@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "emulatore", "runtimeExecutable": "sh", "runtimeArgs": ["scripts/emulatore.sh"], "port": 9000 },
+    { "name": "app", "runtimeExecutable": "npm", "runtimeArgs": ["start"], "port": 3000 }
+  ]
+}

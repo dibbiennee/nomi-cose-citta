@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Nomi Cose Città — gioco mobile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&amp;family=Figtree:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F3FF}
+a{color:#17122B}a:hover{color:#5B3FD6}
+button,input{font-family:Figtree,system-ui,sans-serif}
+input::placeholder{color:#A39DC4}
+.n-scroll{scrollbar-width:none}.n-scroll::-webkit-scrollbar{display:none}
+.n-up{animation:nUp .5s cubic-bezier(.2,.8,.2,1) both}
+.n-new{animation:nNew .6s cubic-bezier(.2,.9,.3,1.4) both}
+.n-sheet{animation:nSheet .42s cubic-bezier(.2,.9,.2,1) both}
+.n-fade{animation:nFade .25s ease both}
+.n-toast{animation:nToast .45s cubic-bezier(.2,.9,.2,1.2) both}
+.n-pop{animation:nPop .6s cubic-bezier(.2,.9,.3,1.4) both}
+.n-float{animation:nFloat 3.2s ease-in-out infinite}
+.n-shake{animation:nShake .16s linear infinite}
+.n-ring{animation:nRing 1.2s ease-out both}
+.n-pulse{animation:nPulse .9s ease-in-out infinite}
+.n-stop{animation:nStop .5s cubic-bezier(.2,.9,.3,1.5) both}
+.n-rise{transform-origin:bottom center;animation:nRise .9s cubic-bezier(.2,.9,.3,1.2) both}
+.n-grow{transform-origin:left center;animation:nGrow .9s cubic-bezier(.2,.8,.2,1) both}
+.n-fall{animation:nFall linear infinite}
+.n-bob{animation:nBob 1.4s ease-in-out infinite}
+.n-react{animation:nReact 1.9s cubic-bezier(.2,.7,.3,1) both}
+.n-screen{animation:nScreen .38s cubic-bezier(.2,.8,.2,1) both}
+.n-up2{animation:nUpB .5s cubic-bezier(.2,.8,.2,1) both}
+.n-pop2{animation:nPopB .6s cubic-bezier(.2,.9,.3,1.4) both}
+.n-blink{transform-box:fill-box;transform-origin:center;animation:nBlink 4.2s ease-in-out infinite}
+.n-wiggle{animation:nWiggle .5s ease-in-out infinite}
+.n-flip{animation:nFlip .7s cubic-bezier(.2,.9,.3,1.3) both}
+.n-wgrow{animation:nW 1.1s cubic-bezier(.2,.8,.2,1) both}
+.n-no{animation:nNo .4s ease both}
+.n-no2{animation:nNoB .4s ease both}
+.n-drop{animation:nDrop .7s cubic-bezier(.3,1.6,.4,1) both}
+.n-down{animation:nDown .4s cubic-bezier(.2,.9,.2,1) both}
+.n-spin{animation:nSpinR .8s linear infinite}
+.n-card{animation:nCard .7s cubic-bezier(.2,.9,.3,1.3) both}
+.n-dots span{animation:nDot 1.2s infinite both}
+.n-btn{transition:transform .12s ease, box-shadow .12s ease}.n-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #17122B !important}
+.n-press{transition:transform .15s ease}.n-press:active{transform:scale(.95)}
+@keyframes nScreen{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes nUpB{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes nPopB{0%{opacity:0;transform:scale(.4) rotate(12deg)}100%{opacity:1;transform:none}}
+@keyframes nBlink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+@keyframes nWiggle{0%,100%{transform:rotate(-1.2deg)}50%{transform:rotate(1.2deg)}}
+@keyframes nFlip{0%{opacity:0;transform:perspective(400px) rotateY(-90deg)}100%{opacity:1;transform:perspective(400px) rotateY(0)}}
+@keyframes nW{from{width:44px}}
+@keyframes nNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes nNoB{0%,100%{transform:translateX(0)}25%{transform:translateX(6px)}75%{transform:translateX(-6px)}}
+@keyframes nDrop{0%{opacity:0;transform:translateY(-40px) rotate(-20deg)}100%{opacity:1;transform:none}}
+@keyframes nDown{from{transform:translateY(-100%)}to{transform:none}}
+@keyframes nSpinR{to{transform:rotate(360deg)}}
+@keyframes nCard{0%{opacity:0;transform:translateY(40px) rotate(8deg) scale(.9)}100%{opacity:1}}
+@keyframes nDot{0%,80%,100%{opacity:.2}40%{opacity:1}}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
+@keyframes nUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes nNew{0%{opacity:0;transform:scale(.5)}100%{opacity:1;transform:none}}
+@keyframes nSheet{from{transform:translateY(100%)}to{transform:none}}
+@keyframes nFade{from{opacity:0}to{opacity:1}}
+@keyframes nToast{from{opacity:0;transform:translate(-50%,-24px) scale(.9)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes nPop{0%{opacity:0;transform:scale(.4) rotate(-12deg)}100%{opacity:1;transform:none}}
+@keyframes nFloat{0%,100%{translate:0 0}50%{translate:0 -5px}}
+@keyframes nShake{0%{transform:translate(0,0) rotate(-3deg)}50%{transform:translate(2px,-3px) rotate(3deg)}100%{transform:translate(0,0) rotate(-3deg)}}
+@keyframes nRing{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.4);opacity:0}}
+@keyframes nPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes nStop{0%{opacity:0;transform:scale(2.6) rotate(-10deg)}100%{opacity:1;transform:scale(1) rotate(-6deg)}}
+@keyframes nRise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes nGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes nFall{0%{transform:translateY(-40px) rotate(0)}100%{transform:translateY(460px) rotate(540deg);opacity:0}}
+@keyframes nBob{0%,100%{translate:0 0}50%{translate:0 -8px}}
+@keyframes nReact{0%{opacity:0;transform:translateY(20px) scale(.7)}15%{opacity:1;transform:translateY(0) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateY(-260px) scale(1.05)}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F6F3FF; color: #17122B; font-family: Figtree, system-ui, sans-serif">
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div class="n-screen" style="position: absolute; inset: 0; background: #FFD23F; padding: 20px 24px 28px; box-sizing: border-box; display: flex; flex-direction: column">
+<div style="display: flex; justify-content: flex-end">
+<button class="n-btn" onClick="{{ openRules }}" style="height: 44px; padding: 0 16px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer">Come si gioca</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px; align-items: center; padding: 22px 0 0">
+<sc-for list="{{ homeTiles }}" as="row" hint-placeholder-count="3">
+<div style="display: flex; gap: 8px">
+<sc-for list="{{ row.tiles }}" as="t" hint-placeholder-count="4">
+<span class="n-pop" style="display: inline-block; animation-delay: {{ t.delay }}"><span class="n-float" style="width: 52px; height: 58px; box-sizing: border-box; border-radius: 14px; border: 2.5px solid #17122B; background: {{ t.bg }}; color: #17122B; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 32px; box-shadow: 0 5px 0 #17122B; transform: rotate({{ t.rot }}); animation-delay: {{ t.fdelay }}">{{ t.ch }}</span></span>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<div class="n-up" style="margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 14px; animation-delay: .5s">
+<button class="n-press" aria-label="Cambia faccia" onClick="{{ nextFace }}" style="width: 108px; height: 108px; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative">
+<svg width="108" height="108" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22.5" fill="{{ myFace.bg }}" stroke="#17122B" stroke-width="2"></circle><path class="n-blink" d="{{ myFace.eyes }}" fill="none" stroke="#17122B" stroke-width="3.4" stroke-linecap="round"></path><path d="{{ myFace.mouth }}" fill="{{ myFace.mouthFill }}" stroke="#17122B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="position: absolute; right: -4px; bottom: 2px; width: 36px; height: 36px; box-sizing: border-box; border-radius: 50%; background: #FFFFFF; border: 2.5px solid #17122B; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#17122B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path><path d="M3 21v-5h5"></path></svg></span>
+</button>
+<div style="display: flex; gap: 10px">
+<sc-for list="{{ colorDots }}" as="a" hint-placeholder-count="6">
+<button class="n-press" aria-label="{{ a.aria }}" onClick="{{ a.pick }}" style="width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 2.5px solid #17122B; background: {{ a.bg }}; cursor: pointer; box-shadow: {{ a.shadow }}; transform: {{ a.scale }}; transition: transform .25s cubic-bezier(.2,.9,.3,1.5)"></button>
+</sc-for>
+</div>
+<input type="text" aria-label="Il tuo nome" value="{{ name }}" onChange="{{ onName }}" maxlength="14" placeholder="Il tuo nome" style="width: 100%; box-sizing: border-box; height: 58px; padding: 0 18px; border-radius: 18px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 20px; font-weight: 800; text-align: center; outline: none">
+</div>
+<div class="n-up" style="display: flex; flex-direction: column; gap: 14px; margin-top: auto; animation-delay: .6s">
+<button class="n-btn" onClick="{{ goSetup }}" style="height: 62px; border: 2.5px solid #17122B; border-radius: 20px; background: #17122B; color: #FFD23F; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #7A5F00; cursor: pointer">Crea una stanza</button>
+<button class="n-btn" onClick="{{ openJoin }}" style="height: 58px; border-radius: 20px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer">Ho un codice</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSetup }}" hint-placeholder-val="{{ false }}">
+<div class="n-screen" style="position: absolute; inset: 0; display: flex; flex-direction: column">
+<header style="display: flex; align-items: center; gap: 12px; padding: 20px 20px 10px">
+<button class="n-btn" aria-label="Indietro" onClick="{{ backFromSetup }}" style="width: 46px; height: 46px; border-radius: 14px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; box-shadow: 0 4px 0 #17122B; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">{{ setupTitle }}</span>
+</header>
+<div class="n-scroll" style="flex-grow: 1; overflow-y: auto; padding: 14px 20px 24px; display: flex; flex-direction: column; gap: 24px">
+<section class="n-up" style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 17px; font-weight: 800">Categorie</span><span style="font-size: 13px; font-weight: 600; color: #5E5880">{{ catCount }}</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{ catChips }}" as="c" hint-placeholder-count="8">
+<button class="n-press" onClick="{{ c.toggle }}" style="height: 46px; padding: 0 16px; border-radius: 999px; border: 2.5px solid {{ c.border }}; background: {{ c.bg }}; color: {{ c.fg }}; font-size: 15px; font-weight: 800; box-shadow: {{ c.shadow }}; cursor: pointer; transition: background .2s, box-shadow .2s">{{ c.label }}</button>
+</sc-for>
+</div>
+<div style="display: flex; gap: 8px">
+<input type="text" value="{{ newCat }}" onChange="{{ onNewCat }}" maxlength="16" placeholder="Inventa una categoria" aria-label="Nuova categoria" style="flex-grow: 1; min-width: 0; height: 50px; padding: 0 16px; border-radius: 16px; border: 2.5px dashed #A39DC4; background: transparent; color: #17122B; font-size: 15px; font-weight: 700; outline: none">
+<button class="n-press" onClick="{{ addCat }}" aria-label="Aggiungi categoria" style="width: 50px; height: 50px; border-radius: 16px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 24px; font-weight: 800; cursor: pointer; opacity: {{ addCatOp }}">+</button>
+</div>
+</section>
+<section class="n-up" style="border-radius: 22px; border: 2.5px solid #17122B; background: #FFFFFF; overflow: hidden; animation-delay: .08s">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 12px 16px; border-bottom: 2px solid #E6E0F7">
+<span style="font-size: 16px; font-weight: 800">Round</span>
+<span style="display: flex; align-items: center; gap: 12px">
+<button class="n-press" aria-label="Meno round" onClick="{{ decRounds }}" style="width: 44px; height: 44px; border-radius: 12px; border: 0; background: #EDE8FB; color: #17122B; font-size: 22px; font-weight: 800; cursor: pointer">−</button>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; width: 30px; text-align: center">{{ rounds }}</span>
+<button class="n-press" aria-label="Più round" onClick="{{ incRounds }}" style="width: 44px; height: 44px; border-radius: 12px; border: 0; background: #EDE8FB; color: #17122B; font-size: 22px; font-weight: 800; cursor: pointer">+</button>
+</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 12px 16px; border-bottom: 2px solid #E6E0F7">
+<span style="font-size: 16px; font-weight: 800">Giocatori max</span>
+<span style="display: flex; align-items: center; gap: 12px">
+<button class="n-press" aria-label="Meno giocatori" onClick="{{ decMax }}" style="width: 44px; height: 44px; border-radius: 12px; border: 0; background: #EDE8FB; color: #17122B; font-size: 22px; font-weight: 800; cursor: pointer">−</button>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; width: 30px; text-align: center">{{ maxPlayers }}</span>
+<button class="n-press" aria-label="Più giocatori" onClick="{{ incMax }}" style="width: 44px; height: 44px; border-radius: 12px; border: 0; background: #EDE8FB; color: #17122B; font-size: 22px; font-weight: 800; cursor: pointer">+</button>
+</span>
+</div>
+<button onClick="{{ toggleHard }}" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 14px 14px 16px; border: 0; background: transparent; color: #17122B; cursor: pointer; text-align: left">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 800">Niente lettere difficili</span><span style="font-size: 13px; color: #5E5880">Esclude H, J, K, Q, W, X, Y</span></span>
+<span style="width: 54px; height: 32px; box-sizing: border-box; border-radius: 999px; border: 2.5px solid #17122B; background: {{ hardBg }}; position: relative; flex-shrink: 0; transition: background .3s"><span style="position: absolute; top: 2px; left: 2px; width: 23px; height: 23px; border-radius: 50%; background: #17122B; transform: {{ hardX }}; transition: transform .35s cubic-bezier(.2,.9,.3,1.4)"></span></span>
+</button>
+</section>
+<section class="n-up" style="display: flex; flex-direction: column; gap: 10px; animation-delay: .14s">
+<span style="font-size: 17px; font-weight: 800">Tempo per round</span>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{ timerOpts }}" as="o" hint-placeholder-count="4">
+<button class="n-press" onClick="{{ o.pick }}" style="height: 50px; border-radius: 14px; border: 2.5px solid {{ o.border }}; background: {{ o.bg }}; color: #17122B; font-size: 15px; font-weight: 800; box-shadow: {{ o.shadow }}; cursor: pointer; transition: all .2s">{{ o.label }}</button>
+</sc-for>
+</div>
+<span style="font-size: 13px; color: #5E5880">{{ timerHint }}</span>
+</section>
+</div>
+<div style="padding: 14px 20px 26px; background: #F6F3FF; border-top: 2px solid #E6E0F7">
+<button class="n-btn" onClick="{{ createRoom }}" style="width: 100%; height: 62px; border: 2.5px solid #17122B; border-radius: 20px; background: #FFD23F; color: #17122B; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer">{{ setupCta }}</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLobby }}" hint-placeholder-val="{{ false }}">
+<div class="n-screen" style="position: absolute; inset: 0; display: flex; flex-direction: column">
+<section style="background: #B79CFF; border-bottom: 2.5px solid #17122B; border-radius: 0 0 34px 34px; padding: 20px 20px 24px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<button class="n-btn" onClick="{{ goHome }}" style="height: 44px; padding: 0 16px; border-radius: 14px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer">Esci</button>
+<sc-if value="{{ meHost }}" hint-placeholder-val="{{ true }}">
+<button class="n-btn" onClick="{{ editSettings }}" style="height: 44px; padding: 0 16px; border-radius: 14px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer">Impostazioni</button>
+</sc-if>
+</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 12px">
+<span style="font-size: 13px; font-weight: 800; letter-spacing: 0.12em">CODICE STANZA</span>
+<div style="display: flex; gap: 10px">
+<sc-for list="{{ codeChars }}" as="c" hint-placeholder-count="4">
+<span class="n-pop" style="width: 60px; height: 70px; box-sizing: border-box; border-radius: 16px; border: 2.5px solid #17122B; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 34px; box-shadow: 0 5px 0 #17122B; animation-delay: {{ c.delay }}">{{ c.ch }}</span>
+</sc-for>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<button class="n-btn" onClick="{{ copyCode }}" style="height: 52px; border-radius: 16px; border: 2.5px solid #17122B; background: {{ copyBg }}; color: #17122B; font-size: 15px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer; transition: background .25s">{{ copyLabel }}</button>
+<button class="n-btn" onClick="{{ shareCode }}" style="height: 52px; border-radius: 16px; border: 2.5px solid #17122B; background: #17122B; color: #FFFFFF; font-size: 15px; font-weight: 800; box-shadow: 0 4px 0 #5B3FD6; cursor: pointer">WhatsApp</button>
+</div>
+</section>
+<div class="n-scroll" style="flex-grow: 1; overflow-y: auto; padding: 22px 20px 16px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 17px; font-weight: 800">Chi c'è</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #5E5880">{{ playerCount }}</span></div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 8px">
+<sc-for list="{{ lobbyPlayers }}" as="p" hint-placeholder-count="2">
+<div class="n-new" style="display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative">
+<span class="n-bob" style="display: block; width: 64px; height: 64px; animation-delay: {{ p.bob }}"><svg width="64" height="64" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22.5" fill="{{ p.bg }}" stroke="#17122B" stroke-width="2.4"></circle><path class="n-blink" d="{{ p.eyes }}" fill="none" stroke="#17122B" stroke-width="3.4" stroke-linecap="round" style="animation-delay: {{ p.bob }}"></path><path d="{{ p.mouth }}" fill="{{ p.mouthFill }}" stroke="#17122B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+<span style="font-size: 13px; font-weight: 800; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ p.name }}</span>
+<sc-if value="{{ p.host }}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); height: 20px; padding: 0 8px; border-radius: 999px; border: 2px solid #17122B; background: #FFD23F; font-size: 10px; font-weight: 800; letter-spacing: 0.06em; display: flex; align-items: center">HOST</span></sc-if>
+<sc-if value="{{ p.canKick }}" hint-placeholder-val="{{ false }}"><button aria-label="{{ p.kickAria }}" onClick="{{ p.kick }}" style="position: absolute; top: -10px; right: -4px; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; display: flex; align-items: flex-start; justify-content: flex-end"><span style="width: 24px; height: 24px; box-sizing: border-box; border-radius: 50%; border: 2px solid #17122B; background: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#17122B" stroke-width="4" stroke-linecap="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></span></button></sc-if>
+</div>
+</sc-for>
+<sc-for list="{{ emptySlots }}" as="e" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px">
+<span style="width: 64px; height: 64px; box-sizing: border-box; border-radius: 50%; border: 2.5px dashed #BDB6DC; display: flex; align-items: center; justify-content: center; color: #BDB6DC; font-size: 24px; font-weight: 700">+</span>
+<span style="font-size: 13px; color: #8D87AE">libero</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{ lobbyChips }}" as="c" hint-placeholder-count="5"><span style="height: 32px; padding: 0 12px; border-radius: 999px; background: {{ c.bg }}; border: 2px solid #17122B; font-size: 13px; font-weight: 800; display: flex; align-items: center">{{ c.label }}</span></sc-for>
+</div>
+</div>
+<div style="padding: 14px 20px 26px; border-top: 2px solid #E6E0F7">
+<button class="n-btn" onClick="{{ startGame }}" style="width: 100%; height: 62px; border: 2.5px solid {{ startBorder }}; border-radius: 20px; background: {{ startBg }}; color: {{ startFg }}; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 {{ startBorder }}; cursor: pointer; transition: background .3s">{{ startLabel }}</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSpin }}" hint-placeholder-val="{{ false }}">
+<div class="n-screen" style="position: absolute; inset: 0; background: #FF8A65; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; padding: 24px">
+<span class="n-up" style="height: 36px; padding: 0 16px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 13px; font-weight: 800; letter-spacing: 0.12em; display: flex; align-items: center">{{ roundLabel }}</span>
+<div style="position: relative; width: 210px; height: 230px; display: flex; align-items: center; justify-content: center">
+<sc-if value="{{ spinDone }}" hint-placeholder-val="{{ true }}">
+<span class="n-ring" style="position: absolute; width: 200px; height: 200px; border-radius: 50%; border: 5px solid #17122B"></span>
+<span class="n-ring" style="position: absolute; width: 200px; height: 200px; border-radius: 50%; border: 5px solid #FFFFFF; animation-delay: .2s"></span>
+</sc-if>
+<span class="{{ spinCls }}" style="width: 190px; height: 210px; box-sizing: border-box; border-radius: 40px; border: 4px solid #17122B; background: #FFFFFF; color: #17122B; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 136px; box-shadow: 0 12px 0 #17122B">{{ spinLetter }}</span>
+</div>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px; text-align: center; min-height: 40px">{{ spinText }}</span>
+<div style="height: 76px; display: flex; align-items: center; justify-content: center">
+<sc-for list="{{ goNums }}" as="g" hint-placeholder-count="1"><span class="{{ g.cls }}" style="min-width: 76px; height: 76px; padding: 0 18px; box-sizing: border-box; border-radius: 999px; border: 3px solid #17122B; background: #FFD23F; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; box-shadow: 0 5px 0 #17122B">{{ g.label }}</span></sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPlay }}" hint-placeholder-val="{{ false }}">
+<div class="n-screen" style="position: absolute; inset: 0; display: flex; flex-direction: column">
+<header style="padding: 18px 20px 14px; display: flex; flex-direction: column; gap: 14px; background: #FFFFFF; border-bottom: 2.5px solid #17122B">
+<div style="display: flex; align-items: center; gap: 14px">
+<span class="n-flip" style="width: 58px; height: 64px; box-sizing: border-box; border-radius: 16px; border: 2.5px solid #17122B; background: #FFD23F; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; box-shadow: 0 5px 0 #17122B; flex-shrink: 0">{{ letter }}</span>
+<span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 800; letter-spacing: 0.1em; color: #5E5880">{{ roundLabel }}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">Tutto con la {{ letter }}</span>
+</span>
+<button class="n-press" aria-label="Classifica" onClick="{{ openScores }}" style="width: 46px; height: 46px; border-radius: 14px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"></path><path d="M12 17v4"></path><path d="M7 4h10v5a5 5 0 0 1-10 0z"></path><path d="M17 5h3v2a3 3 0 0 1-3 3"></path><path d="M7 5H4v2a3 3 0 0 0 3 3"></path></svg></button>
+</div>
+<div style="display: flex; align-items: center; gap: 12px">
+<div style="flex-grow: 1; height: 16px; box-sizing: border-box; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; overflow: hidden"><div style="width: {{ timePct }}; height: 100%; background: {{ timeColor }}; transition: width 1s linear, background .3s"></div></div>
+<span class="{{ timerCls }}" style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px; min-width: 44px; text-align: right; color: {{ timeText }}">{{ timerText }}</span>
+</div>
+</header>
+<div class="n-scroll" style="flex-grow: 1; overflow-y: auto; padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; gap: 14px">
+<sc-for list="{{ progressRows }}" as="p" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 6px">
+<svg width="30" height="30" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="{{ p.bg }}" stroke="#17122B" stroke-width="3"></circle><path d="{{ p.eyes }}" fill="none" stroke="#17122B" stroke-width="3.6" stroke-linecap="round"></path><path d="{{ p.mouth }}" fill="{{ p.mouthFill }}" stroke="#17122B" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: {{ p.fg }}">{{ p.done }}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: {{ gridCols }}; gap: 24px 12px">
+<sc-for list="{{ catInputs }}" as="c" hint-placeholder-count="3">
+<label class="n-up" style="position: relative; display: block; border-radius: 18px; border: 2.5px solid {{ c.border }}; background: {{ c.bg }}; box-shadow: 0 4px 0 {{ c.border }}; animation-delay: {{ c.delay }}; transition: background .25s">
+<span style="position: absolute; top: -13px; left: 12px; height: 24px; box-sizing: border-box; padding: 0 9px; border-radius: 8px; border: 2px solid #17122B; background: {{ c.color }}; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; display: flex; align-items: center">{{ c.label }}</span>
+<input type="text" value="{{ c.value }}" onChange="{{ c.onChange }}" placeholder="{{ c.placeholder }}" autocomplete="off" style="width: 100%; box-sizing: border-box; height: {{ fieldH }}; padding: 8px 14px 0; border: 0; background: transparent; color: #17122B; font-size: {{ fieldFont }}; font-weight: 800; outline: none">
+<sc-if value="{{ c.bad }}" hint-placeholder-val="{{ false }}"><span style="position: absolute; right: 10px; bottom: -12px; height: 22px; padding: 0 8px; border-radius: 6px; background: #17122B; color: #FFFFFF; font-size: 11px; font-weight: 700; display: flex; align-items: center">Inizia con {{ letter }}</span></sc-if>
+</label>
+</sc-for>
+</div>
+</div>
+<div style="padding: 12px 20px 26px; border-top: 2px solid #E6E0F7">
+<button class="{{ stopCls }}" onClick="{{ pressStop }}" style="position: relative; overflow: hidden; width: 100%; height: 66px; border: 2.5px solid #17122B; border-radius: 22px; background: #FFFFFF; color: #17122B; box-shadow: 0 5px 0 #17122B; cursor: pointer; padding: 0">
+<span style="position: absolute; left: 0; top: 0; bottom: 0; width: {{ stopFill }}; background: #FF5E3A; transition: width .45s cubic-bezier(.2,.8,.2,1)"></span>
+<span style="position: relative; font-family: 'Bricolage Grotesque', sans-serif; font-size: {{ stopSize }}; font-weight: 800; letter-spacing: 0.02em">{{ stopLabel }}</span>
+</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isStopping }}" hint-placeholder-val="{{ false }}">
+<div class="n-fade" style="position: absolute; inset: 0; z-index: 40; background: #FF5E3A; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px">
+<span class="n-stop" style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 124px; line-height: 1; color: #FFFFFF; text-shadow: 0 8px 0 #17122B">STOP!</span>
+<span class="n-up" style="height: 46px; padding: 0 20px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 17px; font-weight: 800; display: flex; align-items: center; animation-delay: .3s">{{ stopText }}</span>
+</div>
+</sc-if>
+
+<sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+<div class="n-screen" style="position: absolute; inset: 0; display: flex; flex-direction: column">
+<header style="padding: 20px 20px 22px; background: {{ rvColor }}; border-bottom: 2.5px solid #17122B; border-radius: 0 0 34px 34px; display: flex; flex-direction: column; gap: 16px; transition: background .35s">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="font-size: 13px; font-weight: 800; letter-spacing: 0.12em">CORREZIONE · {{ rvIdx }}</span>
+<span style="display: flex; gap: 6px">
+<sc-for list="{{ rvDots }}" as="d" hint-placeholder-count="3"><span style="width: {{ d.w }}; height: 10px; box-sizing: border-box; border-radius: 999px; border: 2px solid #17122B; background: {{ d.bg }}; transition: width .35s cubic-bezier(.2,.8,.2,1)"></span></sc-for>
+</span>
+</div>
+<div style="display: flex; align-items: center; gap: 14px">
+<span style="width: 58px; height: 64px; box-sizing: border-box; border-radius: 16px; border: 2.5px solid #17122B; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 38px; box-shadow: 0 5px 0 #17122B">{{ letter }}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; line-height: 1">{{ rvLabel }}</span>
+</div>
+</header>
+<div class="n-scroll" style="flex-grow: 1; overflow-y: auto; padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{ rvRows }}" as="r" hint-placeholder-count="4">
+<div class="{{ r.cls }}" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 20px; border: 2.5px solid #17122B; background: {{ r.cardBg }}; animation-delay: {{ r.delay }}; transition: background .25s">
+<svg width="44" height="44" viewBox="0 0 48 48" style="flex-shrink: 0"><circle cx="24" cy="24" r="22.5" fill="{{ r.bg }}" stroke="#17122B" stroke-width="2.6"></circle><path d="{{ r.eyes }}" fill="none" stroke="#17122B" stroke-width="3.4" stroke-linecap="round"></path><path d="{{ r.mouth }}" fill="{{ r.mouthFill }}" stroke="#17122B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+<span style="font-size: 12px; font-weight: 700; color: #5E5880">{{ r.name }} · {{ r.tag }}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 800; text-decoration: {{ r.deco }}; opacity: {{ r.op }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ r.text }}</span>
+</span>
+<sc-if value="{{ r.canVote }}" hint-placeholder-val="{{ true }}">
+<button class="n-press" onClick="{{ r.vote }}" style="height: 44px; padding: 0 12px; border-radius: 12px; border: 2px solid #17122B; background: {{ r.voteBg }}; color: {{ r.voteFg }}; font-size: 13px; font-weight: 800; cursor: pointer; flex-shrink: 0; transition: background .2s">{{ r.voteLabel }}</button>
+</sc-if>
+<span class="n-pop" style="min-width: 46px; height: 40px; padding: 0 8px; box-sizing: border-box; border-radius: 12px; border: 2.5px solid #17122B; background: {{ r.ptsBg }}; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 19px; display: flex; align-items: center; justify-content: center; transform: rotate(4deg); flex-shrink: 0">{{ r.pts }}</span>
+</div>
+</sc-for>
+</div>
+<div style="position: absolute; left: 0; right: 0; bottom: 170px; height: 0; pointer-events: none">
+<sc-for list="{{ reactions }}" as="x" hint-placeholder-count="0"><span class="n-react" style="position: absolute; bottom: 0; left: {{ x.left }}; height: 40px; padding: 0 14px 0 5px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; white-space: nowrap; box-shadow: 0 4px 0 #17122B"><svg width="28" height="28" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="{{ x.bg }}" stroke="#17122B" stroke-width="3"></circle><path d="{{ x.eyes }}" fill="none" stroke="#17122B" stroke-width="3.6" stroke-linecap="round"></path><path d="{{ x.mouth }}" fill="{{ x.mouthFill }}" stroke="#17122B" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{ x.text }}</span></sc-for>
+</div>
+<div style="padding: 12px 20px 26px; border-top: 2px solid #E6E0F7; display: flex; flex-direction: column; gap: 12px">
+<div class="n-scroll" style="display: flex; gap: 8px; overflow-x: auto; margin: 0 -20px; padding: 0 20px">
+<sc-for list="{{ reactBtns }}" as="b" hint-placeholder-count="4"><button class="n-press" onClick="{{ b.send }}" style="height: 44px; padding: 0 16px; flex-shrink: 0; border-radius: 999px; border: 2px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 14px; font-weight: 800; cursor: pointer">{{ b.text }}</button></sc-for>
+</div>
+<button class="n-btn" onClick="{{ nextCat }}" style="width: 100%; height: 62px; border: 2.5px solid {{ hostBorder }}; border-radius: 20px; background: {{ hostBg }}; color: {{ hostFg }}; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 {{ hostBorder }}; cursor: pointer">{{ rvNext }}</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isRound }}" hint-placeholder-val="{{ false }}">
+<div class="n-screen" style="position: absolute; inset: 0; display: flex; flex-direction: column">
+<header class="n-up" style="padding: 26px 20px 6px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; font-weight: 800; letter-spacing: 0.12em; color: #5E5880">LETTERA {{ letter }} · ROUND {{ round }} DI {{ roundsTotal }}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 36px; line-height: 1.05">{{ roundHeadline }}</span>
+</header>
+<div class="n-scroll" style="flex-grow: 1; overflow-y: auto; padding: 22px 20px 20px; display: flex; flex-direction: column; gap: 20px">
+<sc-for list="{{ roundRows }}" as="r" hint-placeholder-count="4">
+<div class="n-up" style="display: flex; flex-direction: column; gap: 8px; animation-delay: {{ r.delay }}">
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: #5E5880">{{ r.rank }}</span>
+<span style="flex-grow: 1; font-size: 17px; font-weight: 800">{{ r.name }}</span>
+<span class="n-pop" style="height: 26px; padding: 0 9px; border-radius: 8px; border: 2px solid #17122B; background: #6EE7A8; font-size: 13px; font-weight: 800; display: flex; align-items: center; transform: rotate(-3deg); animation-delay: {{ r.plusDelay }}">+{{ r.plus }}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px; min-width: 56px; text-align: right">{{ r.total }}</span>
+</div>
+<div style="position: relative; height: 44px">
+<div style="position: absolute; left: 0; right: 0; top: 13px; height: 18px; box-sizing: border-box; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; overflow: hidden"><div class="n-grow" style="width: {{ r.pct }}; height: 100%; background: {{ r.bg }}; animation-delay: {{ r.delay }}"></div></div>
+<span class="n-wgrow" style="position: absolute; top: 0; left: 0; width: {{ r.pct }}; height: 44px; display: flex; justify-content: flex-end; animation-delay: {{ r.delay }}"><svg width="44" height="44" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22.5" fill="{{ r.bg }}" stroke="#17122B" stroke-width="2.6"></circle><path d="{{ r.eyes }}" fill="none" stroke="#17122B" stroke-width="3.4" stroke-linecap="round"></path><path d="{{ r.mouth }}" fill="{{ r.mouthFill }}" stroke="#17122B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="padding: 14px 20px 26px; border-top: 2px solid #E6E0F7">
+<button class="n-btn" onClick="{{ nextRound }}" style="width: 100%; height: 62px; border: 2.5px solid {{ hostBorder }}; border-radius: 20px; background: {{ hostBg }}; color: {{ hostFg }}; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 {{ hostBorder }}; cursor: pointer">{{ nextRoundLabel }}</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isFinal }}" hint-placeholder-val="{{ false }}">
+<div class="n-screen" style="position: absolute; inset: 0; background: #FFD23F">
+<div style="position: absolute; left: 0; right: 0; top: 0; height: 420px; pointer-events: none; overflow: hidden">
+<sc-for list="{{ confetti }}" as="k" hint-placeholder-count="24"><span class="n-fall" style="position: absolute; top: 0; left: {{ k.left }}; width: {{ k.w }}; height: 14px; box-sizing: border-box; border-radius: 3px; border: 1.5px solid #17122B; background: {{ k.color }}; animation-duration: {{ k.dur }}; animation-delay: {{ k.delay }}"></span></sc-for>
+</div>
+<div style="position: relative; height: 100%; box-sizing: border-box; padding: 40px 20px 26px; display: flex; flex-direction: column; align-items: center">
+<span class="n-up" style="height: 32px; padding: 0 14px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; display: flex; align-items: center">PARTITA FINITA</span>
+<span class="n-pop" style="margin-top: 14px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 44px; text-align: center; line-height: 1">{{ winLine }}</span>
+<div style="flex-grow: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 10px">
+<sc-for list="{{ podium }}" as="p" hint-placeholder-count="3">
+<div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px">
+<span class="n-pop" style="position: relative; display: block; animation-delay: {{ p.avDelay }}">
+<sc-if value="{{ p.first }}" hint-placeholder-val="{{ false }}"><svg class="n-drop" width="44" height="30" viewBox="0 0 44 30" style="position: absolute; top: -26px; left: 50%; margin-left: -22px; animation-delay: 1.9s"><path d="M4 26 2 8l11 8 9-13 9 13 11-8-2 18z" fill="#FFFFFF" stroke="#17122B" stroke-width="3" stroke-linejoin="round"></path></svg></sc-if>
+<svg width="{{ p.size }}" height="{{ p.size }}" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22.5" fill="{{ p.bg }}" stroke="#17122B" stroke-width="2.4"></circle><path d="{{ p.eyes }}" fill="none" stroke="#17122B" stroke-width="3.4" stroke-linecap="round"></path><path d="{{ p.mouth }}" fill="{{ p.mouthFill }}" stroke="#17122B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</span>
+<span style="font-size: 15px; font-weight: 800">{{ p.name }}</span>
+<div class="n-rise" style="width: 100%; height: {{ p.h }}; box-sizing: border-box; border-radius: 20px 20px 0 0; border: 2.5px solid #17122B; border-bottom: 0; background: {{ p.block }}; color: {{ p.fg }}; display: flex; flex-direction: column; align-items: center; gap: 2px; padding-top: 12px; animation-delay: {{ p.delay }}">
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 44px; line-height: 1">{{ p.place }}</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700">{{ p.pts }} pt</span>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="width: 100%; box-sizing: border-box; border-top: 2.5px solid #17122B; padding-top: 14px; display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{ restPlayers }}" as="p" hint-placeholder-count="1">
+<div class="n-up" style="display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 10px; border-radius: 16px; border: 2.5px solid #17122B; background: #FFFFFF; animation-delay: 1s">
+<span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; width: 22px; text-align: center">{{ p.place }}</span>
+<svg width="32" height="32" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="{{ p.bg }}" stroke="#17122B" stroke-width="3"></circle><path d="{{ p.eyes }}" fill="none" stroke="#17122B" stroke-width="3.6" stroke-linecap="round"></path><path d="{{ p.mouth }}" fill="{{ p.mouthFill }}" stroke="#17122B" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="flex-grow: 1; font-weight: 800">{{ p.name }}</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-weight: 700">{{ p.pts }} pt</span>
+</div>
+</sc-for>
+<button class="n-btn" onClick="{{ rematch }}" style="height: 62px; border: 2.5px solid #17122B; border-radius: 20px; background: #17122B; color: #FFD23F; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #7A5F00; cursor: pointer">Rivincita</button>
+<button class="n-btn" onClick="{{ goHome }}" style="height: 54px; border-radius: 20px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 16px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer">Torna alla home</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isInvite }}" hint-placeholder-val="{{ false }}">
+<div class="n-screen" style="position: absolute; inset: 0; background: #B79CFF; padding: 28px 24px 28px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center">
+<span style="height: 34px; padding: 0 14px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; display: flex; align-items: center">STANZA {{ codeText }}</span>
+<span class="n-pop" style="margin-top: 18px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; line-height: 1.05; text-align: center">{{ inviteLine }}</span>
+<div style="margin-top: 18px; display: flex; padding-left: 10px">
+<sc-for list="{{ miniPlayers }}" as="p" hint-placeholder-count="3"><span class="n-bob" style="display: block; margin-left: -10px; animation-delay: {{ p.bob }}"><svg width="56" height="56" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22.5" fill="{{ p.bg }}" stroke="#17122B" stroke-width="2.6"></circle><path d="{{ p.eyes }}" fill="none" stroke="#17122B" stroke-width="3.4" stroke-linecap="round"></path><path d="{{ p.mouth }}" fill="{{ p.mouthFill }}" stroke="#17122B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-for>
+</div>
+<span style="margin-top: 8px; font-size: 14px; font-weight: 700">{{ inviteWho }}</span>
+<div class="n-up" style="margin-top: 22px; width: 100%; box-sizing: border-box; padding: 20px; border-radius: 28px; border: 2.5px solid #17122B; background: #FFFFFF; box-shadow: 0 6px 0 #17122B; display: flex; flex-direction: column; align-items: center; gap: 14px; animation-delay: .25s">
+<span style="font-size: 15px; font-weight: 800">Tu chi sei?</span>
+<button class="n-press" aria-label="Cambia faccia" onClick="{{ nextFace }}" style="width: 88px; height: 88px; padding: 0; border: 0; background: transparent; cursor: pointer">
+<svg width="88" height="88" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22.5" fill="{{ myFace.bg }}" stroke="#17122B" stroke-width="2.2"></circle><path class="n-blink" d="{{ myFace.eyes }}" fill="none" stroke="#17122B" stroke-width="3.4" stroke-linecap="round"></path><path d="{{ myFace.mouth }}" fill="{{ myFace.mouthFill }}" stroke="#17122B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</button>
+<div style="display: flex; gap: 8px">
+<sc-for list="{{ colorDots }}" as="a" hint-placeholder-count="6">
+<button class="n-press" aria-label="{{ a.aria }}" onClick="{{ a.pick }}" style="width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 2.5px solid #17122B; background: {{ a.bg }}; cursor: pointer; box-shadow: {{ a.shadow }}; transform: {{ a.scale }}; transition: transform .25s cubic-bezier(.2,.9,.3,1.5)"></button>
+</sc-for>
+</div>
+<input type="text" aria-label="Il tuo nome" value="{{ name }}" onChange="{{ onName }}" maxlength="14" placeholder="Il tuo nome" style="width: 100%; box-sizing: border-box; height: 56px; padding: 0 18px; border-radius: 16px; border: 2.5px solid #17122B; background: #F6F3FF; color: #17122B; font-size: 20px; font-weight: 800; text-align: center; outline: none">
+</div>
+<button class="n-btn" onClick="{{ joinInvite }}" style="margin-top: auto; width: 100%; height: 62px; border: 2.5px solid #17122B; border-radius: 20px; background: #FFD23F; color: #17122B; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer">Entra nella stanza</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+<div class="n-screen" style="position: absolute; inset: 0; padding: 28px 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; text-align: center">
+<span class="n-pop" style="width: 150px; height: 164px; box-sizing: border-box; border-radius: 34px; border: 3px solid #17122B; background: {{ err.color }}; box-shadow: 0 9px 0 #17122B; display: flex; align-items: center; justify-content: center; transform: rotate(-5deg)">
+<svg width="96" height="96" viewBox="0 0 48 48"><path d="{{ err.eyes }}" fill="none" stroke="#17122B" stroke-width="3.6" stroke-linecap="round"></path><path d="{{ err.mouth }}" fill="none" stroke="#17122B" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+</span>
+<span class="n-up" style="margin-top: 10px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; line-height: 1.05; animation-delay: .15s">{{ err.title }}</span>
+<span class="n-up" style="font-size: 16px; line-height: 1.5; color: #5E5880; max-width: 300px; animation-delay: .2s">{{ err.text }}</span>
+<sc-if value="{{ err.waiting }}" hint-placeholder-val="{{ false }}">
+<span class="n-dots" style="height: 44px; padding: 0 18px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 2px">Aspetto il prossimo round<span>.</span><span style="animation-delay: .2s">.</span><span style="animation-delay: .4s">.</span></span>
+</sc-if>
+<button class="n-btn" onClick="{{ goHome }}" style="margin-top: 14px; width: 100%; height: 60px; border: 2.5px solid #17122B; border-radius: 20px; background: {{ err.btnBg }}; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer">{{ err.btn }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAwards }}" hint-placeholder-val="{{ false }}">
+<div class="n-screen" style="position: absolute; inset: 0; background: #5CD0FF; display: flex; flex-direction: column">
+<header style="padding: 30px 20px 8px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; font-weight: 800; letter-spacing: 0.12em">PRIMA DEL PODIO</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; line-height: 1">I premi</span>
+</header>
+<div style="flex-grow: 1; padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; justify-content: center">
+<sc-for list="{{ awards }}" as="a" hint-placeholder-count="3">
+<div class="n-card" style="position: relative; padding: 18px 16px 16px; border-radius: 24px; border: 2.5px solid #17122B; background: #FFFFFF; box-shadow: 0 6px 0 #17122B; display: flex; align-items: center; gap: 14px; transform: rotate({{ a.rot }}); animation-delay: {{ a.delay }}">
+<span style="position: absolute; top: -13px; left: 16px; height: 26px; box-sizing: border-box; padding: 0 10px; border-radius: 8px; border: 2px solid #17122B; background: {{ a.color }}; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; display: flex; align-items: center">{{ a.title }}</span>
+<svg width="60" height="60" viewBox="0 0 48 48" style="flex-shrink: 0"><circle cx="24" cy="24" r="22.5" fill="{{ a.bg }}" stroke="#17122B" stroke-width="2.6"></circle><path d="{{ a.eyes }}" fill="none" stroke="#17122B" stroke-width="3.4" stroke-linecap="round"></path><path d="{{ a.mouth }}" fill="{{ a.mouthFill }}" stroke="#17122B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px">{{ a.name }}</span><span style="font-size: 14px; color: #5E5880; line-height: 1.35">{{ a.text }}</span></span>
+</div>
+</sc-for>
+</div>
+<div style="padding: 14px 20px 26px">
+<button class="n-btn" onClick="{{ goFinal }}" style="width: 100%; height: 62px; border: 2.5px solid {{ hostBorder }}; border-radius: 20px; background: {{ hostBgInk }}; color: {{ hostFgInk }}; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer">{{ awardsCta }}</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isRules }}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; z-index: 30">
+<div class="n-fade" onClick="{{ closeSheet }}" style="position: absolute; inset: 0; background: rgba(23,18,43,0.55)"></div>
+<div class="n-sheet" style="position: absolute; left: 8px; right: 8px; bottom: 8px; border-radius: 30px; border: 2.5px solid #17122B; background: #FFFFFF; padding: 12px 22px 22px; display: flex; flex-direction: column; gap: 16px">
+<span style="width: 40px; height: 5px; border-radius: 999px; background: #D9D2F2; align-self: center"></span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px">Come si gioca</span>
+<ol style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.45">
+<li>Esce una lettera a caso, uguale per tutti.</li>
+<li>Scrivi una parola per categoria che inizi con quella lettera.</li>
+<li>Chi finisce per primo preme STOP, oppure scade il tempo.</li>
+<li>Correggete insieme: le parole che non valgono si bocciano a maggioranza.</li>
+</ol>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{ ruleScores }}" as="q" hint-placeholder-count="4">
+<div style="padding: 10px 6px; border-radius: 16px; border: 2.5px solid #17122B; background: {{ q.bg }}; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center"><span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; line-height: 1">{{ q.n }}</span><span style="font-size: 11px; font-weight: 700; line-height: 1.2">{{ q.t }}</span></div>
+</sc-for>
+</div>
+<button class="n-btn" onClick="{{ closeSheet }}" style="height: 58px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer">Ho capito</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isJoin }}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; z-index: 30">
+<div class="n-fade" onClick="{{ closeSheet }}" style="position: absolute; inset: 0; background: rgba(23,18,43,0.55)"></div>
+<div class="n-sheet" style="position: absolute; left: 8px; right: 8px; bottom: 8px; border-radius: 30px; border: 2.5px solid #17122B; background: #FFFFFF; padding: 12px 22px 22px; display: flex; flex-direction: column; gap: 18px">
+<span style="width: 40px; height: 5px; border-radius: 999px; background: #D9D2F2; align-self: center"></span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px">Entra in una stanza</span>
+<label style="display: flex; flex-direction: column; gap: 10px; font-size: 14px; font-weight: 700; color: #5E5880">Scrivi il codice di 4 caratteri
+<input type="text" value="{{ joinCode }}" onChange="{{ onJoinCode }}" maxlength="4" placeholder="AB12" autocomplete="off" style="height: 78px; border-radius: 20px; border: 2.5px solid #17122B; background: #F6F3FF; color: #17122B; font-family: 'JetBrains Mono', monospace; font-size: 40px; font-weight: 700; letter-spacing: 0.4em; text-align: center; text-transform: uppercase; outline: none; padding-left: 0.4em">
+</label>
+<button class="n-btn" onClick="{{ joinRoom }}" style="height: 60px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer; opacity: {{ joinOk }}; transition: opacity .2s">Entra</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isScores }}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; z-index: 30">
+<div class="n-fade" onClick="{{ closeSheet }}" style="position: absolute; inset: 0; background: rgba(23,18,43,0.55)"></div>
+<div class="n-sheet" style="position: absolute; left: 8px; right: 8px; bottom: 8px; border-radius: 30px; border: 2.5px solid #17122B; background: #FFFFFF; padding: 12px 20px 20px; display: flex; flex-direction: column; gap: 12px">
+<span style="width: 40px; height: 5px; border-radius: 999px; background: #D9D2F2; align-self: center"></span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px">Classifica</span>
+<sc-for list="{{ scoreRows }}" as="p" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 12px; padding: 8px 14px 8px 10px; border-radius: 16px; border: 2.5px solid #17122B; background: {{ p.rowBg }}">
+<span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; width: 20px; text-align: center">{{ p.place }}</span>
+<svg width="36" height="36" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="{{ p.bg }}" stroke="#17122B" stroke-width="3"></circle><path d="{{ p.eyes }}" fill="none" stroke="#17122B" stroke-width="3.6" stroke-linecap="round"></path><path d="{{ p.mouth }}" fill="{{ p.mouthFill }}" stroke="#17122B" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="flex-grow: 1; font-size: 16px; font-weight: 800">{{ p.name }}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px">{{ p.pts }}</span>
+</div>
+</sc-for>
+<button onClick="{{ openExit }}" style="height: 48px; border: 0; background: transparent; color: #C4300F; font-size: 15px; font-weight: 800; cursor: pointer">Esci dalla partita</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isExit }}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; inset: 0; z-index: 30">
+<div class="n-fade" onClick="{{ closeSheet }}" style="position: absolute; inset: 0; background: rgba(23,18,43,0.55)"></div>
+<div class="n-sheet" style="position: absolute; left: 8px; right: 8px; bottom: 8px; border-radius: 30px; border: 2.5px solid #17122B; background: #FFFFFF; padding: 12px 22px 22px; display: flex; flex-direction: column; gap: 14px">
+<span style="width: 40px; height: 5px; border-radius: 999px; background: #D9D2F2; align-self: center"></span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px">Esci dalla partita?</span>
+<span style="font-size: 15px; line-height: 1.45; color: #5E5880">Gli altri continuano senza di te e perdi i punti fatti finora.</span>
+<button class="n-btn" onClick="{{ closeSheet }}" style="height: 60px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer">Resto a giocare</button>
+<button class="n-btn" onClick="{{ goHome }}" style="height: 56px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFFFFF; color: #C4300F; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer">Esci</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isOffline }}" hint-placeholder-val="{{ false }}">
+<div class="n-down" role="status" style="position: absolute; left: 10px; right: 10px; top: 10px; z-index: 50; border-radius: 18px; background: #17122B; color: #FFFFFF; padding: 14px 16px; box-shadow: 0 10px 30px rgba(23,18,43,0.35); display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 700">
+<span class="n-spin" style="width: 18px; height: 18px; box-sizing: border-box; border-radius: 50%; border: 3px solid rgba(255,255,255,.3); border-top-color: #FFD23F; flex-shrink: 0"></span>
+<span style="flex-grow: 1">Connessione persa. Riprovo…</span>
+<span style="font-size: 13px; color: #BDB6DC">Le tue parole sono salve</span>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+<div class="n-toast" role="status" style="position: absolute; top: 16px; left: 50%; z-index: 60; transform: translateX(-50%); height: 46px; padding: 0 18px; border-radius: 999px; background: #17122B; color: #FFFFFF; display: flex; align-items: center; font-size: 15px; font-weight: 700; white-space: nowrap; box-shadow: 0 10px 30px rgba(23,18,43,0.35)">{{ toast }}</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"start":{"editor":"enum","options":["home","invite","setup","lobby","lobbyGuest","spin","play","stop","offline","review","reviewGuest","round","awards","final","error"],"default":"home"},"live":{"editor":null},"sheet":{"editor":null},"kind":{"editor":null},"manyCats":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.seed(props.start || 'home', props.manyCats === true);
+    if (props.sheet) this.state.sheet = props.sheet;
+    if (props.kind) this.state.errKind = props.kind;
+  }
+  colors() { return ['#FFD23F', '#FF8A65', '#5CD0FF', '#B79CFF', '#6EE7A8', '#FF7EB6']; }
+  faces() {
+    return [
+      { eyes: 'M17 19v3M31 19v3', mouth: 'M16 29q8 8 16 0', fill: 'none' },
+      { eyes: 'M13 21q3.5-5 7 0M28 21q3.5-5 7 0', mouth: 'M15 28h18q-1 10-9 10t-9-10z', fill: '#17122B' },
+      { eyes: 'M17 19v3M28 21h7', mouth: 'M17 31q8 5 15-3', fill: 'none' },
+      { eyes: 'M17 18v5M31 18v5', mouth: 'M24 29a4.5 4.5 0 1 0 .01 0z', fill: '#17122B' },
+      { eyes: 'M14 20h6M28 20h6', mouth: 'M18 32h12', fill: 'none' },
+      { eyes: 'M13 21q3.5-5 7 0M28 21q3.5-5 7 0', mouth: 'M16 29q8 8 16 0M21 34v3q3 3 6 0v-3', fill: 'none' }
+    ];
+  }
+  catDefs() {
+    return [
+      { key: 'nomi', label: 'Nomi', color: '#FF8A65' }, { key: 'cose', label: 'Cose', color: '#5CD0FF' },
+      { key: 'citta', label: 'Città', color: '#B79CFF' }, { key: 'animali', label: 'Animali', color: '#6EE7A8' },
+      { key: 'cibi', label: 'Cibi', color: '#FFB547' }, { key: 'mestieri', label: 'Mestieri', color: '#FF7EB6' },
+      { key: 'film', label: 'Film', color: '#9AA8FF' }, { key: 'calciatori', label: 'Calciatori', color: '#E8E46A' }
+    ];
+  }
+  bots() { return [{ id: 'b1', name: 'Marco', color: 1, face: 1 }, { id: 'b2', name: 'Giulia', color: 2, face: 5 }, { id: 'b3', name: 'Sara', color: 3, face: 2 }]; }
+  dict() {
+    return {
+      M: { nomi: ['Marta', 'Matteo', 'Marta'], cose: ['Martello', 'Matita', ''], citta: ['Milano', 'Modena', 'Milano'], animali: ['Mucca', 'Merlo', 'Mulo'], cibi: ['Mozzarella', 'Melanzana', 'Mela'], mestieri: ['Medico', 'Muratore', 'Medico'] },
+      S: { nomi: ['Sofia', 'Simone', 'Sara'], cose: ['Sedia', 'Sapone', 'Sedia'], citta: ['Siena', 'Savona', 'Salerno'], animali: ['Serpente', 'Scoiattolo', ''], cibi: ['Spaghetti', 'Salame', 'Spaghetti'], mestieri: ['Sarto', 'Segretario', ''] },
+      P: { nomi: ['Paolo', 'Paola', 'Pietro'], cose: ['Penna', 'Piatto', 'Penna'], citta: ['Palermo', 'Pisa', 'Padova'], animali: ['Pecora', 'Pinguino', 'Pecora'], cibi: ['Pizza', 'Pasta', 'Pizza'], mestieri: ['Pilota', 'Pittore', 'Postino'] },
+      B: { nomi: ['Bianca', 'Bruno', 'Beatrice'], cose: ['Borsa', 'Bicchiere', 'Bottiglia'], citta: ['Bologna', 'Bari', 'Bologna'], animali: ['Balena', 'Bue', 'Balena'], cibi: ['Burro', 'Banana', 'Biscotto'], mestieri: ['Barista', 'Barbiere', 'Barista'] },
+      C: { nomi: ['Chiara', 'Carlo', 'Chiara'], cose: ['Cuscino', 'Chiave', 'Candela'], citta: ['Catania', 'Como', 'Cagliari'], animali: ['Cane', 'Cavallo', 'Cane'], cibi: ['Carbonara', 'Cornetto', 'Carota'], mestieri: ['Cuoco', 'Cameriere', 'Cuoco'] },
+      L: { nomi: ['Luca', 'Laura', 'Lorenzo'], cose: ['Lampada', 'Libro', 'Libro'], citta: ['Livorno', 'Lecce', 'Latina'], animali: ['Leone', 'Lupo', 'Leone'], cibi: ['Lasagne', 'Limone', 'Lasagne'], mestieri: ['Libraio', '', 'Liutaio'] },
+      T: { nomi: ['Tommaso', 'Teresa', 'Tommaso'], cose: ['Tavolo', 'Tazza', 'Telefono'], citta: ['Torino', 'Trieste', 'Torino'], animali: ['Tigre', 'Topo', 'Tartaruga'], cibi: ['Tiramisù', 'Tonno', 'Tiramisù'], mestieri: ['Tassista', 'Tecnico', ''] },
+      R: { nomi: ['Riccardo', 'Rebecca', 'Roberta'], cose: ['Radio', 'Righello', 'Radio'], citta: ['Roma', 'Rimini', 'Roma'], animali: ['Rana', 'Renna', 'Riccio'], cibi: ['Risotto', 'Ricotta', 'Risotto'], mestieri: ['Regista', 'Restauratore', ''] },
+      F: { nomi: ['Francesca', 'Filippo', 'Federico'], cose: ['Forbici', 'Frigo', 'Forbici'], citta: ['Firenze', 'Ferrara', 'Firenze'], animali: ['Foca', 'Formica', 'Falco'], cibi: ['Fragola', 'Focaccia', 'Fragola'], mestieri: ['Fornaio', 'Fotografo', 'Fornaio'] },
+      G: { nomi: ['Giorgia', 'Gabriele', 'Giulio'], cose: ['Gomma', 'Guanto', 'Gomma'], citta: ['Genova', 'Grosseto', ''], animali: ['Gatto', 'Giraffa', 'Gatto'], cibi: ['Gelato', 'Gnocchi', 'Gelato'], mestieri: ['Giornalista', 'Giardiniere', ''] }
+    };
+  }
+  base() {
+    return {
+      screen: 'home', sheet: null, name: 'Edo', avatar: 0, face: 0, joinCode: '', toast: null, fromLobby: false,
+      cats: ['nomi', 'cose', 'citta'], rounds: 3, maxPlayers: 8, timer: 90, hard: true,
+      players: [{ id: 'me', name: 'Edo', color: 0, face: 0, host: true }], code: 'K7Q2', copied: false,
+      round: 1, letter: 'M', spinLetter: 'A', spinDone: false, go: 0, answers: {}, timeLeft: 90, progress: {}, stopping: false, stopBy: null,
+      custom: [], newCat: '', reactions: [], rseq: 0,
+      stats: {}, errKind: 'notfound', offline: false,
+      reviewIdx: 0, invalid: {}, scores: { me: 0 }, prevScores: { me: 0 }, roundPts: {}, used: [], count: 1
+    };
+  }
+  seed(start, many) {
+    var s = this.base();
+    var bots = this.bots();
+    var alias = { lobbyGuest: 'lobby', stop: 'play', offline: 'play', reviewGuest: 'review' };
+    var guest = start === 'lobbyGuest' || start === 'reviewGuest' || start === 'invite';
+    if (start === 'stop') { s.stopping = true; s.stopBy = 'b2'; }
+    if (start === 'offline') s.offline = true;
+    if (guest) { s.players = [Object.assign({}, bots[0], { host: true }), { id: 'me', name: 'Edo', color: 0, face: 0, host: false }, bots[1]]; s.scores = { me: 0, b1: 0, b2: 0 }; }
+    if (start === 'reviewGuest') { s.players = s.players.concat([bots[2]]); s.scores.b3 = 0; s.prevScores = Object.assign({}, s.scores); s.answers = { nomi: 'Martina', cose: 'Martello', citta: 'Milano' }; s.reviewIdx = 1; }
+    if (start === 'awards') { s.players = s.players.concat(bots); s.round = 3; s.scores = { me: 85, b1: 70, b2: 95, b3: 40 }; s.stats = { me: { stops: 1, uniq: 4, dup: 3 }, b1: { stops: 0, uniq: 2, dup: 5 }, b2: { stops: 2, uniq: 6, dup: 2 }, b3: { stops: 0, uniq: 3, dup: 1 } }; }
+    start = alias[start] || start;
+    s.screen = start;
+    if (many) s.cats = ['nomi', 'cose', 'citta', 'animali', 'cibi', 'mestieri'];
+    if (start === 'lobby' && !guest) { s.players = s.players.concat([bots[0], bots[1]]); }
+    if (!guest && ['spin', 'play', 'review', 'round', 'final'].indexOf(start) >= 0) {
+      s.players = s.players.concat(bots);
+      s.scores = { me: 0, b1: 0, b2: 0, b3: 0 }; s.prevScores = Object.assign({}, s.scores);
+    }
+    if (start === 'spin') { s.spinLetter = 'M'; s.spinDone = true; s.go = 3; }
+    if (start === 'play') {
+      s.answers = many ? { nomi: 'Martina', cose: 'Mattarello', citta: 'Milano', animali: 'Aquila' } : { nomi: 'Martina', cose: 'Mattarello' };
+      s.timeLeft = 54; s.progress = many ? { b1: 4, b2: 2, b3: 5 } : { b1: 2, b2: 1, b3: 3 };
+    }
+    if (start === 'review' || start === 'round') { s.answers = { nomi: 'Martina', cose: 'Martello', citta: 'Milano' }; s.stopBy = 'me'; }
+    if (start === 'review') { s.invalid = { 'b2|nomi': true }; }
+    if (start === 'round') { this.applyRound(s); s.count = 1; }
+    if (start === 'final') { s.round = 3; s.scores = { me: 85, b1: 70, b2: 95, b3: 40 }; }
+    return s;
+  }
+  componentDidMount() {
+    if (this.props.live === false) return;
+    if (this.state.screen === 'spin') this.runSpin();
+    if (this.state.screen === 'play') this.startTick();
+    if (this.state.screen === 'lobby') this.scheduleJoins(true);
+  }
+  componentWillUnmount() { this.clearAll(); }
+  clearAll() {
+    (this.timers || []).forEach(function (t) { clearTimeout(t); clearInterval(t); });
+    this.timers = [];
+    if (this.raf) cancelAnimationFrame(this.raf);
+  }
+  later(fn, ms) { this.timers = this.timers || []; var t = setTimeout(fn, ms); this.timers.push(t); return t; }
+  every(fn, ms) { this.timers = this.timers || []; var t = setInterval(fn, ms); this.timers.push(t); return t; }
+  toast(msg) {
+    var self = this;
+    if (this.tt) clearTimeout(this.tt);
+    this.setState({ toast: msg });
+    this.tt = setTimeout(function () { self.setState({ toast: null }); }, 2400);
+  }
+  me() { return this.state.players.find(function (p) { return p.id === 'me'; }); }
+  scheduleJoins(hostIsMe) {
+    var self = this, bots = this.bots();
+    var have = this.state.players.map(function (p) { return p.id; });
+    var queue = bots.filter(function (b) { return have.indexOf(b.id) < 0; });
+    queue.forEach(function (b, i) {
+      self.later(function () {
+        if (self.state.screen !== 'lobby') return;
+        self.setState(function (s) {
+          if (s.players.some(function (p) { return p.id === b.id; })) return {};
+          var sc = Object.assign({}, s.scores); sc[b.id] = 0;
+          return { players: s.players.concat([b]), scores: sc };
+        });
+        self.toast(b.name + ' è nella stanza');
+      }, 1300 + i * 1400);
+    });
+    if (!hostIsMe) this.later(function () { self.toast('Marco avvia la partita'); self.later(function () { self.startGame(true); }, 900); }, 1300 + queue.length * 1400 + 1200);
+  }
+  norm(t) { return (t || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  answerOf(st, pid, cat) {
+    if (pid === 'me') return st.answers[cat] || '';
+    var d = this.dict()[st.letter], idx = { b1: 0, b2: 1, b3: 2 }[pid];
+    return d && d[cat] ? (d[cat][idx] || '') : '';
+  }
+  scoreCat(st, cat) {
+    var self = this, L = st.letter.toLowerCase();
+    var rows = st.players.map(function (p) {
+      var t = self.answerOf(st, p.id, cat), n = self.norm(t);
+      var ok = !!n && n.charAt(0) === L, inv = !!st.invalid[p.id + '|' + cat];
+      return { pid: p.id, text: t, n: n, ok: ok, inv: inv, valid: ok && !inv };
+    });
+    var valid = rows.filter(function (r) { return r.valid; });
+    rows.forEach(function (r) {
+      if (!r.text) { r.pts = 0; r.tag = 'vuota'; }
+      else if (!r.ok) { r.pts = 0; r.tag = 'lettera sbagliata'; }
+      else if (r.inv) { r.pts = 0; r.tag = 'bocciata'; }
+      else if (valid.length === 1) { r.pts = 20; r.tag = 'unico a rispondere'; }
+      else if (valid.filter(function (v) { return v.n === r.n; }).length > 1) { r.pts = 5; r.tag = 'doppia'; }
+      else { r.pts = 10; r.tag = 'unica'; }
+    });
+    return rows;
+  }
+  applyRound(s) {
+    var self = this, pts = {};
+    s.players.forEach(function (p) { pts[p.id] = 0; });
+    s.cats.forEach(function (c) { self.scoreCat(s, c).forEach(function (r) { pts[r.pid] += r.pts; }); });
+    s.prevScores = Object.assign({}, s.scores);
+    var sc = Object.assign({}, s.scores);
+    Object.keys(pts).forEach(function (k) { sc[k] = (sc[k] || 0) + pts[k]; });
+    s.scores = sc; s.roundPts = pts;
+    var st = JSON.parse(JSON.stringify(s.stats || {}));
+    s.players.forEach(function (p) { st[p.id] = st[p.id] || { stops: 0, uniq: 0, dup: 0 }; });
+    s.cats.forEach(function (c) { self.scoreCat(s, c).forEach(function (r) { if (r.pts >= 10) st[r.pid].uniq++; else if (r.pts === 5) st[r.pid].dup++; }); });
+    if (s.stopBy && st[s.stopBy]) st[s.stopBy].stops++;
+    s.stats = st;
+    return s;
+  }
+  pickLetter() {
+    var used = this.state.used;
+    var pool = Object.keys(this.dict()).filter(function (l) { return used.indexOf(l) < 0; });
+    if (!pool.length) pool = Object.keys(this.dict());
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  startGame(force) {
+    var me = this.me();
+    if (!force && (!me.host || this.state.players.length < 2)) return;
+    this.clearAll();
+    this.setState({ screen: 'spin', round: 1, used: [], invalid: {}, stats: {} });
+    this.runSpin();
+  }
+  runSpin() {
+    var self = this, abc = 'ABCDEFGILMNOPRSTUVZ', target = this.pickLetter();
+    this.setState({ spinDone: false, letter: target, go: 0 });
+    var iv = this.every(function () { self.setState({ spinLetter: abc.charAt(Math.floor(Math.random() * abc.length)) }); }, 75);
+    this.later(function () {
+      clearInterval(iv);
+      self.setState(function (s) { return { spinLetter: target, spinDone: true, go: 3, used: s.used.concat([target]) }; });
+      self.later(function () { self.setState({ go: 2 }); }, 800);
+      self.later(function () { self.setState({ go: 1 }); }, 1600);
+      self.later(function () { self.setState({ go: -1 }); }, 2400);
+      self.later(function () { self.startPlay(); }, 3000);
+    }, 2000);
+  }
+  startPlay() {
+    var p = {}; this.state.players.forEach(function (pl) { if (pl.id !== 'me') p[pl.id] = 0; });
+    this.setState({ screen: 'play', answers: {}, timeLeft: this.state.timer || 0, progress: p, invalid: {}, stopping: false, stopBy: null, sheet: null });
+    this.startTick();
+  }
+  startTick() {
+    var self = this, elapsed = 0;
+    this.tick = this.every(function () {
+      elapsed++;
+      var s = self.state, total = s.cats.length, prog = Object.assign({}, s.progress);
+      Object.keys(prog).forEach(function (k) { if (prog[k] < total && Math.random() < 0.28) prog[k]++; });
+      var next = { progress: prog };
+      if (s.timer) next.timeLeft = Math.max(0, s.timeLeft - 1);
+      self.setState(next);
+      if (s.timer && next.timeLeft === 0) self.stop(null);
+      else if (elapsed >= 48) self.stop('b2');
+    }, 1000);
+  }
+  stop(by) {
+    var self = this;
+    if (this.state.stopping) return;
+    clearInterval(this.tick);
+    this.setState({ stopping: true, stopBy: by, sheet: null });
+    this.later(function () { self.setState({ stopping: false, screen: 'review', reviewIdx: 0 }); if (self.isGuest()) self.later(function () { self.advanceReview(); }, 4500); }, 1700);
+  }
+  isGuest() { var m = this.me(); return !(m && m.host); }
+  hostName() { var h = this.state.players.find(function (p) { return p.host; }); return h ? h.name : 'l\'host'; }
+  advanceReview() {
+    var self = this, s = this.state;
+    if (s.screen !== 'review') return;
+    if (s.reviewIdx < s.cats.length - 1) { this.setState({ reviewIdx: s.reviewIdx + 1 }); if (this.isGuest()) this.later(function () { self.advanceReview(); }, 4500); return; }
+    var n = Object.assign({}, s); this.applyRound(n);
+    this.setState({ screen: 'round', scores: n.scores, prevScores: n.prevScores, roundPts: n.roundPts, stats: n.stats });
+    this.animateCount();
+    if (this.isGuest()) this.later(function () { self.advanceRound(); }, 5000);
+  }
+  advanceRound() {
+    var self = this, s = this.state;
+    if (s.screen !== 'round') return;
+    if (s.round < s.rounds) { this.setState({ round: s.round + 1, screen: 'spin', invalid: {} }); this.runSpin(); }
+    else { this.setState({ screen: 'awards' }); if (this.isGuest()) this.later(function () { self.setState({ screen: 'final' }); }, 6000); }
+  }
+  react(text, pid) {
+    var self = this, p = this.state.players.find(function (x) { return x.id === pid; });
+    if (!p) return;
+    var id = this.state.rseq + 1;
+    var r = { id: id, text: text, pid: pid, left: (16 + (id * 67) % 190) + 'px' };
+    this.setState(function (s) { return { rseq: id, reactions: s.reactions.concat([r]) }; });
+    this.later(function () { self.setState(function (s) { return { reactions: s.reactions.filter(function (x) { return x.id !== id; }) }; }); }, 1900);
+    if (pid === 'me' && this.props.live !== false) this.later(function () { var b = self.bots()[id % 3]; self.react(['Ahah', 'Ma dai!', 'Geniale'][id % 3], b.id); }, 700);
+  }
+  animateCount() {
+    var self = this, t0 = null;
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.setState({ count: 0 });
+    var step = function (ts) {
+      if (t0 === null) t0 = ts;
+      var t = Math.min(1, (ts - t0 - 350) / 900);
+      self.setState({ count: t < 0 ? 0 : 1 - Math.pow(1 - t, 3) });
+      if (t < 1) self.raf = requestAnimationFrame(step);
+    };
+    this.raf = requestAnimationFrame(step);
+  }
+  renderVals() {
+    var s = this.state, self = this, C = this.colors(), F = this.faces(), CATS = this.catDefs().concat(s.custom);
+    var INK = '#17122B';
+    var catOf = function (k) { return CATS.find(function (c) { return c.key === k; }); };
+    var pl = function (id) { return s.players.find(function (p) { return p.id === id; }); };
+    var face = function (p) { var f = F[(p && p.face) || 0]; return { bg: C[(p && p.color) || 0], eyes: f.eyes, mouth: f.mouth, mouthFill: f.fill }; };
+    var withFace = function (o, p) { return Object.assign(o, face(p)); };
+    var label = function (p) { return p.id === 'me' ? 'Tu' : p.name; };
+
+    var words = [['N', 'O', 'M', 'I'], ['C', 'O', 'S', 'E'], ['C', 'I', 'T', 'T', 'À']];
+    var wcol = ['#FF8A65', '#5CD0FF', '#B79CFF'], rots = ['-5deg', '3deg', '-2deg', '5deg', '-3deg'], k = 0;
+    var homeTiles = words.map(function (w, wi) {
+      return { tiles: w.map(function (ch, i) { var d = k++; return { ch: ch, bg: wcol[wi], rot: rots[(i + wi) % 5], delay: (d * 55) + 'ms', fdelay: (d * 180) + 'ms' }; }) };
+    });
+    var setMe = function (patch) {
+      self.setState(function (st) {
+        var pp = {};
+        if (patch.name !== undefined) pp.name = patch.name || 'Tu';
+        if (patch.avatar !== undefined) pp.color = patch.avatar;
+        if (patch.face !== undefined) pp.face = patch.face;
+        return Object.assign({}, patch, { players: st.players.map(function (p) { return p.id === 'me' ? Object.assign({}, p, pp) : p; }) });
+      });
+    };
+    var colorDots = C.map(function (c, i) {
+      var on = s.avatar === i;
+      return { bg: c, shadow: on ? '0 4px 0 ' + INK : 'none', scale: on ? 'scale(1.12) translateY(-2px)' : 'scale(1)', aria: 'Colore ' + (i + 1), pick: function () { setMe({ avatar: i }); } };
+    });
+
+    var catChips = CATS.map(function (c) {
+      var on = s.cats.indexOf(c.key) >= 0;
+      return { label: c.label, bg: on ? c.color : '#FFFFFF', border: on ? INK : '#CFC8EA', fg: on ? INK : '#5E5880', shadow: on ? '0 3px 0 ' + INK : 'none',
+        toggle: function () {
+          if (on && s.cats.length <= 2) { self.toast('Servono almeno 2 categorie'); return; }
+          self.setState({ cats: on ? s.cats.filter(function (x) { return x !== c.key; }) : CATS.map(function (d) { return d.key; }).filter(function (x) { return x === c.key || s.cats.indexOf(x) >= 0; }) });
+        } };
+    });
+    var timerOpts = [[60, '60s'], [90, '90s'], [120, '2 min'], [0, 'Libero']].map(function (o) {
+      var on = s.timer === o[0];
+      return { label: o[1], bg: on ? '#FFD23F' : '#FFFFFF', border: on ? INK : '#CFC8EA', shadow: on ? '0 3px 0 ' + INK : 'none', pick: function () { self.setState({ timer: o[0] }); } };
+    });
+
+    var me = pl('me') || { host: true };
+    var nP = s.players.length;
+    var lobbyPlayers = s.players.map(function (p, i) {
+      var isMe = p.id === 'me';
+      return withFace({ name: isMe ? 'Tu' : p.name, host: !!p.host, bob: (i * 180) + 'ms',
+        canKick: !!me.host && !isMe, kickAria: 'Rimuovi ' + p.name,
+        kick: function () { self.setState({ players: s.players.filter(function (x) { return x.id !== p.id; }) }); self.toast(p.name + ' rimosso dalla stanza'); } }, p);
+    });
+    var emptySlots = []; for (var e = nP; e < Math.min(s.maxPlayers, 8); e++) emptySlots.push({});
+    var canStart = me.host && nP >= 2;
+    var lobbyChips = s.cats.map(function (key) { var c = catOf(key); return { label: c.label, bg: c.color }; })
+      .concat([{ label: s.rounds + ' round', bg: '#FFFFFF' }, { label: s.timer ? s.timer + ' secondi' : 'senza tempo', bg: '#FFFFFF' }]);
+
+    var rvCats = s.cats;
+    var rvKey = rvCats[Math.min(s.reviewIdx, rvCats.length - 1)];
+    var rvCat = catOf(rvKey) || CATS[0];
+    var rvRows = (s.screen === 'review' ? this.scoreCat(s, rvKey) : []).map(function (r, i) {
+      var p = pl(r.pid), isMe = r.pid === 'me';
+      var ptsBg = r.pts === 20 ? '#FFD23F' : r.pts === 10 ? '#6EE7A8' : r.pts === 5 ? '#5CD0FF' : '#E6E0F7';
+      return withFace({ name: label(p), text: r.text || '—', tag: r.tag,
+        deco: r.inv || (!!r.text && !r.ok) ? 'line-through' : 'none', op: r.valid ? '1' : '0.45', cardBg: r.inv ? '#FFE3DB' : '#FFFFFF',
+        pts: (r.pts > 0 ? '+' : '') + r.pts, ptsBg: ptsBg, delay: r.inv ? '0ms' : (i * 70) + 'ms',
+        cls: r.inv ? 'n-no' : (s.reviewIdx % 2 ? 'n-up2' : 'n-up'),
+        canVote: !isMe && !!r.text && r.ok, voteBg: r.inv ? '#FF5E3A' : '#FFFFFF', voteFg: r.inv ? '#FFFFFF' : INK, voteLabel: r.inv ? 'Annulla' : 'Non vale',
+        vote: function () {
+          var key = r.pid + '|' + rvKey, inv = Object.assign({}, s.invalid);
+          if (inv[key]) delete inv[key]; else inv[key] = true;
+          self.setState({ invalid: inv });
+        } }, p);
+    });
+    var rvDots = rvCats.map(function (c, i) { return { w: i === s.reviewIdx ? '26px' : '10px', bg: i <= s.reviewIdx ? INK : '#FFFFFF' }; });
+
+    var maxScore = Math.max.apply(null, s.players.map(function (p) { return s.scores[p.id] || 0; }).concat([1]));
+    var ranked = s.players.slice().sort(function (a, b) { return (s.scores[b.id] || 0) - (s.scores[a.id] || 0); });
+    var roundRows = ranked.map(function (p, i) {
+      var prev = s.prevScores[p.id] || 0, plus = s.roundPts[p.id] || 0;
+      return withFace({ rank: (i + 1) + '°', name: label(p), plus: plus, total: Math.round(prev + plus * s.count),
+        pct: Math.max(14, (s.scores[p.id] || 0) / maxScore * 100) + '%', delay: (i * 90) + 'ms', plusDelay: (600 + i * 90) + 'ms', faceDelay: (500 + i * 90) + 'ms' }, p);
+    });
+    var lead = ranked[0];
+    var roundHeadline = lead ? (lead.id === 'me' ? 'Sei in testa!' : lead.name + ' è in testa') : '';
+    var podiumSpec = [
+      { h: '190px', block: INK, fg: '#FFD23F', size: 76, delay: '500ms', avDelay: '1300ms' },
+      { h: '136px', block: '#FFFFFF', fg: INK, size: 60, delay: '250ms', avDelay: '1050ms' },
+      { h: '96px', block: '#FFFFFF', fg: INK, size: 60, delay: '0ms', avDelay: '800ms' }
+    ];
+    var podium = [1, 0, 2].filter(function (i) { return ranked[i]; }).map(function (i) {
+      var p = ranked[i], sp = podiumSpec[i];
+      return withFace({ name: label(p), pts: s.scores[p.id] || 0, place: i + 1, first: i === 0, h: sp.h, block: sp.block, fg: sp.fg, size: sp.size, delay: sp.delay, avDelay: sp.avDelay }, p);
+    });
+    var restPlayers = ranked.slice(3).map(function (p, i) { return withFace({ place: (i + 4) + '°', name: label(p), pts: s.scores[p.id] || 0 }, p); });
+    var scoreRows = ranked.map(function (p, i) { return withFace({ place: (i + 1) + '°', name: label(p), pts: s.scores[p.id] || 0, rowBg: p.id === 'me' ? '#FFF3C4' : '#FFFFFF' }, p); });
+    var cc = ['#FFFFFF', '#FF8A65', '#5CD0FF', '#B79CFF', '#6EE7A8', '#FF7EB6'];
+    var confetti = [];
+    for (var ci = 0; ci < 24; ci++) confetti.push({ left: ((ci * 37) % 100) + '%', w: (7 + (ci % 3) * 3) + 'px', color: cc[ci % 6], dur: (2.4 + (ci % 5) * 0.4) + 's', delay: ((ci * 0.23) % 2.4).toFixed(2) + 's' });
+
+    var L = s.letter, nCats = s.cats.length, two = nCats > 4;
+    var myFilled = s.cats.filter(function (c) { return (s.answers[c] || '').trim(); }).length;
+    var allFilled = myFilled === nCats;
+    var catInputs = s.cats.map(function (key, i) {
+      var c = catOf(key), v = s.answers[key] || '', n = self.norm(v), ok = !!n && n.charAt(0) === L.toLowerCase(), bad = !!n && !ok;
+      return { label: c.label.toUpperCase(), color: c.color, value: v, placeholder: L + '…', delay: (i * 50) + 'ms', bad: bad,
+        border: bad ? '#FF5E3A' : INK, bg: ok ? c.color + '40' : '#FFFFFF',
+        onChange: function (ev) { var a = Object.assign({}, self.state.answers); a[key] = ev.target.value; self.setState({ answers: a }); } };
+    });
+    var progressRows = s.players.map(function (p) {
+      var done = p.id === 'me' ? myFilled : (s.progress[p.id] || 0);
+      return withFace({ done: done + '/' + nCats, fg: done === nCats ? '#0E7A45' : '#5E5880' }, p);
+    });
+    var tl = s.timeLeft, low = s.timer && tl <= 10;
+    var stopper = s.stopBy ? pl(s.stopBy) : null;
+
+    return {
+      isHome: s.screen === 'home', isSetup: s.screen === 'setup', isLobby: s.screen === 'lobby', isSpin: s.screen === 'spin',
+      isPlay: s.screen === 'play', isReview: s.screen === 'review', isRound: s.screen === 'round', isFinal: s.screen === 'final',
+      isStopping: s.stopping,
+      homeTiles: homeTiles, colorDots: colorDots, name: s.name, myFace: face({ color: s.avatar, face: s.face }),
+      nextFace: function () { setMe({ face: (s.face + 1) % F.length }); },
+      onName: function (ev) { setMe({ name: ev.target.value }); },
+      goSetup: function () { if (!s.name.trim()) { self.toast('Scrivi prima il tuo nome'); return; } self.setState({ screen: 'setup', fromLobby: false }); },
+      goHome: function () { self.clearAll(); var b = self.base(); b.name = s.name; b.avatar = s.avatar; b.face = s.face; b.players = [{ id: 'me', name: s.name || 'Tu', color: s.avatar, face: s.face, host: true }]; self.setState(b); },
+      openRules: function () { self.setState({ sheet: 'rules' }); }, openJoin: function () { self.setState({ sheet: 'join', joinCode: '' }); },
+      openScores: function () { self.setState({ sheet: 'scores' }); }, closeSheet: function () { self.setState({ sheet: null }); },
+      isRules: s.sheet === 'rules', isJoin: s.sheet === 'join', isScores: s.sheet === 'scores',
+      ruleScores: [{ n: '20', t: 'rispondi solo tu', bg: '#FFD23F' }, { n: '10', t: 'parola unica', bg: '#6EE7A8' }, { n: '5', t: 'parola doppia', bg: '#5CD0FF' }, { n: '0', t: 'vuota o bocciata', bg: '#E6E0F7' }],
+      joinCode: s.joinCode, joinOk: s.joinCode.length === 4 ? '1' : '0.45',
+      onJoinCode: function (ev) { self.setState({ joinCode: ev.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4) }); },
+      joinRoom: function () {
+        if (s.joinCode.length !== 4) return;
+        var bots = self.bots();
+        self.setState({ sheet: null, screen: 'lobby', code: s.joinCode, players: [Object.assign({}, bots[0], { host: true }), { id: 'me', name: s.name || 'Tu', color: s.avatar, face: s.face, host: false }], scores: { me: 0, b1: 0 } });
+        self.scheduleJoins(false);
+      },
+      setupTitle: s.fromLobby ? 'Impostazioni' : 'Nuova stanza', setupCta: s.fromLobby ? 'Salva e torna alla stanza' : 'Crea stanza',
+      backFromSetup: function () { self.setState({ screen: s.fromLobby ? 'lobby' : 'home' }); },
+      catChips: catChips, catCount: nCats + ' scelte', rounds: s.rounds,
+      newCat: s.newCat, addCatOp: s.newCat.trim() ? '1' : '0.4',
+      onNewCat: function (ev) { self.setState({ newCat: ev.target.value }); },
+      addCat: function () {
+        var lab = s.newCat.trim(); if (!lab) return;
+        var extra = ['#7FE3D0', '#FFA6C9', '#C7F06B', '#FFC78A'];
+        var c = { key: 'x' + (s.custom.length + 1), label: lab.charAt(0).toUpperCase() + lab.slice(1), color: extra[s.custom.length % 4] };
+        self.setState({ custom: s.custom.concat([c]), cats: s.cats.concat([c.key]), newCat: '' });
+      },
+      incRounds: function () { self.setState({ rounds: Math.min(10, s.rounds + 1) }); }, decRounds: function () { self.setState({ rounds: Math.max(1, s.rounds - 1) }); },
+      maxPlayers: s.maxPlayers,
+      incMax: function () { self.setState({ maxPlayers: Math.min(12, s.maxPlayers + 1) }); }, decMax: function () { self.setState({ maxPlayers: Math.max(2, s.maxPlayers - 1) }); },
+      timerOpts: timerOpts, timerHint: s.timer ? 'Quando il tempo scade il round si chiude da solo.' : 'Senza tempo: il round finisce quando qualcuno preme STOP.',
+      hardBg: s.hard ? '#6EE7A8' : '#FFFFFF', hardX: s.hard ? 'translateX(22px)' : 'translateX(0)', toggleHard: function () { self.setState({ hard: !s.hard }); },
+      createRoom: function () {
+        if (s.fromLobby) { self.setState({ screen: 'lobby', fromLobby: false }); self.toast('Impostazioni aggiornate per tutti'); return; }
+        var abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', code = '';
+        for (var i = 0; i < 4; i++) code += abc.charAt(Math.floor(Math.random() * abc.length));
+        self.setState({ screen: 'lobby', code: code, players: [{ id: 'me', name: s.name || 'Tu', color: s.avatar, face: s.face, host: true }], scores: { me: 0 } });
+        self.scheduleJoins(true);
+      },
+      meHost: !!me.host, editSettings: function () { self.setState({ screen: 'setup', fromLobby: true }); },
+      codeChars: s.code.split('').map(function (ch, i) { return { ch: ch, delay: (i * 80) + 'ms' }; }),
+      copyLabel: s.copied ? 'Copiato!' : 'Copia link', copyBg: s.copied ? '#6EE7A8' : '#FFFFFF',
+      copyCode: function () { try { navigator.clipboard && navigator.clipboard.writeText(location.origin + '/r/' + s.code); } catch (err) {} self.setState({ copied: true }); self.later(function () { self.setState({ copied: false }); }, 1600); },
+      shareCode: function () { self.toast('Chi apre il link entra subito'); },
+      lobbyPlayers: lobbyPlayers, emptySlots: emptySlots, lobbyChips: lobbyChips, playerCount: nP + ' di ' + s.maxPlayers,
+      startLabel: !me.host ? 'In attesa dell\'host…' : canStart ? 'Inizia partita' : 'Aspetta almeno un amico',
+      startBg: canStart ? '#FFD23F' : '#EDE8FB', startFg: canStart ? INK : '#6F698F', startBorder: canStart ? INK : '#CFC8EA',
+      startGame: function () { if (!canStart) { self.toast(me.host ? 'Manda il link a qualcuno' : 'Decide l\'host'); return; } self.startGame(false); },
+      roundLabel: 'ROUND ' + s.round + ' DI ' + s.rounds, roundsTotal: s.rounds, spinLetter: s.spinLetter, spinDone: s.spinDone,
+      spinCls: s.spinDone ? 'n-pop' : 'n-shake', spinText: s.spinDone ? 'Tutto con la ' + s.letter + '!' : 'Estraggo la lettera…',
+      goNums: s.go !== 0 ? [{ label: s.go > 0 ? String(s.go) : 'Via!', cls: (s.go + 4) % 2 ? 'n-pop' : 'n-pop2' }] : [],
+      letter: L, catInputs: catInputs, progressRows: progressRows,
+      gridCols: two ? 'repeat(2, minmax(0, 1fr))' : 'repeat(1, minmax(0, 1fr))', fieldH: two ? '54px' : '62px', fieldFont: two ? '17px' : '22px',
+      timerText: s.timer ? (tl >= 60 ? Math.floor(tl / 60) + ':' + ('0' + (tl % 60)).slice(-2) : '0:' + ('0' + tl).slice(-2)) : '∞',
+      timePct: s.timer ? (tl / s.timer * 100) + '%' : '100%', timeColor: low ? '#FF5E3A' : '#6EE7A8', timeText: low ? '#C4300F' : INK, timerCls: low ? 'n-pulse' : '',
+      stopFill: (myFilled / nCats * 100) + '%', stopCls: allFilled ? 'n-btn n-wiggle' : 'n-btn',
+      stopLabel: allFilled ? 'STOP!' : 'Ancora ' + (nCats - myFilled) + ' per lo STOP', stopSize: allFilled ? '30px' : '18px',
+      pressStop: function () { if (!allFilled) { self.toast('Riempi tutte le categorie per fermare'); return; } self.stop('me'); },
+      stopText: stopper ? (stopper.id === 'me' ? 'Hai fermato tu il round' : stopper.name + ' ha fermato il round') : 'Tempo scaduto',
+      rvRows: rvRows, rvDots: rvDots, rvColor: rvCat.color, rvLabel: rvCat.label, rvIdx: (s.reviewIdx + 1) + ' DI ' + rvCats.length,
+      rvNext: !me.host ? 'Va avanti ' + self.hostName() + '…' : s.reviewIdx < rvCats.length - 1 ? 'Prossima categoria' : 'Vedi i punteggi',
+      reactions: s.reactions.map(function (x) { return withFace({ text: x.text, left: x.left }, pl(x.pid)); }),
+      reactBtns: ['Ahah', 'Geniale', 'Ma dai!', 'Rubata', 'Non esiste'].map(function (t) { return { text: t, send: function () { self.react(t, 'me'); } }; }),
+      nextCat: function () { if (!me.host) { self.toast('Va avanti ' + self.hostName()); return; } self.advanceReview(); },
+      round: s.round, roundRows: roundRows, roundHeadline: roundHeadline,
+      nextRoundLabel: !me.host ? 'Va avanti ' + self.hostName() + '…' : s.round < s.rounds ? 'Prossima lettera' : 'Vai ai premi',
+      nextRound: function () { if (!me.host) { self.toast('Va avanti ' + self.hostName()); return; } self.advanceRound(); },
+      winLine: ranked[0] ? (ranked[0].id === 'me' ? 'Hai vinto!' : 'Vince ' + ranked[0].name + '!') : '', podium: podium, restPlayers: restPlayers, scoreRows: scoreRows, confetti: confetti,
+      rematch: function () {
+        var sc = {}; s.players.forEach(function (p) { sc[p.id] = 0; });
+        self.setState({ scores: sc, prevScores: sc, round: 1, used: [], screen: 'spin' }); self.runSpin();
+      },
+      isInvite: s.screen === 'invite', isError: s.screen === 'error', isAwards: s.screen === 'awards',
+      isExit: s.sheet === 'exit', openExit: function () { self.setState({ sheet: 'exit' }); }, isOffline: s.offline,
+      codeText: s.code, inviteLine: self.hostName() + ' ti aspetta!', inviteWho: s.players.filter(function (p) { return p.id !== 'me'; }).map(function (p) { return p.name; }).join(', ') + (nP > 2 ? ' sono già dentro' : ' è già dentro'),
+      miniPlayers: s.players.filter(function (p) { return p.id !== 'me'; }).map(function (p, i) { return withFace({ bob: (i * 200) + 'ms' }, p); }),
+      joinInvite: function () {
+        if (!s.name.trim()) { self.toast('Scrivi prima il tuo nome'); return; }
+        self.setState({ screen: 'lobby' }); self.scheduleJoins(false);
+      },
+      err: ({
+        notfound: { title: 'Stanza non trovata', text: 'Il codice ' + s.code + ' non esiste più, oppure la partita è già finita.', btn: 'Torna alla home', btnBg: '#FFD23F', color: '#B79CFF', eyes: 'M13 17l7 7M20 17l-7 7M28 17l7 7M35 17l-7 7', mouth: 'M17 36q7-6 14 0', waiting: false },
+        full: { title: 'Stanza piena', text: 'Ci sono già ' + s.maxPlayers + ' giocatori. Chiedi all\'host di alzare il limite.', btn: 'Torna alla home', btnBg: '#FFD23F', color: '#FF8A65', eyes: 'M16 18v5M32 18v5', mouth: 'M18 35h12', waiting: false },
+        started: { title: 'Stanno già giocando', text: 'Sei nella stanza ' + s.code + '. Entri in gioco appena finisce questo round.', btn: 'Esci', btnBg: '#FFFFFF', color: '#FFD23F', eyes: 'M13 21q3.5-5 7 0M28 21q3.5-5 7 0', mouth: 'M17 32q7 6 14 0', waiting: true },
+        kicked: { title: 'Sei fuori dalla stanza', text: 'L\'host ti ha rimosso. Puoi creare una stanza tua o entrare in un\'altra.', btn: 'Torna alla home', btnBg: '#FFD23F', color: '#5CD0FF', eyes: 'M14 20h6M28 20h6', mouth: 'M17 36q7-6 14 0', waiting: false }
+      })[s.errKind],
+      awards: (function () {
+        var best = function (k) { return s.players.slice().sort(function (a, b) { return ((s.stats[b.id] || {})[k] || 0) - ((s.stats[a.id] || {})[k] || 0); })[0]; };
+        var num = function (p, k) { return (s.stats[p.id] || {})[k] || 0; };
+        var defs = [
+          ['stops', 'FULMINE', '#FFD23F', function (n) { return n === 1 ? 'Ha gridato STOP una volta' : 'Ha gridato STOP ' + n + ' volte'; }],
+          ['uniq', 'ORIGINALE', '#6EE7A8', function (n) { return n + ' parole che nessun altro aveva'; }],
+          ['dup', 'COPIONE', '#FF7EB6', function (n) { return n + ' parole uguali a quelle degli altri'; }]
+        ];
+        return defs.map(function (d, i) { var p = best(d[0]); return withFace({ title: d[1], color: d[2], name: p.id === 'me' ? 'Tu' : p.name, text: d[3](num(p, d[0])), rot: ['-2deg', '1.5deg', '-1deg'][i], delay: (300 + i * 550) + 'ms' }, p); });
+      })(),
+      goFinal: function () { if (!me.host) { self.toast('Va avanti ' + self.hostName()); return; } self.setState({ screen: 'final' }); },
+      awardsCta: me.host ? 'Vai al podio' : 'Va avanti ' + self.hostName() + '…',
+      hostBg: me.host ? '#FFD23F' : '#EDE8FB', hostFg: me.host ? INK : '#6F698F', hostBorder: me.host ? INK : '#CFC8EA',
+      hostBgInk: me.host ? INK : '#FFFFFF', hostFgInk: me.host ? '#FFD23F' : '#6F698F',
+      hasToast: !!s.toast, toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

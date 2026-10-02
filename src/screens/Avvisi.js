@@ -1,0 +1,117 @@
+import React, { useState } from 'react';
+import { sx, Face, Sheet } from '../ui/kit';
+
+const ERR = {
+  notfound: (e) => ({ title: 'Stanza non trovata', text: `Il codice ${e.code || ''} non esiste più, oppure la partita è già finita.`, btn: 'Torna alla home', btnBg: '#FFD23F', color: '#B79CFF', eyes: 'M13 17l7 7M20 17l-7 7M28 17l7 7M35 17l-7 7', mouth: 'M17 36q7-6 14 0' }),
+  full: (e) => ({ title: 'Stanza piena', text: `Ci sono già ${e.max || ''} giocatori. Chiedi all'host di alzare il limite.`, btn: 'Torna alla home', btnBg: '#FFD23F', color: '#FF8A65', eyes: 'M16 18v5M32 18v5', mouth: 'M18 35h12' }),
+  started: (e) => ({ title: 'Stanno già giocando', text: `Sei nella stanza ${e.code || ''}. Entri in gioco appena finisce questo round.`, btn: 'Esci', btnBg: '#FFFFFF', color: '#FFD23F', eyes: 'M13 21q3.5-5 7 0M28 21q3.5-5 7 0', mouth: 'M17 32q7 6 14 0', waiting: true }),
+  kicked: () => ({ title: 'Sei fuori dalla stanza', text: 'L\'host ti ha rimosso. Puoi creare una stanza tua o entrare in un\'altra.', btn: 'Torna alla home', btnBg: '#FFD23F', color: '#5CD0FF', eyes: 'M14 20h6M28 20h6', mouth: 'M17 36q7-6 14 0' }),
+  offline: () => ({ title: 'Non riesco a collegarmi', text: 'Controlla la connessione e riprova tra un attimo.', btn: 'Torna alla home', btnBg: '#FFD23F', color: '#FF7EB6', eyes: 'M16 18v5M32 18v5', mouth: 'M17 36q7-6 14 0' }),
+};
+
+export function ErrorScreen({ kind, info = {}, onButton }) {
+  const err = (ERR[kind] || ERR.notfound)(info);
+  return (
+    <div className="n-screen" style={sx('position: absolute; inset: 0; padding: 28px 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; text-align: center')}>
+      <span className="n-pop" style={sx(`width: 150px; height: 164px; box-sizing: border-box; border-radius: 34px; border: 3px solid #17122B; background: ${err.color}; box-shadow: 0 9px 0 #17122B; display: flex; align-items: center; justify-content: center; transform: rotate(-5deg)`)}>
+        <svg width="96" height="96" viewBox="0 0 48 48" aria-hidden="true"><path d={err.eyes} fill="none" stroke="#17122B" strokeWidth="3.6" strokeLinecap="round" /><path d={err.mouth} fill="none" stroke="#17122B" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </span>
+      <h1 className="n-up" style={sx("margin: 10px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; line-height: 1.05; animation-delay: .15s")}>{err.title}</h1>
+      <p className="n-up" style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; max-width: 300px; animation-delay: .2s')}>{err.text}</p>
+      {err.waiting && (
+        <span className="n-dots" role="status" style={sx('height: 44px; padding: 0 18px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 2px; white-space: nowrap')}>Aspetto il prossimo round<span>.</span><span style={{ animationDelay: '.2s' }}>.</span><span style={{ animationDelay: '.4s' }}>.</span></span>
+      )}
+      <button className="n-btn" onClick={onButton} style={sx(`margin-top: 14px; width: 100%; height: 60px; border: 2.5px solid #17122B; border-radius: 20px; background: ${err.btnBg}; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer`)}>{err.btn}</button>
+    </div>
+  );
+}
+
+const RULE_SCORES = [{ n: '20', t: 'rispondi solo tu', bg: '#FFD23F' }, { n: '10', t: 'parola unica', bg: '#6EE7A8' }, { n: '5', t: 'parola doppia', bg: '#5CD0FF' }, { n: '0', t: 'vuota o bocciata', bg: '#E6E0F7' }];
+
+export function RulesSheet({ onClose }) {
+  return (
+    <Sheet onClose={onClose} label="Come si gioca">
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px")}>Come si gioca</h2>
+      <ol style={sx('margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.45')}>
+        <li>Esce una lettera a caso, uguale per&nbsp;tutti.</li>
+        <li>Scrivi una parola per categoria che inizi con quella&nbsp;lettera.</li>
+        <li>Chi finisce per primo preme STOP, oppure scade il&nbsp;tempo.</li>
+        <li>Correggete insieme: le parole che non valgono si bocciano a&nbsp;maggioranza.</li>
+      </ol>
+      <div style={sx('display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px')}>
+        {RULE_SCORES.map((q) => (
+          <div key={q.n} style={sx(`padding: 10px 6px; border-radius: 16px; border: 2.5px solid #17122B; background: ${q.bg}; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; min-width: 0`)}><span style={sx("font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; line-height: 1")}>{q.n}</span><span style={sx('font-size: 11px; font-weight: 700; line-height: 1.2')}>{q.t}</span></div>
+        ))}
+      </div>
+      <button className="n-btn" onClick={onClose} style={sx('height: 58px; flex-shrink: 0; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Ho capito</button>
+    </Sheet>
+  );
+}
+
+export function JoinSheet({ onClose, onJoin }) {
+  const [code, setCode] = useState('');
+  const ok = code.length === 4;
+  return (
+    <Sheet onClose={onClose} gap={18} label="Entra in una stanza">
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px")}>Entra in una stanza</h2>
+      <form style={sx('display: flex; flex-direction: column; gap: 18px')} onSubmit={(e) => { e.preventDefault(); if (ok) onJoin(code); }}>
+        <label style={sx('display: flex; flex-direction: column; gap: 10px; font-size: 14px; font-weight: 700; color: #5E5880')}>Scrivi il codice di 4&nbsp;caratteri
+          <input type="text" value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4))} maxLength={4} placeholder="AB12" autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false} autoFocus enterKeyHint="go"
+            style={sx("height: 78px; border-radius: 20px; border: 2.5px solid #17122B; background: #F6F3FF; color: #17122B; font-family: 'JetBrains Mono', monospace; font-size: 40px; font-weight: 700; letter-spacing: 0.4em; text-align: center; text-transform: uppercase; outline: none; padding-left: 0.4em; min-width: 0")} />
+        </label>
+        <button type="submit" className="n-btn" aria-disabled={!ok} style={sx(`height: 60px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer; opacity: ${ok ? '1' : '0.45'}; transition: opacity .2s`)}>Entra</button>
+      </form>
+    </Sheet>
+  );
+}
+
+export function ScoresSheet({ g, onClose, onExit }) {
+  const rows = g.ranked;
+  return (
+    <Sheet onClose={onClose} gap={12} pad="12px 20px 20px" label="Classifica">
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px")}>Classifica</h2>
+      {rows.map((p, i) => (
+        <div key={p.id} style={sx(`display: flex; align-items: center; gap: 12px; padding: 8px 14px 8px 10px; border-radius: 16px; border: 2.5px solid #17122B; background: ${p.id === g.uid ? '#FFF3C4' : '#FFFFFF'}; flex-shrink: 0`)}>
+          <span style={sx("font-family: 'JetBrains Mono', monospace; font-weight: 700; width: 20px; text-align: center")}>{i + 1}°</span>
+          <Face p={p} size={36} small />
+          <span style={sx('flex-grow: 1; min-width: 0; font-size: 16px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{p.id === g.uid ? 'Tu' : p.name}</span>
+          <span style={sx("font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px")}>{p.score || 0}</span>
+        </div>
+      ))}
+      <button onClick={onExit} style={sx('height: 48px; flex-shrink: 0; border: 0; background: transparent; color: #C4300F; font-size: 15px; font-weight: 800; cursor: pointer')}>Esci dalla partita</button>
+    </Sheet>
+  );
+}
+
+export function ExitSheet({ onClose, onLeave }) {
+  return (
+    <Sheet onClose={onClose} gap={14} label="Esci dalla partita">
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px")}>Esci dalla partita?</h2>
+      <p style={sx('margin: 0; font-size: 15px; line-height: 1.45; color: #5E5880')}>Gli altri continuano senza di&nbsp;te e&nbsp;perdi i&nbsp;punti fatti&nbsp;finora.</p>
+      <button className="n-btn" onClick={onClose} style={sx('height: 60px; flex-shrink: 0; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Resto a giocare</button>
+      <button className="n-btn" onClick={onLeave} style={sx('height: 56px; flex-shrink: 0; border: 2.5px solid #17122B; border-radius: 18px; background: #FFFFFF; color: #C4300F; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Esci</button>
+    </Sheet>
+  );
+}
+
+export function OfflineBanner() {
+  return (
+    <div className="n-down" role="status" style={sx('position: absolute; left: 10px; right: 10px; top: 10px; z-index: 50; border-radius: 18px; background: #17122B; color: #FFFFFF; padding: 14px 16px; box-shadow: 0 10px 30px rgba(23,18,43,0.35); display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 700')}>
+      <span className="n-spin" style={sx('width: 18px; height: 18px; box-sizing: border-box; border-radius: 50%; border: 3px solid rgba(255,255,255,.3); border-top-color: #FFD23F; flex-shrink: 0')} />
+      <span style={sx('flex-grow: 1')}>Connessione persa. Riprovo…</span>
+      <span style={sx('font-size: 13px; color: #BDB6DC; text-align: right')}>Le tue parole sono&nbsp;salve</span>
+    </div>
+  );
+}
+
+export function Toast({ text }) {
+  return <div className="n-toast" role="status" style={sx('position: absolute; top: 16px; left: 50%; z-index: 60; transform: translateX(-50%); max-width: calc(100% - 32px); min-height: 46px; padding: 10px 18px; box-sizing: border-box; border-radius: 999px; background: #17122B; color: #FFFFFF; display: flex; align-items: center; font-size: 15px; font-weight: 700; box-shadow: 0 10px 30px rgba(23,18,43,0.35); text-align: center')}>{text}</div>;
+}
+
+export function Loading() {
+  return (
+    <div style={sx('position: absolute; inset: 0; background: #FFD23F; display: flex; align-items: center; justify-content: center')} role="status" aria-label="Caricamento">
+      <Face p={{ face: 0, color: 0 }} size={72} blink className="n-bob" />
+    </div>
+  );
+}
