@@ -1,0 +1,647 @@
+<title>Taccuino del playtest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700..800&family=Figtree:wght@400;600;700;800&display=swap">
+<style>
+/* Taccuino da tenere in mano durante il test: barra fissa in alto (sessione e fase), contenuto a una colonna, schede in basso. */
+:root {
+  --paper: #F6F3FF; --card: #FFFFFF; --ink: #17122B; --muted: #5E5880; --line: #E2DCF5;
+  --yellow: #FFD23F; --lilac: #B79CFF; --mint: #6EE7A8; --coral: #FF8A65; --sky: #5CD0FF; --pink: #FF7EB6;
+  --danger: #C4300F; --chip: #EDE8FB; --on-accent: #17122B;
+  --display: 'Bricolage Grotesque', 'Arial Black', system-ui, sans-serif;
+  --body: Figtree, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #15122B; --card: #211C3B; --ink: #F3F0FF; --muted: #B7B0D8; --line: #3A3360; --chip: #2C2650; --danger: #FF8A6B; color-scheme: dark; } }
+:root[data-theme="dark"] { --paper: #15122B; --card: #211C3B; --ink: #F3F0FF; --muted: #B7B0D8; --line: #3A3360; --chip: #2C2650; --danger: #FF8A6B; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.45; -webkit-tap-highlight-color: transparent; }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--lilac); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 800; margin: 0; text-wrap: balance; line-height: 1.1; }
+h2 { font-size: 22px; }
+h3 { font-size: 16px; }
+p { margin: 0; text-wrap: pretty; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.num { font-variant-numeric: tabular-nums; }
+
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); border-bottom: 2px solid var(--line); padding: 10px 16px 8px; display: flex; flex-direction: column; gap: 8px; }
+.top-row { display: flex; align-items: center; gap: 10px; }
+.brand { font-family: var(--display); font-weight: 800; font-size: 17px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sess-btn { border: 2px solid var(--ink); background: var(--yellow); color: var(--on-accent); border-radius: 999px; height: 36px; padding: 0 12px; font-weight: 800; font-size: 13px; white-space: nowrap; max-width: 60%; overflow: hidden; text-overflow: ellipsis; }
+.phases { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
+.phases::-webkit-scrollbar { display: none; }
+.phase { flex: none; height: 34px; padding: 0 12px; border-radius: 999px; border: 2px solid var(--line); background: var(--card); font-weight: 700; font-size: 13px; }
+.phase[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+
+main { padding: 16px 16px calc(96px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 18px; max-width: 640px; margin: 0 auto; }
+.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--card); border-top: 2px solid var(--line); display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); }
+.tab { border: 0; background: transparent; height: 48px; border-radius: 12px; font-weight: 800; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; }
+.tab svg { width: 20px; height: 20px; }
+.tab[aria-current="page"] { color: var(--ink); background: var(--chip); }
+
+.card { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.grow { flex: 1; min-width: 0; }
+
+.quick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.qbtn { border: 2px solid var(--ink); border-radius: 14px; min-height: 52px; padding: 8px 10px; font-weight: 800; font-size: 14px; text-align: left; background: var(--card); box-shadow: 0 3px 0 var(--ink); line-height: 1.2; }
+.qbtn:active { transform: translateY(3px); box-shadow: 0 0 0 var(--ink); }
+.qbtn .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; border: 1.5px solid var(--ink); vertical-align: 1px; }
+.qbtn.wide { grid-column: 1 / -1; text-align: center; }
+
+.btn { border: 2px solid var(--ink); border-radius: 14px; height: 46px; padding: 0 16px; font-weight: 800; background: var(--card); box-shadow: 0 3px 0 var(--ink); white-space: nowrap; }
+.btn:active { transform: translateY(3px); box-shadow: 0 0 0 var(--ink); }
+.btn.primary { background: var(--yellow); color: var(--on-accent); }
+.btn.ghost { border-color: var(--line); box-shadow: none; }
+.btn.danger { color: var(--danger); border-color: var(--danger); box-shadow: none; }
+.btn.full { width: 100%; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { height: 36px; min-width: 44px; padding: 0 12px; border-radius: 999px; border: 2px solid var(--line); background: var(--card); font-weight: 700; font-size: 13px; }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--lilac); color: var(--on-accent); }
+.chip.p0[aria-pressed="true"] { background: #FF5E3A; color: #fff; }
+.chip.p1[aria-pressed="true"] { background: var(--coral); }
+.chip.p2[aria-pressed="true"] { background: var(--yellow); }
+.chip.p3[aria-pressed="true"] { background: var(--sky); }
+
+label.field { display: flex; flex-direction: column; gap: 4px; font-weight: 700; font-size: 13px; color: var(--muted); }
+input[type=text], textarea, select { width: 100%; border: 2px solid var(--line); border-radius: 12px; background: var(--paper); padding: 10px 12px; font-size: 16px; color: var(--ink); }
+textarea { min-height: 76px; resize: vertical; }
+input:focus, textarea:focus, select:focus { border-color: var(--ink); outline: none; }
+
+.event { border: 2px solid var(--line); border-radius: 16px; background: var(--card); padding: 12px; display: flex; flex-direction: column; gap: 6px; text-align: left; width: 100%; }
+.event-head { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 12px; font-weight: 700; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; border: 1.5px solid var(--ink); font-size: 11px; font-weight: 800; color: var(--on-accent); white-space: nowrap; }
+.event-text { font-size: 15px; overflow-wrap: anywhere; }
+
+.timer { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.timer:last-child { border-bottom: 0; }
+.timer-val { font-family: var(--display); font-size: 22px; font-weight: 800; min-width: 74px; text-align: right; }
+.running { color: var(--danger); }
+
+.check { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.check:last-child { border-bottom: 0; }
+.seg { display: inline-flex; border: 2px solid var(--line); border-radius: 12px; overflow: hidden; align-self: flex-start; }
+.seg button { border: 0; background: transparent; height: 38px; padding: 0 12px; font-weight: 700; font-size: 13px; min-width: 44px; }
+.seg button + button { border-left: 2px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat b { font-family: var(--display); font-size: 24px; line-height: 1; }
+.stat span { font-size: 12px; color: var(--muted); font-weight: 700; }
+
+.hyp { border-bottom: 1px solid var(--line); padding: 10px 0; display: flex; flex-direction: column; gap: 4px; }
+.hyp:last-child { border-bottom: 0; }
+.strength { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+
+.sheet-wrap { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; }
+.sheet-bg { position: absolute; inset: 0; background: rgba(23, 18, 43, .55); }
+.sheet { position: relative; width: 100%; max-width: 640px; margin: 0 auto; max-height: calc(100% - 24px); overflow-y: auto; background: var(--card); border-top: 2px solid var(--ink); border-radius: 22px 22px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 14px; }
+.toast { position: fixed; left: 50%; top: calc(12px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 40; background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: 14px; max-width: calc(100% - 32px); text-align: center; }
+.empty { text-align: center; padding: 24px 8px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+details summary { cursor: pointer; font-weight: 800; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<header class="top" id="top">
+  <div class="top-row">
+    <div class="brand">Taccuino del playtest</div>
+    <button class="sess-btn" id="sessBtn" type="button">Nessuna sessione</button>
+  </div>
+  <div class="phases" id="phases" role="group" aria-label="Fase del gioco in corso"></div>
+</header>
+<main id="main" aria-live="polite">
+  <div class="empty"><h2>Taccuino del playtest</h2><p class="muted">Carico le annotazioni salvate…</p></div>
+</main>
+<nav class="tabs" id="tabs" aria-label="Sezioni"></nav>
+<div id="layer"></div>
+
+<script>
+'use strict';
+// ---------------- contenuti (dal protocollo di playtest e dalle ipotesi UX) ----------------
+const FASI = ['Lobby', 'Estrazione', 'Partita', 'STOP', 'Correzione', 'Punti', 'Premi', 'Podio', 'Rivincita', 'Fuori dal gioco'];
+const TIPI = [
+  { k: 'domanda', t: 'Domanda spontanea', c: 'var(--sky)', hint: 'Cosa ha chiesto, con le sue parole' },
+  { k: 'confusione', t: 'Confusione', c: 'var(--yellow)', hint: 'Cosa non era chiaro, cosa ha fatto' },
+  { k: 'blocco', t: 'Partita bloccata', c: '#FF5E3A', hint: 'Cosa non andava avanti e per quanto' },
+  { k: 'errore', t: 'Errore o cosa strana', c: 'var(--coral)', hint: 'Cosa è successo sullo schermo' },
+  { k: 'refresh', t: 'Refresh', c: 'var(--chip)', hint: 'Chi ha ricaricato e cosa ha visto dopo' },
+  { k: 'disconnessione', t: 'Disconnessione', c: 'var(--chip)', hint: 'Chi, quanto è durata, cosa è successo al ritorno' },
+  { k: 'positivo', t: 'Momento positivo', c: 'var(--mint)', hint: 'Risate, "STOP!" gridato, discussione su una parola' },
+  { k: 'negativo', t: 'Segnale negativo', c: 'var(--pink)', hint: 'Silenzio, attesa, telefoni posati, uno che guida gli altri' },
+  { k: 'altro', t: 'Altro', c: 'var(--card)', hint: 'Qualsiasi altra cosa notata' },
+];
+const TIPO = Object.fromEntries(TIPI.map((t) => [t.k, t]));
+const SESSIONI = [
+  { n: 1, t: 'Partita normale' }, { n: 2, t: 'Comportamento reale' }, { n: 3, t: 'Stress test controllato' },
+  { n: 4, t: 'Seconda partita' }, { n: 5, t: 'Terza partita' },
+];
+const SI_NO_NV = [['si', 'Sì'], ['no', 'No'], ['nv', 'Non visto']];
+const SI_NO = [['si', 'Sì'], ['no', 'No']];
+const OK_PROB_NF = [['ok', 'Ok'], ['problema', 'Problema'], ['nf', 'Non fatto']];
+const OK_PROB = [['ok', 'Ok'], ['problema', 'Problema']];
+const CHECK = {
+  1: { titolo: 'Capiscono da soli?', opzioni: SI_NO_NV, gruppi: [
+    ['Lobby', ['Capiscono come creare una stanza', 'Capiscono come entrare', 'Il codice o il link è chiaro', 'Capiscono chi è presente', 'Capiscono chi può iniziare', 'Capiscono se manca qualcuno']],
+    ['Estrazione', ['Capiscono quando la lettera è definitiva', 'La lettera è abbastanza evidente', 'La transizione crea attesa']],
+    ['Partita', ['Capiscono subito la lettera', 'Capiscono il timer', 'Capiscono cosa compilare', 'Capiscono quante categorie mancano', 'Capiscono cosa fanno gli altri', 'Capiscono cosa significa STOP', 'Capiscono che STOP vale per tutti']],
+    ['Momento STOP', ['Il pulsante è sempre visibile', 'Si distingue dagli altri pulsanti', 'Quando viene premuto, se ne accorgono tutti', 'Gli altri capiscono subito che il tempo è finito', 'Le ultime parole vengono gestite bene', 'Il passaggio alla correzione è soddisfacente']],
+    ['Correzione', ['Capiscono le risposte degli altri', 'Capiscono come votare', 'Capiscono quando una risposta non vale', 'Capiscono quanti voti servono', 'Capiscono perché hanno preso 20, 10, 5 o 0', 'La fase non sembra troppo lunga']],
+    ['Podio', ['Capiscono chi ha vinto', 'Capiscono i premi', 'Capiscono il proprio punteggio', 'Capiscono cosa fare dopo']],
+  ] },
+  2: { titolo: 'È successo da solo?', opzioni: SI_NO, gruppi: [
+    ['Telefono', ['Qualcuno cambia app', 'Qualcuno blocca il telefono', 'Qualcuno torna indietro', 'Qualcuno ricarica', 'Qualcuno perde la connessione', 'Qualcuno entra tardi']],
+    ['Gioco', ['Qualcuno non completa le categorie', 'Qualcuno preme STOP molto presto', 'Due premono STOP quasi insieme', 'Qualcuno non vota', 'Qualcuno vota molto velocemente']],
+    ['Domande', ['Qualcuno chiede "tocca a chi?"', 'Qualcuno chiede "quanto manca?"', 'Qualcuno chiede "posso rientrare?"', 'Qualcuno non capisce il punteggio']],
+  ] },
+  3: { titolo: 'Com\'è andato il test?', opzioni: OK_PROB_NF, gruppi: [
+    ['A · Refresh', ['In lobby', 'Durante l\'estrazione', 'In partita', 'In correzione', 'Sul podio']],
+    ['B · Host offline', ['L\'host chiude il browser e la partita continua']],
+    ['C · Connessione', ['Connessione persa e ripresa durante il round']],
+    ['D · STOP durante la scrittura', ['Uno preme STOP mentre un altro sta scrivendo']],
+    ['E · STOP quasi simultanei', ['Due premono STOP quasi insieme']],
+    ['F · Voto simultaneo', ['Tutti votano nello stesso momento']],
+  ] },
+  4: { titolo: 'Cosa è successo dopo il podio?', opzioni: SI_NO, gruppi: [
+    ['Segnali', ['Qualcuno dice da solo "dai, un\'altra"', 'Chiedono "come facciamo a ricominciare?"', 'Chiudono la pagina e finisce lì']],
+    ['Ripartenza', ['Hanno dovuto ricreare la stanza', 'Hanno dovuto reinserire nome o faccina', 'La seconda partita parte correttamente']],
+  ] },
+  5: { titolo: 'La terza partita è pulita?', opzioni: OK_PROB, gruppi: [
+    ['Stato', ['Stato pulito', 'Punteggi nuovi', 'Lettera nuova', 'Round nuovi', 'Nessun dato della partita prima', 'Nessun giocatore perso', 'Nessun rallentamento percepito']],
+  ] },
+};
+const TEMPI = [['creaStanza', 'Creare la stanza'], ['tuttiDentro', 'Far entrare tutti'], ['lobbyPartita', 'Dalla lobby alla partita'], ['partita', 'Durata della partita'], ['podioRivincita', 'Dal podio alla rivincita']];
+const GIRI = [['round', 'Round'], ['correzione', 'Correzione']];
+const ESITI = [['secondaPartita', 'Seconda partita completata?'], ['terzaPartita', 'Terza partita completata?'], ['rivincitaSpontanea', 'Rivincita proposta spontaneamente?']];
+const DOMANDE = [
+  'Cosa ti è sembrato più divertente?', 'Cosa ti è sembrato più confuso?', 'C\'è stato un momento in cui non sapevi cosa fare?',
+  'Hai capito subito cosa faceva STOP?', 'Hai capito come venivano assegnati i punti?', 'La fase di votazione era troppo lunga?',
+  'Ti sei accorto di cosa stavano facendo gli altri?', 'Hai avuto voglia di fare una seconda partita?', 'Se sì, perché?',
+  'Se no, perché?', 'Cosa cambieresti?', 'Lo useresti con un gruppo di amici?',
+];
+const DOD = [
+  '4 giocatori hanno completato una partita', 'Almeno 3 round giocati', 'Almeno 2 disconnessioni provate', 'Refresh provato',
+  'Host offline provato', 'STOP durante la scrittura provato', 'STOP quasi simultanei provati', 'Votazione simultanea provata',
+  'Seconda partita completata', 'Terza partita tentata', 'Domande spontanee raccolte', 'Comportamento dopo il podio osservato',
+  'Tutti i P0 classificati', 'Tutti i P1 hanno una riproduzione o una spiegazione', 'Backlog finale prodotto', 'Test di regressione definiti per i problemi risolti',
+];
+const IPOTESI = [
+  ['H1', 'forte', 'Rientrare dopo aver chiuso la pagina', 'Chiede "come rientro?" o chiede di nuovo il link'],
+  ['H2', 'forte', 'Link aperto dentro WhatsApp e poi nel browser', 'La stessa persona compare due volte in lobby'],
+  ['H3', 'media', 'Cambiare faccina dall\'invito', 'Chi entra dal link tiene la faccina di partenza o chiede come cambiarla'],
+  ['H4', 'media', '"Manca qualcuno?" per i posti liberi', 'Esitano a iniziare in 4, "aspettiamo gli altri?"'],
+  ['H5', 'debole', 'Chi può far partire la partita', 'Un non-host cerca di avviare o chiede chi deve premere'],
+  ['H6', 'media', 'Estrazione lenta dal secondo round', 'Sbuffi o "dai dai" durante l\'estrazione'],
+  ['H7', 'debole', 'Quando la lettera è definitiva', 'Pensano a parole con una lettera vista durante il tremolio'],
+  ['H8', 'forte', 'Tastiera sopra i campi o sopra STOP', 'Chiudono la tastiera per premere STOP o non trovano un campo'],
+  ['H9', 'media', 'STOP premuto prima di aver finito', 'Tocchi ripetuti su STOP, "perché non si ferma?"'],
+  ['H10', 'media', 'Cosa vuol dire "può fermare"', '"Bea ha finito!" oppure "cosa vuol dire?"'],
+  ['H11', 'debole', 'Maiuscole, accenti, lettera sbagliata', 'Domande su maiuscole o accenti'],
+  ['H12', 'media', 'STOP come momento di gioco', 'Reazioni al momento dello STOP; silenzio o "è finito?"'],
+  ['H13', 'media', 'Parole scritte negli ultimi istanti', '"Avevo scritto una cosa diversa" in correzione'],
+  ['H14', 'forte', 'L\'host va avanti prima che tutti votino', 'Proteste mentre l\'host passa alla categoria dopo'],
+  ['H15', 'media', 'Correzione troppo lunga', 'Telefoni posati, chiacchiere d\'altro'],
+  ['H16', 'media', 'Soglia del voto', '"Perché vale ancora se l\'ho bocciata?"'],
+  ['H17', 'media', 'Differenza tra 20, 10 e 5', 'Domande sui punti, "perché 10 e non 20?"'],
+  ['H18', 'media', 'Reazioni poco notate', 'Quante reazioni mandano, se scorrono la riga'],
+  ['H19', 'media', 'Rivincita decisa solo dall\'host', 'Chi propone la rivincita, quanto tempo passa'],
+  ['H20', 'media', '"Torna alla home" dal podio', 'Qualcuno esce per sbaglio e poi chiede come rientrare'],
+  ['H21', 'debole', 'Il premio "Copione"', 'Reazioni quando compare'],
+  ['H22', 'forte', 'Telefono bloccato in correzione = 0 punti', 'Risposte valide ma 0 punti; faccina spenta in correzione'],
+  ['H23', 'media', 'L\'host che cambia app perde il posto', '"Perché non posso più andare avanti?"'],
+  ['H24', 'media', 'L\'attesa di chi entra tardi', 'Quanto aspetta, "quando tocca a me?"'],
+  ['H25', 'media', 'Connessione mobile lenta', '"A me è ancora aperto!" dopo uno STOP'],
+];
+const GIOCATORI = ['A', 'B', 'C', 'D'];
+
+// ---------------- stato ----------------
+const S = { db: null, ready: false, noDb: false, readonly: false, prova: null, sessioni: [], eventi: [], tab: 'eventi', fase: 'Lobby', giocatore: 'A', dirty: false, tick: null };
+try { S.tab = localStorage.getItem('tp-tab') || 'eventi'; S.fase = localStorage.getItem('tp-fase') || 'Lobby'; } catch (e) { /* senza memoria locale va bene lo stesso */ }
+
+// ---------------- utilità DOM (testo sempre con textContent: i dati salvati non sono codice) ----------------
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v === undefined || v === null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'style') el.style.cssText = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) if (c !== null && c !== undefined && c !== false) el.append(c.nodeType ? c : document.createTextNode(String(c)));
+  return el;
+}
+const ICON = {
+  eventi: '<path d="M4 6h16M4 12h10M4 18h7" />',
+  tempi: '<circle cx="12" cy="13" r="7"/><path d="M12 9v4l2.5 2M9 3h6"/>',
+  check: '<path d="M4 12l5 5L20 6"/>',
+  domande: '<path d="M8 9a4 4 0 1 1 6 3.5c-1.2.7-2 1.4-2 2.5M12 19h.01"/>',
+  ipotesi: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+  prova: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/>',
+};
+const svg = (name) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '2.2'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = ICON[name]; return s; };
+let toastTimer;
+function toast(msg) {
+  clearTimeout(toastTimer);
+  document.querySelector('.toast')?.remove();
+  document.body.append(h('div', { class: 'toast', role: 'status' }, msg));
+  toastTimer = setTimeout(() => document.querySelector('.toast')?.remove(), 2400);
+}
+const fmtDur = (ms) => { if (ms == null || ms < 0) return '–'; const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const fmtOra = (t) => new Date(t).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+const nomeG = (g) => (S.prova?.giocatori?.[g]?.nome || '').trim() || `Giocatore ${g}`;
+const sessione = () => S.sessioni.find((s) => s.id === S.prova?.sessioneAttiva) || null;
+
+// ---------------- scritture: una alla volta per documento ----------------
+const queues = {};
+function write(path, fn) {
+  const run = () => fn().catch((e) => {
+    if (e && e.code === 'invalid_argument') { S.readonly = true; toast('Non hai il permesso di salvare in questo taccuino'); }
+    else if (e && e.code === 'quota_exceeded') toast('Il taccuino è pieno: elimina qualche evento vecchio');
+    else toast('Non salvato: controlla la connessione e riprova');
+    throw e;
+  });
+  const p = (queues[path] || Promise.resolve()).catch(() => {}).then(run);
+  queues[path] = p;
+  return p;
+}
+const debouncers = {};
+function later(key, ms, fn) { clearTimeout(debouncers[key]); debouncers[key] = setTimeout(fn, ms); }
+// Il messaggio d'errore lo mostra write(): qui la promessa non deve restare rifiutata senza gestione.
+const updProva = (patch) => write('prova/attuale', () => S.db.doc('prova/attuale').update(patch)).catch(() => {});
+const updSess = (patch) => { const s = sessione(); if (!s) return Promise.resolve(); return write('sessioni/' + s.id, () => S.db.doc('sessioni/' + s.id).update(patch)).catch(() => {}); };
+
+// ---------------- avvio ----------------
+(async function start() {
+  renderAll();
+  const use = window.claude && window.claude.use;
+  S.db = use ? await window.claude.use('db') : null;
+  if (!S.db) { S.noDb = true; S.ready = true; renderAll(); return; }
+  const fail = () => { S.noDb = true; renderAll(); };
+  S.db.doc('prova/attuale').onSnapshot((s) => { S.prova = s.exists ? s.data() : null; S.ready = true; renderAll(); }, fail);
+  S.db.collection('sessioni').orderBy('creataIl').onSnapshot((q) => { S.sessioni = q.docs.map((d) => ({ id: d.id, ...d.data() })); renderAll(); }, fail);
+  S.db.collection('eventi').orderBy('at', 'desc').limit(1000).onSnapshot((q) => { S.eventi = q.docs.map((d) => ({ id: d.id, ...d.data() })); renderAll(); }, fail);
+  // Schermo acceso mentre si osserva (se il telefono lo permette).
+  try { if (navigator.wakeLock) { const ask = () => navigator.wakeLock.request('screen').catch(() => {}); ask(); document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') ask(); }); } } catch (e) { /* facoltativo */ }
+})();
+
+// Non ridisegnare mentre si sta scrivendo in un campo: si riprende appena il campo perde il focus.
+document.addEventListener('focusout', () => setTimeout(() => { if (S.dirty && !editing()) renderMain(); }, 0));
+const editing = () => { const a = document.activeElement; return a && document.getElementById('main').contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName); };
+
+function renderAll() { renderTop(); renderTabs(); renderMain(); }
+
+function renderTop() {
+  const s = sessione();
+  const btn = document.getElementById('sessBtn');
+  btn.textContent = s ? `S${s.n} · ${s.titolo}` : (S.prova ? 'Scegli la sessione' : 'Nessuna prova');
+  btn.onclick = () => (S.prova ? openSessionPicker() : null);
+  const ph = document.getElementById('phases');
+  ph.replaceChildren(...FASI.map((f) => h('button', { class: 'phase', type: 'button', 'aria-pressed': String(S.fase === f), onclick: () => { S.fase = f; try { localStorage.setItem('tp-fase', f); } catch (e) {} renderTop(); } }, f)));
+}
+
+function renderTabs() {
+  const items = [['eventi', 'Eventi'], ['tempi', 'Tempi'], ['check', 'Checklist'], ['domande', 'Domande'], ['ipotesi', 'Ipotesi'], ['prova', 'Prova']];
+  document.getElementById('tabs').replaceChildren(...items.map(([k, t]) => h('button', { class: 'tab', type: 'button', 'aria-current': S.tab === k ? 'page' : null, onclick: () => { S.tab = k; try { localStorage.setItem('tp-tab', k); } catch (e) {} renderTabs(); renderMain(); window.scrollTo(0, 0); } }, svg(k), t)));
+}
+
+function renderMain() {
+  if (editing()) { S.dirty = true; return; }
+  S.dirty = false;
+  clearInterval(S.tick); S.tick = null;
+  const main = document.getElementById('main');
+  let view;
+  if (!S.ready) view = [h('div', { class: 'empty' }, h('p', { class: 'muted' }, 'Carico le annotazioni salvate…'))];
+  else if (S.noDb) view = [h('div', { class: 'empty' }, h('h2', {}, 'Annotazioni non disponibili qui'), h('p', { class: 'muted' }, 'Apri il taccuino da claude.ai con il tuo account: solo lì le annotazioni vengono salvate e restano per il rapporto.'))];
+  else if (!S.prova) view = viewWelcome();
+  else if (S.tab === 'ipotesi') view = viewIpotesi();
+  else if (S.tab === 'prova') view = viewProva();
+  else if (!sessione()) view = [h('div', { class: 'empty' }, h('h2', {}, 'Scegli la sessione'), h('p', { class: 'muted' }, 'Eventi, tempi, checklist e domande appartengono a una delle 5 sessioni del protocollo.'), h('button', { class: 'btn primary', type: 'button', onclick: openSessionPicker }, 'Scegli la sessione'))];
+  else if (S.tab === 'eventi') view = viewEventi();
+  else if (S.tab === 'tempi') view = viewTempi();
+  else if (S.tab === 'check') view = viewCheck();
+  else view = viewDomande();
+  main.replaceChildren(...view);
+}
+
+// ---------------- benvenuto: prima volta ----------------
+function viewWelcome() {
+  return [
+    h('div', { class: 'card' },
+      h('h2', {}, 'Prima del test'),
+      h('p', {}, 'Ai giocatori dici solo questo, nient\'altro:'),
+      h('p', { style: 'font-weight:800' }, '«Questo è un gioco online di Nomi, Cose, Città. Giocate normalmente. Se qualcosa non è chiaro, provate a capire da soli.»'),
+      h('p', { class: 'muted small' }, 'Non spiegare chi è l\'host, come funziona STOP, i punti, i voti o cosa succede se qualcuno si disconnette. Se qualcuno chiede, annota la domanda come evento. Non correggere chi sbaglia: guarda cosa succede.'),
+    ),
+    h('div', { class: 'card' },
+      h('h3', {}, 'Inizia la prova'),
+      h('p', { class: 'muted small' }, 'Crea il taccuino della giornata di test. Poi inserisci i nomi dei 4 giocatori nella scheda Prova.'),
+      h('button', { class: 'btn primary full', type: 'button', onclick: creaProva }, 'Inizia la prova'),
+    ),
+  ];
+}
+async function creaProva() {
+  if (S.readonly) return;
+  try {
+  const giocatori = Object.fromEntries(GIOCATORI.map((g) => [g, { nome: '', telefono: '', rete: '' }]));
+  await write('prova/attuale', () => S.db.doc('prova/attuale').set({ nome: 'Playtest', creataIl: Date.now(), giocatori, dod: {}, note: '', sessioneAttiva: null }));
+  const ref = await nuovaSessione(1);
+  if (ref) toast('Prova iniziata: sessione 1, partita normale');
+  } catch (e) { /* il messaggio l'ha già dato write() */ }
+}
+async function nuovaSessione(n) {
+  const def = SESSIONI.find((s) => s.n === n);
+  const ref = S.db.collection('sessioni').doc();
+  await write('sessioni/' + ref.id, () => ref.set({ n, titolo: def.t, creataIl: Date.now(), tempi: {}, giri: {}, esiti: {}, checklist: {}, domande: {} }));
+  await updProva({ sessioneAttiva: ref.id });
+  return ref;
+}
+
+// ---------------- scelta della sessione ----------------
+function openSessionPicker() {
+  const close = () => layer.replaceChildren();
+  const rows = SESSIONI.map((def) => {
+    const esistenti = S.sessioni.filter((s) => s.n === def.n);
+    return h('div', { class: 'card' },
+      h('div', { class: 'row' }, h('h3', { class: 'grow' }, `S${def.n} · ${def.t}`)),
+      esistenti.length ? h('div', { class: 'chips' }, esistenti.map((s, i) => h('button', { class: 'chip', type: 'button', 'aria-pressed': String(S.prova?.sessioneAttiva === s.id), onclick: async () => { await updProva({ sessioneAttiva: s.id }); close(); } }, `${esistenti.length > 1 ? `#${i + 1} · ` : ''}iniziata alle ${fmtOra(s.creataIl)}`))) : null,
+      h('button', { class: 'btn ghost', type: 'button', onclick: async () => { try { await nuovaSessione(def.n); close(); toast(`Sessione ${def.n} iniziata`); } catch (e) { /* già segnalato */ } } }, esistenti.length ? 'Ricomincia questa sessione' : 'Inizia questa sessione'),
+    );
+  });
+  sheet('Sessione', rows, close);
+}
+
+// ---------------- eventi ----------------
+function viewEventi() {
+  const s = sessione();
+  const lista = S.eventi.filter((e) => e.sessione === s.id);
+  const conta = (k) => lista.filter((e) => k.includes(e.tipo)).length;
+  return [
+    h('div', { class: 'quick' }, TIPI.map((t) => h('button', { class: 'qbtn' + (t.k === 'altro' ? ' wide' : ''), type: 'button', onclick: () => openEvento({ tipo: t.k }) }, h('span', { class: 'dot', style: `background:${t.c}` }), t.t))),
+    h('div', { class: 'stats' },
+      h('div', { class: 'stat' }, h('b', { class: 'num' }, conta(['domanda'])), h('span', {}, 'domande')),
+      h('div', { class: 'stat' }, h('b', { class: 'num' }, conta(['blocco'])), h('span', {}, 'blocchi')),
+      h('div', { class: 'stat' }, h('b', { class: 'num' }, conta(['confusione', 'errore'])), h('span', {}, 'errori UX')),
+    ),
+    h('div', { class: 'stack' },
+      h('div', { class: 'row' }, h('h2', { class: 'grow' }, 'Annotati'), h('span', { class: 'muted small num' }, `${lista.length} eventi`)),
+      lista.length ? lista.map(cardEvento) : h('div', { class: 'empty' }, h('p', { class: 'muted' }, 'Ancora niente. Quando succede qualcosa, tocca il tipo qui sopra: fase e ora si compilano da sole.')),
+    ),
+  ];
+}
+function cardEvento(e) {
+  const t = TIPO[e.tipo] || TIPO.altro;
+  const imp = e.impatto ? h('span', { class: 'pill', style: `background:${{ P0: '#FF5E3A', P1: 'var(--coral)', P2: 'var(--yellow)', P3: 'var(--sky)' }[e.impatto]}` }, e.impatto) : null;
+  return h('button', { class: 'event', type: 'button', onclick: () => openEvento(e) },
+    h('div', { class: 'event-head' },
+      h('span', { class: 'pill', style: `background:${t.c}` }, t.t),
+      imp,
+      h('span', { class: 'num' }, fmtOra(e.at)),
+      h('span', {}, '·'), h('span', {}, e.fase || ''),
+      (e.giocatori || []).length ? h('span', {}, '· ' + e.giocatori.map((g) => (g === 'tutti' ? 'tutti' : nomeG(g))).join(', ')) : null,
+      (e.ipotesi || []).length ? h('span', {}, '· ' + e.ipotesi.join(' ')) : null,
+    ),
+    h('div', { class: 'event-text' }, e.cosa || '(senza descrizione)'),
+  );
+}
+function openEvento(e) {
+  const nuovo = !e.id;
+  const d = { tipo: e.tipo || 'altro', fase: e.fase || S.fase, giocatori: [...(e.giocatori || [])], cosa: e.cosa || '', atteso: e.atteso || '', reale: e.reale || '', impatto: e.impatto || '', frequenza: e.frequenza || '', riproducibile: e.riproducibile || '', ipotesi: [...(e.ipotesi || [])], at: e.at || Date.now() };
+  const close = () => layer.replaceChildren();
+  const toggle = (arr, v) => { const i = arr.indexOf(v); if (i >= 0) arr.splice(i, 1); else arr.push(v); };
+  const chipGroup = (opts, get, set, cls) => { const wrap = h('div', { class: 'chips' }); const draw = () => wrap.replaceChildren(...opts.map(([v, label]) => h('button', { class: 'chip' + (cls ? ' ' + cls(v) : ''), type: 'button', 'aria-pressed': String(get(v)), onclick: () => { set(v); draw(); } }, label))); draw(); return wrap; };
+  const cosa = h('textarea', { id: 'ev-cosa', placeholder: (TIPO[d.tipo] || TIPO.altro).hint });
+  cosa.value = d.cosa;
+  const atteso = h('textarea', { id: 'ev-atteso', placeholder: 'Cosa avrebbe dovuto succedere' }); atteso.value = d.atteso;
+  const reale = h('textarea', { id: 'ev-reale', placeholder: 'Cosa è successo davvero' }); reale.value = d.reale;
+  const tipoSel = h('select', { id: 'ev-tipo' }, TIPI.map((t) => h('option', { value: t.k, selected: t.k === d.tipo }, t.t)));
+  const faseSel = h('select', { id: 'ev-fase' }, FASI.map((f) => h('option', { value: f, selected: f === d.fase }, f)));
+  const salva = async () => {
+    if (S.readonly) return;
+    const body = { ...d, tipo: tipoSel.value, fase: faseSel.value, cosa: cosa.value.trim(), atteso: atteso.value.trim(), reale: reale.value.trim(), sessione: sessione().id };
+    if (!body.cosa) { cosa.focus(); toast('Scrivi almeno cosa è successo'); return; }
+    try {
+      if (nuovo) { const ref = S.db.collection('eventi').doc(); await write('eventi/' + ref.id, () => ref.set(body)); }
+      else await write('eventi/' + e.id, () => S.db.doc('eventi/' + e.id).set(body));
+      close(); toast(nuovo ? 'Evento salvato' : 'Evento aggiornato');
+    } catch (err) { /* il messaggio l'ha già dato write() */ }
+  };
+  let confirmDel = false;
+  const delBtn = nuovo ? null : h('button', { class: 'btn danger', type: 'button', onclick: async () => {
+    if (!confirmDel) { confirmDel = true; delBtn.textContent = 'Tocca di nuovo per eliminare'; return; }
+    try { await write('eventi/' + e.id, () => S.db.doc('eventi/' + e.id).delete()); close(); toast('Evento eliminato'); } catch (err) { /* già segnalato */ }
+  } }, 'Elimina');
+  const body = [
+    h('div', { class: 'row' }, h('label', { class: 'field grow' }, 'Tipo', tipoSel), h('label', { class: 'field grow' }, 'Fase', faseSel)),
+    h('div', { class: 'stack' }, h('span', { class: 'small muted', style: 'font-weight:700' }, 'Chi'), chipGroup([...GIOCATORI.map((g) => [g, nomeG(g)]), ['tutti', 'Tutti']], (v) => d.giocatori.includes(v), (v) => toggle(d.giocatori, v))),
+    h('label', { class: 'field' }, 'Cosa è successo, o cosa ha detto', cosa),
+    h('details', { open: !nuovo && !!(d.atteso || d.reale || d.impatto || d.ipotesi.length) },
+      h('summary', {}, 'Dettagli per il rapporto'),
+      h('div', { class: 'stack', style: 'margin-top:10px' },
+        h('label', { class: 'field' }, 'Risultato atteso', atteso),
+        h('label', { class: 'field' }, 'Risultato reale', reale),
+        h('div', { class: 'stack' }, h('span', { class: 'small muted', style: 'font-weight:700' }, 'Impatto (P0 partita bloccata, P1 esperienza compromessa, P2 frizione, P3 idea)'), chipGroup([['P0', 'P0'], ['P1', 'P1'], ['P2', 'P2'], ['P3', 'P3']], (v) => d.impatto === v, (v) => { d.impatto = d.impatto === v ? '' : v; }, (v) => v.toLowerCase())),
+        h('div', { class: 'stack' }, h('span', { class: 'small muted', style: 'font-weight:700' }, 'Frequenza'), chipGroup([['una', 'Una volta'], ['ripetuto', 'Ripetuto'], ['sempre', 'Sempre']], (v) => d.frequenza === v, (v) => { d.frequenza = d.frequenza === v ? '' : v; })),
+        h('div', { class: 'stack' }, h('span', { class: 'small muted', style: 'font-weight:700' }, 'Si riesce a rifarlo succedere?'), chipGroup([['si', 'Sì'], ['no', 'No'], ['nonprovato', 'Non provato']], (v) => d.riproducibile === v, (v) => { d.riproducibile = d.riproducibile === v ? '' : v; })),
+        h('div', { class: 'stack' }, h('span', { class: 'small muted', style: 'font-weight:700' }, 'Ipotesi collegate (scheda Ipotesi)'), chipGroup(IPOTESI.map(([id]) => [id, id]), (v) => d.ipotesi.includes(v), (v) => toggle(d.ipotesi, v))),
+      ),
+    ),
+    h('div', { class: 'row' }, delBtn, h('span', { class: 'grow' }), h('button', { class: 'btn ghost', type: 'button', onclick: close }, 'Annulla'), h('button', { class: 'btn primary', type: 'button', onclick: salva }, 'Salva')),
+  ];
+  sheet(nuovo ? 'Nuovo evento' : 'Evento delle ' + fmtOra(d.at), body, close);
+  if (nuovo) setTimeout(() => cosa.focus(), 50);
+}
+
+// ---------------- tempi ----------------
+function viewTempi() {
+  const s = sessione();
+  const now = Date.now();
+  const valore = (t) => (t?.inizio ? (t.fine || now) - t.inizio : null);
+  const singoli = TEMPI.map(([k, label]) => {
+    const t = s.tempi?.[k] || {};
+    const corre = t.inizio && !t.fine;
+    return h('div', { class: 'timer' },
+      h('div', { class: 'grow' }, h('div', { style: 'font-weight:800' }, label), h('div', { class: 'small muted' }, t.inizio ? `dalle ${fmtOra(t.inizio)}${t.fine ? ' alle ' + fmtOra(t.fine) : ''}` : 'non avviato')),
+      h('div', { class: 'timer-val num' + (corre ? ' running' : ''), 'data-run': corre ? String(t.inizio) : null }, fmtDur(valore(t))),
+      !t.inizio ? h('button', { class: 'btn', type: 'button', onclick: () => updSess({ tempi: { [k]: { inizio: Date.now() } } }) }, 'Avvia')
+        : corre ? h('button', { class: 'btn primary', type: 'button', onclick: () => updSess({ tempi: { [k]: { inizio: t.inizio, fine: Date.now() } } }) }, 'Ferma')
+          : h('button', { class: 'btn ghost', type: 'button', onclick: () => updSess({ tempi: { [k]: { inizio: null, fine: null } } }) }, 'Azzera'),
+    );
+  });
+  const giri = GIRI.map(([k, label]) => {
+    const arr = s.giri?.[k] || [];
+    const last = arr[arr.length - 1];
+    const corre = last && !last.fine;
+    const chiusi = arr.filter((g) => g.fine);
+    const media = chiusi.length ? chiusi.reduce((a, g) => a + (g.fine - g.inizio), 0) / chiusi.length : null;
+    return h('div', { class: 'card' },
+      h('div', { class: 'row' },
+        h('div', { class: 'grow' }, h('h3', {}, label), h('div', { class: 'small muted num' }, `${chiusi.length} misurati · media ${fmtDur(media)}`)),
+        h('div', { class: 'timer-val num' + (corre ? ' running' : ''), 'data-run': corre ? String(last.inizio) : null }, corre ? fmtDur(now - last.inizio) : ''),
+      ),
+      h('div', { class: 'row' },
+        corre ? h('button', { class: 'btn primary grow', type: 'button', onclick: () => updSess({ giri: { [k]: arr.map((g, i) => (i === arr.length - 1 ? { inizio: g.inizio, fine: Date.now() } : g)) } }) }, `Fine ${label.toLowerCase()}`)
+          : h('button', { class: 'btn grow', type: 'button', onclick: () => updSess({ giri: { [k]: [...arr, { inizio: Date.now() }] } }) }, `Inizio ${label.toLowerCase()}`),
+        arr.length ? h('button', { class: 'btn ghost', type: 'button', onclick: () => updSess({ giri: { [k]: arr.slice(0, -1) } }) }, 'Togli l\'ultimo') : null,
+      ),
+      chiusi.length ? h('div', { class: 'chips' }, chiusi.map((g, i) => h('span', { class: 'chip num', style: 'display:inline-flex;align-items:center' }, `${i + 1}: ${fmtDur(g.fine - g.inizio)}`))) : null,
+    );
+  });
+  const esiti = ESITI.map(([k, label]) => h('div', { class: 'check' }, h('span', { style: 'font-weight:700' }, label), seg(SI_NO, s.esiti?.[k], (v) => updSess({ esiti: { [k]: s.esiti?.[k] === v ? null : v } }))));
+  // I secondi che scorrono sono solo a schermo: nel taccuino si salvano inizio e fine.
+  S.tick = setInterval(() => document.querySelectorAll('[data-run]').forEach((el) => { el.textContent = fmtDur(Date.now() - Number(el.dataset.run)); }), 500);
+  return [
+    h('div', { class: 'card' }, h('h2', {}, 'Cronometri'), h('div', {}, singoli)),
+    ...giri,
+    h('div', { class: 'card' }, h('h2', {}, 'Esiti'), h('div', {}, esiti)),
+    h('p', { class: 'muted small' }, 'Domande spontanee, blocchi, refresh, disconnessioni ed errori UX si contano dagli eventi annotati: non serve tenerli qui.'),
+  ];
+}
+function seg(opts, value, onPick) {
+  return h('div', { class: 'seg', role: 'group' }, opts.map(([v, label]) => h('button', { type: 'button', 'aria-pressed': String(value === v), onclick: () => onPick(v) }, label)));
+}
+
+// ---------------- checklist ----------------
+function viewCheck() {
+  const s = sessione();
+  const def = CHECK[s.n];
+  const vals = s.checklist || {};
+  const fatti = def.gruppi.reduce((a, [, items]) => a + items.filter((it, i) => vals[key(s.n, it)]).length, 0);
+  const totale = def.gruppi.reduce((a, [, items]) => a + items.length, 0);
+  return [
+    h('div', { class: 'row' }, h('h2', { class: 'grow' }, def.titolo), h('span', { class: 'muted small num' }, `${fatti} di ${totale}`)),
+    ...def.gruppi.map(([titolo, items]) => h('div', { class: 'card' }, h('h3', {}, titolo), h('div', {}, items.map((it) => {
+      const k = key(s.n, it);
+      return h('div', { class: 'check' }, h('span', {}, it), seg(def.opzioni, vals[k], (v) => updSess({ checklist: { [k]: vals[k] === v ? null : v } })));
+    })))),
+    s.n === 3 ? h('p', { class: 'muted small' }, 'Quando un test va male, annota anche un evento con cosa è successo: la checklist dice solo se è andato bene.') : null,
+  ];
+}
+function key(n, testo) { let x = 0; for (const c of testo) x = (x * 31 + c.charCodeAt(0)) >>> 0; return `s${n}_${x.toString(36)}`; }
+
+// ---------------- domande finali ----------------
+function viewDomande() {
+  const s = sessione();
+  const g = S.giocatore;
+  const risposte = s.domande?.[g] || {};
+  return [
+    h('div', { class: 'card' },
+      h('h2', {}, 'Domande finali'),
+      h('p', { class: 'muted small' }, 'Solo alla fine, non durante la partita. Non suggerire risposte: scrivi le loro parole.'),
+      h('div', { class: 'chips' }, GIOCATORI.map((x) => h('button', { class: 'chip', type: 'button', 'aria-pressed': String(x === g), onclick: () => { S.giocatore = x; renderMain(); } }, nomeG(x)))),
+    ),
+    ...DOMANDE.map((q, i) => {
+      const ta = h('textarea', { id: `dom-${g}-${i}`, placeholder: 'Risposta' });
+      ta.value = risposte[i + 1] || '';
+      ta.addEventListener('input', () => later(`dom-${g}-${i}`, 700, () => updSess({ domande: { [g]: { [i + 1]: ta.value } } })));
+      ta.addEventListener('blur', () => { clearTimeout(debouncers[`dom-${g}-${i}`]); if ((risposte[i + 1] || '') !== ta.value) updSess({ domande: { [g]: { [i + 1]: ta.value } } }); });
+      return h('label', { class: 'field' }, `${i + 1}. ${q}`, ta);
+    }),
+  ];
+}
+
+// ---------------- ipotesi ----------------
+function viewIpotesi() {
+  const n = (id) => S.eventi.filter((e) => (e.ipotesi || []).includes(id)).length;
+  const col = { forte: 'var(--danger)', media: 'var(--muted)', debole: 'var(--muted)' };
+  return [
+    h('div', { class: 'card' },
+      h('h2', {}, 'Ipotesi da verificare'),
+      h('p', { class: 'muted small' }, 'Sono sospetti, non problemi confermati. Non vanno lette ai giocatori. Quando un evento riguarda un\'ipotesi, collegala nei dettagli dell\'evento: dopo il test diventano confermate, smentite o non verificate.'),
+    ),
+    h('div', { class: 'card' }, IPOTESI.map(([id, forza, titolo, guardare]) => h('div', { class: 'hyp' },
+      h('div', { class: 'row' }, h('b', { class: 'num' }, id), h('span', { class: 'strength', style: `color:${col[forza]}` }, forza), h('span', { class: 'grow' }), n(id) ? h('span', { class: 'pill', style: 'background:var(--lilac)' }, `${n(id)} eventi`) : null),
+      h('div', { style: 'font-weight:700' }, titolo),
+      h('div', { class: 'small muted' }, 'Guardare: ' + guardare),
+    ))),
+  ];
+}
+
+// ---------------- prova: giocatori, definizione di fatto, esportazione ----------------
+function viewProva() {
+  const p = S.prova;
+  const input = (id, value, placeholder, onSave) => {
+    const el = h('input', { type: 'text', id, placeholder, value: value || '' });
+    el.addEventListener('input', () => later(id, 700, () => onSave(el.value)));
+    el.addEventListener('blur', () => { clearTimeout(debouncers[id]); if ((value || '') !== el.value) onSave(el.value); });
+    return el;
+  };
+  const note = h('textarea', { id: 'prova-note', placeholder: 'Luogo, condizioni, cose da ricordare' });
+  note.value = p.note || '';
+  note.addEventListener('input', () => later('prova-note', 900, () => updProva({ note: note.value })));
+  const dodFatti = DOD.filter((d) => p.dod?.[key(0, d)]).length;
+  return [
+    h('div', { class: 'card' },
+      h('h2', {}, 'Giocatori'),
+      h('p', { class: 'muted small' }, 'Bastano iniziali o soprannomi. Telefono e rete servono a capire le differenze tra dispositivi.'),
+      GIOCATORI.map((g) => h('div', { class: 'stack', style: 'padding:8px 0;border-bottom:1px solid var(--line)' },
+        h('b', {}, `Giocatore ${g}`),
+        input(`g-${g}-nome`, p.giocatori?.[g]?.nome, 'Nome o iniziali', (v) => updProva({ giocatori: { [g]: { nome: v } } })),
+        h('div', { class: 'row' },
+          h('div', { class: 'grow' }, input(`g-${g}-tel`, p.giocatori?.[g]?.telefono, 'Telefono (es. iPhone 13)', (v) => updProva({ giocatori: { [g]: { telefono: v } } }))),
+          h('div', { class: 'grow' }, input(`g-${g}-rete`, p.giocatori?.[g]?.rete, 'Rete (Wi-Fi o mobile)', (v) => updProva({ giocatori: { [g]: { rete: v } } }))),
+        ),
+      )),
+    ),
+    h('div', { class: 'card' }, h('h3', {}, 'Note sulla prova'), note),
+    h('div', { class: 'card' },
+      h('div', { class: 'row' }, h('h2', { class: 'grow' }, 'Il test è completo quando'), h('span', { class: 'muted small num' }, `${dodFatti} di ${DOD.length}`)),
+      h('div', {}, DOD.map((d) => { const k = key(0, d); return h('div', { class: 'check' }, h('span', {}, d), seg(SI_NO, p.dod?.[k], (v) => updProva({ dod: { [k]: p.dod?.[k] === v ? null : v } }))); })),
+    ),
+    h('div', { class: 'card' },
+      h('h3', {}, 'Passare i dati a Claude'),
+      h('p', { class: 'muted small' }, 'Claude legge il taccuino direttamente. Se preferisci incollarlo in chat, copia tutto qui sotto.'),
+      h('button', { class: 'btn full', type: 'button', onclick: copiaTutto }, 'Copia tutto come testo'),
+    ),
+  ];
+}
+function testoCompleto() {
+  const p = S.prova, out = [];
+  out.push(`# Playtest Nomi Cose Città (${new Date(p.creataIl).toLocaleDateString('it-IT')})`, '');
+  out.push('## Giocatori');
+  GIOCATORI.forEach((g) => { const x = p.giocatori?.[g] || {}; out.push(`- ${g}: ${x.nome || '-'} · ${x.telefono || '-'} · ${x.rete || '-'}`); });
+  if (p.note) out.push('', 'Note: ' + p.note);
+  for (const s of S.sessioni) {
+    out.push('', `## S${s.n} · ${s.titolo} (iniziata alle ${fmtOra(s.creataIl)})`);
+    TEMPI.forEach(([k, l]) => { const t = s.tempi?.[k]; if (t?.inizio) out.push(`- ${l}: ${t.fine ? fmtDur(t.fine - t.inizio) : 'non fermato'}`); });
+    GIRI.forEach(([k, l]) => { const a = (s.giri?.[k] || []).filter((g) => g.fine); if (a.length) out.push(`- ${l}: ${a.map((g) => fmtDur(g.fine - g.inizio)).join(', ')}`); });
+    ESITI.forEach(([k, l]) => { if (s.esiti?.[k]) out.push(`- ${l} ${s.esiti[k]}`); });
+    const def = CHECK[s.n];
+    def.gruppi.forEach(([titolo, items]) => items.forEach((it) => { const v = s.checklist?.[key(s.n, it)]; if (v) out.push(`- [${titolo}] ${it}: ${v}`); }));
+    const ev = S.eventi.filter((e) => e.sessione === s.id).slice().reverse();
+    if (ev.length) out.push('', '### Eventi');
+    ev.forEach((e) => out.push(`- ${fmtOra(e.at)} · ${e.fase} · ${(TIPO[e.tipo] || TIPO.altro).t}${e.impatto ? ' · ' + e.impatto : ''}${(e.giocatori || []).length ? ' · ' + e.giocatori.join(',') : ''}${(e.ipotesi || []).length ? ' · ' + e.ipotesi.join(' ') : ''}: ${e.cosa}${e.atteso ? ` | atteso: ${e.atteso}` : ''}${e.reale ? ` | reale: ${e.reale}` : ''}${e.frequenza ? ` | frequenza: ${e.frequenza}` : ''}${e.riproducibile ? ` | riproducibile: ${e.riproducibile}` : ''}`));
+    const dom = s.domande || {};
+    const conRisposte = GIOCATORI.filter((g) => Object.values(dom[g] || {}).some((v) => v));
+    if (conRisposte.length) out.push('', '### Domande finali');
+    conRisposte.forEach((g) => { out.push(`**${g}**`); DOMANDE.forEach((q, i) => { const r = dom[g]?.[i + 1]; if (r) out.push(`- ${q} ${r}`); }); });
+  }
+  out.push('', '## Definizione di fatto');
+  DOD.forEach((d) => out.push(`- ${d}: ${p.dod?.[key(0, d)] || '-'}`));
+  return out.join('\n');
+}
+async function copiaTutto() {
+  const testo = testoCompleto();
+  try { await navigator.clipboard.writeText(testo); toast('Copiato: incollalo in chat'); }
+  catch (e) {
+    const ta = h('textarea', { id: 'export', readonly: true, style: 'min-height:240px' }); ta.value = testo;
+    sheet('Seleziona e copia', [ta, h('button', { class: 'btn', type: 'button', onclick: () => layer.replaceChildren() }, 'Chiudi')], () => layer.replaceChildren());
+    setTimeout(() => { ta.focus(); ta.select(); }, 50);
+  }
+}
+
+// ---------------- pannello dal basso ----------------
+const layer = document.getElementById('layer');
+function sheet(titolo, body, onClose) {
+  const panel = h('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-label': titolo }, h('h2', {}, titolo), ...[].concat(body));
+  layer.replaceChildren(h('div', { class: 'sheet-wrap' }, h('div', { class: 'sheet-bg', onclick: onClose }), panel));
+  const esc = (ev) => { if (ev.key === 'Escape') { onClose(); document.removeEventListener('keydown', esc); } };
+  document.addEventListener('keydown', esc);
+}
+</script>
