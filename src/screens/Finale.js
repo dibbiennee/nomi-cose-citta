@@ -19,7 +19,7 @@ export function Awards({ g }) {
     <div className="n-screen" style={sx('position: absolute; inset: 0; background: #5CD0FF; display: flex; flex-direction: column')}>
       <header style={sx('padding: 30px 20px 8px; display: flex; flex-direction: column; gap: 4px')}>
         <span style={sx('font-size: 13px; font-weight: 800; letter-spacing: 0.12em')}>PRIMA DEL PODIO</span>
-        <h1 style={sx("margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; line-height: 1")}>I premi</h1>
+        <h1 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 40px; line-height: 1")}>I premi</h1>
       </header>
       <div className="n-scroll" style={sx('flex-grow: 1; overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; justify-content: center')}>
         {awards.map((a, i) => {
@@ -28,7 +28,7 @@ export function Awards({ g }) {
             <div key={a.key} className="n-card" style={sx(`position: relative; padding: 18px 16px 16px; border-radius: 24px; border: 2.5px solid #17122B; background: #FFFFFF; box-shadow: 0 6px 0 #17122B; display: flex; align-items: center; gap: 14px; transform: rotate(${['-2deg', '1.5deg', '-1deg'][i]}); animation-delay: ${300 + i * 550}ms; flex-shrink: 0`)}>
               <span style={sx(`position: absolute; top: -13px; left: 16px; height: 26px; box-sizing: border-box; padding: 0 10px; border-radius: 8px; border: 2px solid #17122B; background: ${def.color}; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; display: flex; align-items: center`)}>{def.title}</span>
               <Face p={p} size={60} style={{ flexShrink: 0 }} />
-              <span style={sx('display: flex; flex-direction: column; gap: 2px; min-width: 0')}><span style={sx("font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 24px")}>{a.playerId === uid ? 'Tu' : p.name}</span><span style={sx('font-size: 14px; color: #5E5880; line-height: 1.35')}>{def.text(a.value)}</span></span>
+              <span style={sx('display: flex; flex-direction: column; gap: 2px; min-width: 0')}><span style={sx("font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 24px")}>{a.playerId === uid ? 'Tu' : p.name}</span><span style={sx('font-size: 14px; color: #5E5880; line-height: 1.35')}>{def.text(a.value)}</span></span>
             </div>
           );
         })}
@@ -63,7 +63,7 @@ export function Final({ g }) {
       </div>
       <div className="n-scroll" style={sx('position: relative; height: 100%; box-sizing: border-box; padding: 40px 20px 26px; display: flex; flex-direction: column; align-items: center; overflow-y: auto')}>
         <span className="n-up" style={sx('height: 32px; padding: 0 14px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; display: flex; align-items: center; white-space: nowrap')}>PARTITA FINITA</span>
-        <h1 className="n-pop" style={sx("margin: 14px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 44px; text-align: center; line-height: 1")}>{ranked[0] ? (ranked[0].id === uid ? 'Hai vinto!' : <>Vince <span className="ph">{ranked[0].name}!</span></>) : ''}</h1>
+        <h1 className="n-pop" style={sx("margin: 14px 0 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 44px; text-align: center; line-height: 1")}>{ranked[0] ? (ranked[0].id === uid ? 'Hai vinto!' : <>Vince <span className="ph">{ranked[0].name}!</span></>) : ''}</h1>
         <div style={sx('flex-grow: 1; min-height: 300px; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 10px')}>
           {[1, 0, 2].filter((i) => ranked[i]).map((i) => {
             const p = ranked[i], sp = PODIUM[i];
@@ -75,7 +75,7 @@ export function Final({ g }) {
                 </span>
                 <span style={sx('font-size: 15px; font-weight: 800; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{name(p)}</span>
                 <div className="n-rise" style={sx(`width: 100%; height: ${sp.h}; box-sizing: border-box; border-radius: 20px 20px 0 0; border: 2.5px solid #17122B; border-bottom: 0; background: ${sp.block}; color: ${sp.fg}; display: flex; flex-direction: column; align-items: center; gap: 2px; padding-top: 12px; animation-delay: ${sp.delay}`)}>
-                  <span style={sx("font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 44px; line-height: 1")}>{i + 1}</span>
+                  <span style={sx("font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 44px; line-height: 1")}>{i + 1}</span>
                   <span style={sx("font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; white-space: nowrap")}>{p.score || 0}&nbsp;pt</span>
                 </div>
               </div>
@@ -92,6 +92,7 @@ export function Final({ g }) {
             </div>
           ))}
           <button className="n-btn" onClick={rematch} style={sx(`height: 62px; flex-shrink: 0; border: 2.5px solid ${isHost ? INK : '#CFC8EA'}; border-radius: 20px; background: ${isHost ? INK : '#EDE8FB'}; color: ${isHost ? '#FFD23F' : '#6F698F'}; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 ${isHost ? '#7A5F00' : '#CFC8EA'}; cursor: pointer`)}>{isHost ? 'Rivincita' : `Rivincita: decide ${g.hostName}`}</button>
+          {isHost && <button className="n-btn" onClick={() => g.act(() => g.engine.backToLobby(g.code))} style={sx('height: 54px; flex-shrink: 0; border-radius: 20px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 16px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Cambia categorie e round</button>}
           <button className="n-btn" onClick={g.leave} style={sx('height: 54px; flex-shrink: 0; border-radius: 20px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 16px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Torna alla home</button>
         </div>
       </div>

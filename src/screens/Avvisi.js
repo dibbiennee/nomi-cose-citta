@@ -16,7 +16,7 @@ export function ErrorScreen({ kind, info = {}, onButton }) {
       <span className="n-pop" style={sx(`width: 150px; height: 164px; box-sizing: border-box; border-radius: 34px; border: 3px solid #17122B; background: ${err.color}; box-shadow: 0 9px 0 #17122B; display: flex; align-items: center; justify-content: center; transform: rotate(-5deg)`)}>
         <svg width="96" height="96" viewBox="0 0 48 48" aria-hidden="true"><path d={err.eyes} fill="none" stroke="#17122B" strokeWidth="3.6" strokeLinecap="round" /><path d={err.mouth} fill="none" stroke="#17122B" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </span>
-      <h1 className="n-up" style={sx("margin: 10px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; line-height: 1.05; animation-delay: .15s")}>{err.title}</h1>
+      <h1 className="n-up" style={sx("margin: 10px 0 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 34px; line-height: 1.05; animation-delay: .15s")}>{err.title}</h1>
       <p className="n-up" style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; max-width: 300px; animation-delay: .2s')}>{err.text}</p>
       {err.waiting && (
         <span className="n-dots" role="status" style={sx('height: 44px; padding: 0 18px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 2px; white-space: nowrap')}>Aspetto il prossimo round<span>.</span><span style={{ animationDelay: '.2s' }}>.</span><span style={{ animationDelay: '.4s' }}>.</span></span>
@@ -31,7 +31,7 @@ const RULE_SCORES = [{ n: '20', t: 'rispondi solo tu', bg: '#FFD23F' }, { n: '10
 export function RulesSheet({ onClose }) {
   return (
     <Sheet onClose={onClose} label="Come si gioca">
-      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px")}>Come si gioca</h2>
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px")}>Come si gioca</h2>
       <ol style={sx('margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.45')}>
         <li>Esce una lettera a caso, uguale per&nbsp;tutti.</li>
         <li>Scrivi una parola per categoria che inizi con quella&nbsp;lettera.</li>
@@ -40,9 +40,10 @@ export function RulesSheet({ onClose }) {
       </ol>
       <div style={sx('display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px')}>
         {RULE_SCORES.map((q) => (
-          <div key={q.n} style={sx(`padding: 10px 6px; border-radius: 16px; border: 2.5px solid #17122B; background: ${q.bg}; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; min-width: 0`)}><span style={sx("font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; line-height: 1")}>{q.n}</span><span style={sx('font-size: 11px; font-weight: 700; line-height: 1.2')}>{q.t}</span></div>
+          <div key={q.n} style={sx(`padding: 10px 6px; border-radius: 16px; border: 2.5px solid #17122B; background: ${q.bg}; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; min-width: 0`)}><span style={sx("font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 26px; line-height: 1")}>{q.n}</span><span style={sx('font-size: 11px; font-weight: 700; line-height: 1.2')}>{q.t}</span></div>
         ))}
       </div>
+      <p style={sx('margin: 0; font-size: 12px; line-height: 1.45; color: #5E5880')}><strong style={sx('color: #17122B')}>Privacy.</strong> Per giocare salviamo nella stanza il nome, la faccina e il colore che scegli, le risposte e i punteggi, legati a un codice anonimo. Stanno su Firebase di Google (database in Belgio) e il sito è ospitato da Vercel. Niente account, pubblicità o cookie di profilazione. La stanza si cancella quando l'ultimo esce; per far cancellare i tuoi dati scrivi a [CONTATTO].</p>
       <button className="n-btn" onClick={onClose} style={sx('height: 58px; flex-shrink: 0; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Ho capito</button>
     </Sheet>
   );
@@ -53,7 +54,7 @@ export function JoinSheet({ onClose, onJoin }) {
   const ok = code.length === 4;
   return (
     <Sheet onClose={onClose} gap={18} label="Entra in una stanza">
-      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px")}>Entra in una stanza</h2>
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px")}>Entra in una stanza</h2>
       <form style={sx('display: flex; flex-direction: column; gap: 18px')} onSubmit={(e) => { e.preventDefault(); if (ok) onJoin(code); }}>
         <label style={sx('display: flex; flex-direction: column; gap: 10px; font-size: 14px; font-weight: 700; color: #5E5880')}>Scrivi il codice di 4&nbsp;caratteri
           <input type="text" value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4))} maxLength={4} placeholder="AB12" autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false} autoFocus enterKeyHint="go"
@@ -69,13 +70,13 @@ export function ScoresSheet({ g, onClose, onExit }) {
   const rows = g.ranked;
   return (
     <Sheet onClose={onClose} gap={12} pad="12px 20px 20px" label="Classifica">
-      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px")}>Classifica</h2>
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 26px")}>Classifica</h2>
       {rows.map((p, i) => (
         <div key={p.id} style={sx(`display: flex; align-items: center; gap: 12px; padding: 8px 14px 8px 10px; border-radius: 16px; border: 2.5px solid #17122B; background: ${p.id === g.uid ? '#FFF3C4' : '#FFFFFF'}; flex-shrink: 0`)}>
           <span style={sx("font-family: 'JetBrains Mono', monospace; font-weight: 700; width: 20px; text-align: center")}>{i + 1}°</span>
           <Face p={p} size={36} small />
           <span style={sx('flex-grow: 1; min-width: 0; font-size: 16px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{p.id === g.uid ? 'Tu' : p.name}</span>
-          <span style={sx("font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px")}>{p.score || 0}</span>
+          <span style={sx("font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 22px")}>{p.score || 0}</span>
         </div>
       ))}
       <button onClick={onExit} style={sx('height: 48px; flex-shrink: 0; border: 0; background: transparent; color: #C4300F; font-size: 15px; font-weight: 800; cursor: pointer')}>Esci dalla partita</button>
@@ -86,7 +87,7 @@ export function ScoresSheet({ g, onClose, onExit }) {
 export function ExitSheet({ onClose, onLeave }) {
   return (
     <Sheet onClose={onClose} gap={14} label="Esci dalla partita">
-      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px")}>Esci dalla partita?</h2>
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px")}>Esci dalla partita?</h2>
       <p style={sx('margin: 0; font-size: 15px; line-height: 1.45; color: #5E5880')}>Gli altri continuano senza di&nbsp;te e&nbsp;perdi i&nbsp;punti fatti&nbsp;finora.</p>
       <button className="n-btn" onClick={onClose} style={sx('height: 60px; flex-shrink: 0; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Resto a giocare</button>
       <button className="n-btn" onClick={onLeave} style={sx('height: 56px; flex-shrink: 0; border: 2.5px solid #17122B; border-radius: 18px; background: #FFFFFF; color: #C4300F; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Esci</button>

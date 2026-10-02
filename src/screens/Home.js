@@ -51,7 +51,7 @@ export default function Home({ profile, setProfile, onCreate, onJoin, onRules })
               const d = k++;
               return (
                 <span key={i} className="n-pop" style={sx(`display: inline-block; padding: 4px; margin: -4px; animation-delay: ${d * 55}ms`)}>
-                  <span className="n-float" style={sx(`width: 52px; height: 58px; box-sizing: border-box; border-radius: 14px; border: 2.5px solid #17122B; background: ${WCOL[wi]}; color: #17122B; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 32px; box-shadow: 0 5px 0 #17122B; transform: rotate(${ROTS[(i + wi) % 5]}); animation-delay: ${d * 180}ms`)}>{ch}</span>
+                  <span className="n-float" style={sx(`width: 52px; height: 58px; box-sizing: border-box; border-radius: 14px; border: 2.5px solid #17122B; background: ${WCOL[wi]}; color: #17122B; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 32px; box-shadow: 0 5px 0 #17122B; transform: rotate(${ROTS[(i + wi) % 5]}); animation-delay: ${d * 180}ms`)}>{ch}</span>
                 </span>
               );
             })}

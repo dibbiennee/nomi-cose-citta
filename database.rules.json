@@ -7,7 +7,7 @@
         ".validate": "$code.matches(/^[A-Z2-9]{4}$/)",
 
         "hostId": {
-          ".write": "auth != null && data.parent().child('players').child(auth.uid).exists() && (data.val() === auth.uid || data.parent().child('presence').child(data.val()).val() === false || !data.parent().child('players').child(data.val()).exists())",
+          ".write": "auth != null && data.parent().child('players').child(auth.uid).exists() && (data.val() === auth.uid || data.parent().child('presence').child(data.val()).val() === false || !data.parent().child('players').child(data.val()).exists() || (data.parent().child('status').val().matches(/^(review|round|awards)$/) && data.parent().child('round/stepAt').val() + 60000 < now))",
           ".validate": "newData.isString() && newData.parent().child('players').child(newData.val()).exists()"
         },
 
@@ -27,6 +27,10 @@
           ".write": "auth != null && data.parent().child('hostId').val() === auth.uid",
           "stoppedBy": {
             ".write": "auth != null && !data.exists() && data.parent().parent().child('players').child(auth.uid).exists() && data.parent().parent().child('status').val() === 'play' && (newData.val() === auth.uid || (newData.val() === 'time' && data.parent().child('endsAt').val() > 0 && data.parent().child('endsAt').val() <= now + 1500))"
+          },
+          "stepAt": {
+            ".write": "auth != null && data.parent().parent().child('players').child(auth.uid).exists() && newData.val() === now",
+            ".validate": "newData.isNumber()"
           },
           "stoppedAt": {
             ".write": "auth != null && !data.exists() && data.parent().parent().child('players').child(auth.uid).exists()",

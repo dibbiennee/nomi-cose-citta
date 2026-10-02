@@ -44,7 +44,7 @@ export default function Setup({ initial, editing, onBack, onSave, toast }) {
       <span style={sx('font-size: 16px; font-weight: 800')}>{label}</span>
       <span style={sx('display: flex; align-items: center; gap: 12px')}>
         <button className="n-press" aria-label={decLabel} onClick={dec} style={sx('width: 44px; height: 44px; border-radius: 12px; border: 0; background: #EDE8FB; color: #17122B; font-size: 22px; font-weight: 800; cursor: pointer')}>−</button>
-        <span aria-live="polite" style={sx("font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; width: 30px; text-align: center")}>{value}</span>
+        <span aria-live="polite" style={sx("font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 26px; width: 30px; text-align: center")}>{value}</span>
         <button className="n-press" aria-label={incLabel} onClick={inc} style={sx('width: 44px; height: 44px; border-radius: 12px; border: 0; background: #EDE8FB; color: #17122B; font-size: 22px; font-weight: 800; cursor: pointer')}>+</button>
       </span>
     </div>
@@ -54,7 +54,7 @@ export default function Setup({ initial, editing, onBack, onSave, toast }) {
     <div className="n-screen" style={sx('position: absolute; inset: 0; display: flex; flex-direction: column')}>
       <header style={sx('display: flex; align-items: center; gap: 12px; padding: 20px 20px 10px')}>
         <button className="n-btn" aria-label="Indietro" onClick={onBack} style={sx('width: 46px; height: 46px; border-radius: 14px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; box-shadow: 0 4px 0 #17122B; display: flex; align-items: center; justify-content: center; cursor: pointer')}>{BACK_ICON}</button>
-        <h1 style={sx("margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px")}>{editing ? 'Impostazioni' : 'Nuova stanza'}</h1>
+        <h1 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 26px")}>{editing ? 'Impostazioni' : 'Nuova stanza'}</h1>
       </header>
       <div className="n-scroll" style={sx('flex-grow: 1; overflow-y: auto; padding: 14px 20px 24px; display: flex; flex-direction: column; gap: 24px')}>
         <section className="n-up" style={sx('display: flex; flex-direction: column; gap: 12px')}>

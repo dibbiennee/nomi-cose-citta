@@ -29,10 +29,10 @@ export default function Play({ g }) {
     <div className="n-screen" style={sx('position: absolute; inset: 0; display: flex; flex-direction: column')}>
       <header style={sx('padding: 18px 20px 14px; display: flex; flex-direction: column; gap: 14px; background: #FFFFFF; border-bottom: 2.5px solid #17122B')}>
         <div style={sx('display: flex; align-items: center; gap: 14px')}>
-          <span className="n-flip" aria-hidden="true" style={sx("width: 58px; height: 64px; box-sizing: border-box; border-radius: 16px; border: 2.5px solid #17122B; background: #FFD23F; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; box-shadow: 0 5px 0 #17122B; flex-shrink: 0")}>{L}</span>
+          <span className="n-flip" aria-hidden="true" style={sx("width: 58px; height: 64px; box-sizing: border-box; border-radius: 16px; border: 2.5px solid #17122B; background: #FFD23F; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 40px; box-shadow: 0 5px 0 #17122B; flex-shrink: 0")}>{L}</span>
           <span style={sx('flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px')}>
             <span style={sx('font-size: 12px; font-weight: 800; letter-spacing: 0.1em; color: #5E5880; white-space: nowrap')}>ROUND {round.n} DI {s.rounds}</span>
-            <h1 style={sx("margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px")}>Tutto con la&nbsp;{L}</h1>
+            <h1 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 22px")}>Tutto con la&nbsp;{L}</h1>
           </span>
           <button className="n-press" aria-label="Classifica" onClick={() => g.setSheet('scores')} style={sx('width: 46px; height: 46px; flex-shrink: 0; border-radius: 14px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; display: flex; align-items: center; justify-content: center; cursor: pointer')}>{CUP}</button>
         </div>
@@ -74,7 +74,7 @@ export default function Play({ g }) {
         <button className={allFilled ? 'n-btn n-wiggle' : 'n-btn'} onClick={stop} aria-disabled={!allFilled} aria-label={allFilled ? 'STOP' : `Ancora ${nCats - myFilled} per lo STOP`}
           style={sx('position: relative; overflow: hidden; width: 100%; height: 66px; border: 2.5px solid #17122B; border-radius: 22px; background: #FFFFFF; color: #17122B; box-shadow: 0 5px 0 #17122B; cursor: pointer; padding: 0')}>
           <span style={sx(`position: absolute; left: 0; top: 0; bottom: 0; width: ${(myFilled / nCats) * 100}%; background: #FF5E3A; transition: width .45s cubic-bezier(.2,.8,.2,1)`)} />
-          <span style={sx(`position: relative; font-family: 'Bricolage Grotesque', sans-serif; font-size: ${allFilled ? '30px' : '18px'}; font-weight: 800; letter-spacing: 0.02em`)}>{allFilled ? 'STOP!' : `Ancora ${nCats - myFilled} per lo STOP`}</span>
+          <span style={sx(`position: relative; font-family: 'Bricolage Grotesque Variable', sans-serif; font-size: ${allFilled ? '30px' : '18px'}; font-weight: 800; letter-spacing: 0.02em`)}>{allFilled ? 'STOP!' : `Ancora ${nCats - myFilled} per lo STOP`}</span>
         </button>
       </div>
     </div>
@@ -88,7 +88,7 @@ export function StopOverlay({ g }) {
   const text = by === g.uid ? 'Hai fermato tu il round' : p ? `${p.name} ha fermato il round` : 'Tempo scaduto';
   return (
     <div className="n-fade" role="alert" style={sx('position: absolute; inset: 0; z-index: 40; background: #FF5E3A; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px')}>
-      <span className="n-stop" style={sx("font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: min(124px, 31vw); line-height: 1; color: #FFFFFF; text-shadow: 0 8px 0 #17122B")}>STOP!</span>
+      <span className="n-stop" style={sx("font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: min(124px, 31vw); line-height: 1; color: #FFFFFF; text-shadow: 0 8px 0 #17122B")}>STOP!</span>
       <span className="n-up" style={sx('height: 46px; padding: 0 20px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 17px; font-weight: 800; display: flex; align-items: center; white-space: nowrap; animation-delay: .3s')}>{text}</span>
     </div>
   );

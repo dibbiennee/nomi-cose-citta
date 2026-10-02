@@ -37,8 +37,8 @@ input:focus-visible { outline-offset: 2px; }
 
 /* Testo fisso in index.html: si vede solo finché React non parte (e dai crawler). */
 .statico { max-width: 640px; margin: 0 auto; padding: 32px 20px; line-height: 1.5; }
-.statico h1 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 34px; line-height: 1.05; }
-.statico h2 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; margin-top: 28px; }
+.statico h1 { font-family: 'Bricolage Grotesque Variable', sans-serif; font-size: 34px; line-height: 1.05; }
+.statico h2 { font-family: 'Bricolage Grotesque Variable', sans-serif; font-size: 22px; margin-top: 28px; }
 .statico li { margin: 6px 0; }
 
 /* Tipografia (skill tipografia-web) */

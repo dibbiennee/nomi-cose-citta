@@ -27,12 +27,12 @@ export default function Spin({ g }) {
           <span className="n-ring" style={sx('position: absolute; width: 200px; height: 200px; border-radius: 50%; border: 5px solid #FFFFFF; animation-delay: .2s')} />
         </>}
         <span key={done ? 'fatta' : 'gira'} className={done ? 'n-pop' : 'n-shake'} aria-hidden={!done}
-          style={sx("width: 190px; height: 210px; box-sizing: border-box; border-radius: 40px; border: 4px solid #17122B; background: #FFFFFF; color: #17122B; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 136px; box-shadow: 0 12px 0 #17122B")}>{done ? round.letter : spinLetter}</span>
+          style={sx("width: 190px; height: 210px; box-sizing: border-box; border-radius: 40px; border: 4px solid #17122B; background: #FFFFFF; color: #17122B; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 136px; box-shadow: 0 12px 0 #17122B")}>{done ? round.letter : spinLetter}</span>
       </div>
-      <h1 aria-live="polite" style={sx("margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px; text-align: center; min-height: 40px")}>{done ? `Tutto con la ${round.letter}!` : 'Estraggo la lettera…'}</h1>
+      <h1 aria-live="polite" style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 30px; text-align: center; min-height: 40px")}>{done ? `Tutto con la ${round.letter}!` : 'Estraggo la lettera…'}</h1>
       <div style={sx('height: 76px; display: flex; align-items: center; justify-content: center')} aria-live="assertive">
         {go !== 0 && (
-          <span key={go} className={(go + 4) % 2 ? 'n-pop' : 'n-pop2'} style={sx("min-width: 76px; height: 76px; padding: 0 18px; box-sizing: border-box; border-radius: 999px; border: 3px solid #17122B; background: #FFD23F; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; box-shadow: 0 5px 0 #17122B")}>{go > 0 ? String(go) : 'Via!'}</span>
+          <span key={go} className={(go + 4) % 2 ? 'n-pop' : 'n-pop2'} style={sx("min-width: 76px; height: 76px; padding: 0 18px; box-sizing: border-box; border-radius: 999px; border: 3px solid #17122B; background: #FFD23F; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 40px; box-shadow: 0 5px 0 #17122B")}>{go > 0 ? String(go) : 'Via!'}</span>
         )}
       </div>
     </div>

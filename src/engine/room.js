@@ -6,7 +6,8 @@
 //   settings   { cats:[{key,label,color}], rounds, maxPlayers, timer, hard }
 //   players    { [uid]: { name, color, face, joinedAt, score, stats:{stops,uniq,dup}, waiting } }
 //   presence   { [uid]: true | false }   online/offline, in un ramo a parte (vedi trackPresence)
-//   round      { n, letter, used:[...], startsAt, endsAt, stoppedBy, stoppedAt, reviewIdx, points:{[uid]:n} }
+//   round      { n, letter, used:[...], startsAt, endsAt, stoppedBy, stoppedAt, stepAt, reviewIdx, points:{[uid]:n} }
+//              stepAt = ora dell'ultimo passo della partita: serve a capire se l'host si è fermato
 //   answers    { [uid]: { [catKey]: "parola" } }
 //   votes      { [catKey]: { [targetUid]: { [voterUid]: true } } }
 //   reactions  { [pushId]: { uid, text, at } }
@@ -23,6 +24,9 @@ export const SPIN_MS = 2000; // la lettera che gira
 export const COUNTDOWN_MS = 3200; // 3, 2, 1, Via!
 export const STOP_GRACE_MS = 3000; // dopo lo STOP si possono ancora salvare le ultime lettere scritte
 export const HOST_GRACE_MS = 4000; // l'host che ricarica la pagina non perde il posto
+export const IDLE_MS = 60000; // l'host collegato che non va avanti per un minuto passa il posto (lo stesso valore è in database.rules.json)
+/** Fasi in cui la partita aspetta l'host. */
+export const HOST_STEPS = ['review', 'round', 'awards'];
 
 export class RoomError extends Error {
   /** code: 'notfound' | 'full' | 'kicked' | 'nothost' | 'few' */
@@ -161,6 +165,13 @@ export function createEngine(db, uid) {
             const heir = nextHost(players, oldHost);
             // Aspetto un attimo: se l'host ha solo ricaricato la pagina torna online prima.
             if (heir === uid) timer = setTimeout(() => this.claimHost(code, oldHost), room.players[oldHost] ? HOST_GRACE_MS : 0);
+          } else if (HOST_STEPS.includes(room.status) && room.round?.stepAt) {
+            // L'host è collegato ma non va avanti: dopo un minuto il primo giocatore online dopo di lui prende il posto.
+            const heir = nextHost(withPresence(room), room.hostId);
+            if (heir === uid) {
+              const wait = room.round.stepAt + IDLE_MS - now() + 500;
+              timer = setTimeout(() => this.claimIdleHost(code, room.hostId, room.round.stepAt), Math.max(0, wait));
+            }
           }
         }
         onChange(room);
@@ -175,6 +186,16 @@ export function createEngine(db, uid) {
       if (room.players[oldHost] && room.presence?.[oldHost] !== false) return; // è tornato
       if (nextHost(withPresence(room), oldHost) !== uid) return;
       await runTransaction(roomRef(code, 'hostId'), (cur) => (cur === null ? null : cur === oldHost ? uid : undefined));
+    },
+
+    /** Prende il posto di un host collegato ma fermo da più di un minuto. */
+    async claimIdleHost(code, oldHost, stepAt) {
+      const room = await readRoom(code).catch(() => null);
+      if (!room || room.hostId !== oldHost || room.round?.stepAt !== stepAt || !HOST_STEPS.includes(room.status)) return;
+      if (nextHost(withPresence(room), oldHost) !== uid) return;
+      const res = await runTransaction(roomRef(code, 'hostId'), (cur) => (cur === null ? null : cur === oldHost ? uid : undefined));
+      // Il nuovo host ha a sua volta un minuto pieno.
+      if (res.committed) await set(roomRef(code, 'round/stepAt'), serverTimestamp()).catch(() => {});
     },
 
     async updateProfile(code, profile) {
@@ -239,7 +260,7 @@ export function createEngine(db, uid) {
         status: 'spin', answers: null, votes: null, reactions: null,
         round: {
           n, letter, used: [...used, letter], startsAt,
-          endsAt: room.settings.timer ? startsAt + room.settings.timer * 1000 : 0, reviewIdx: 0,
+          endsAt: room.settings.timer ? startsAt + room.settings.timer * 1000 : 0, reviewIdx: 0, stepAt: serverTimestamp(),
         },
       };
       for (const id of Object.keys(room.players || {})) patch[`players/${id}/waiting`] = null;
@@ -272,7 +293,7 @@ export function createEngine(db, uid) {
     async closeRound(code, by) {
       const res = await runTransaction(roomRef(code, 'round/stoppedBy'), (cur) => (cur ? undefined : by), { applyLocally: false });
       if (!res.committed) return false;
-      await update(roomRef(code), { status: 'review', 'round/stoppedAt': serverTimestamp() });
+      await update(roomRef(code), { status: 'review', 'round/stoppedAt': serverTimestamp(), 'round/stepAt': serverTimestamp() });
       if (by !== 'time') await runTransaction(roomRef(code, `players/${uid}/stats/stops`), (n) => (n || 0) + 1);
       return true;
     },
@@ -295,11 +316,11 @@ export function createEngine(db, uid) {
       if (room.status !== 'review') return;
       const cats = room.settings.cats;
       const idx = room.round.reviewIdx || 0;
-      if (idx < cats.length - 1) { await update(roomRef(code), { 'round/reviewIdx': idx + 1 }); return; }
+      if (idx < cats.length - 1) { await update(roomRef(code), { 'round/reviewIdx': idx + 1, 'round/stepAt': serverTimestamp() }); return; }
       // Contano solo i giocatori online e non in attesa: chi è caduto prende 0, come una risposta vuota.
       const ids = activeIds(room);
       const { points, stats } = scoreRound(ids, cats.map((c) => c.key), room.answers || {}, room.votes || {}, room.round.letter);
-      const patch = { status: 'round', 'round/points': points };
+      const patch = { status: 'round', 'round/points': points, 'round/stepAt': serverTimestamp() };
       for (const id of ids) {
         const p = room.players[id];
         patch[`players/${id}/score`] = (p.score || 0) + points[id];
@@ -314,7 +335,7 @@ export function createEngine(db, uid) {
       const room = await requireHost(code);
       if (room.status !== 'round') return;
       if (room.round.n < room.settings.rounds) await this.drawLetter(code, room.round.n + 1, room.round.used || []);
-      else await update(roomRef(code), { status: 'awards' });
+      else await update(roomRef(code), { status: 'awards', 'round/stepAt': serverTimestamp() });
     },
 
     async showPodium(code) {
@@ -322,6 +343,7 @@ export function createEngine(db, uid) {
       if (room.status === 'awards') await update(roomRef(code), { status: 'final' });
     },
     async rematch(code) { await this.startGame(code); },
+    /** Fine partita: si torna in lobby, dove l'host può cambiare categorie e round prima di rigiocare. */
     async backToLobby(code) {
       await requireHost(code);
       await update(roomRef(code), { status: 'lobby', round: null, answers: null, votes: null, reactions: null });

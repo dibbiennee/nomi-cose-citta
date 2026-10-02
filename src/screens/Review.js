@@ -48,8 +48,8 @@ export default function Review({ g }) {
           </span>
         </div>
         <div style={sx('display: flex; align-items: center; gap: 14px')}>
-          <span aria-hidden="true" style={sx("width: 58px; height: 64px; flex-shrink: 0; box-sizing: border-box; border-radius: 16px; border: 2.5px solid #17122B; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 38px; box-shadow: 0 5px 0 #17122B")}>{round.letter}</span>
-          <h1 style={sx("margin: 0; min-width: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; overflow-wrap: anywhere")}>{cat.label}</h1>
+          <span aria-hidden="true" style={sx("width: 58px; height: 64px; flex-shrink: 0; box-sizing: border-box; border-radius: 16px; border: 2.5px solid #17122B; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 38px; box-shadow: 0 5px 0 #17122B")}>{round.letter}</span>
+          <h1 style={sx("margin: 0; min-width: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; overflow-wrap: anywhere")}>{cat.label}</h1>
         </div>
       </header>
       <div className="n-scroll" style={sx('flex-grow: 1; overflow-y: auto; padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 12px')}>
@@ -66,13 +66,13 @@ export default function Review({ g }) {
               <Face p={p} size={44} style={{ flexShrink: 0 }} />
               <span style={sx('flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px')}>
                 <span style={sx('font-size: 12px; font-weight: 700; color: #5E5880')}>{isMe ? 'Tu' : p.name} · {tag}</span>
-                <span style={sx(`font-family: 'Bricolage Grotesque', sans-serif; font-size: 21px; line-height: 1.1; font-weight: 800; text-decoration: ${rejected || r.status === 'wrongLetter' ? 'line-through' : 'none'}; opacity: ${valid ? '1' : '0.45'}; overflow-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden`)}>{r.text || '—'}</span>
+                <span style={sx(`font-family: 'Bricolage Grotesque Variable', sans-serif; font-size: 21px; line-height: 1.1; font-weight: 800; text-decoration: ${rejected || r.status === 'wrongLetter' ? 'line-through' : 'none'}; opacity: ${valid ? '1' : '0.45'}; overflow-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden`)}>{r.text || '—'}</span>
                 {canVote && (
                   <button className="n-press" aria-pressed={myVote} aria-label={`${myVote ? 'Annulla il voto su' : 'Non vale:'} ${r.text} di ${p.name}`} onClick={() => g.act(() => g.engine.vote(g.code, cat.key, p.id, !myVote))}
                     style={sx(`height: 44px; padding: 0 12px; border-radius: 12px; border: 2px solid #17122B; background: ${myVote ? '#FF5E3A' : '#FFFFFF'}; color: ${myVote ? '#FFFFFF' : INK}; font-size: 13px; font-weight: 800; cursor: pointer; align-self: flex-start; margin-top: 8px; transition: background .2s`)}>{myVote ? 'Annulla' : 'Non vale'}</button>
                 )}
               </span>
-              <span key={r.points} className="n-pop" style={sx(`min-width: 46px; height: 40px; padding: 0 8px; box-sizing: border-box; border-radius: 12px; border: 2.5px solid #17122B; background: ${PTS_BG[r.points]}; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 19px; display: flex; align-items: center; justify-content: center; transform: rotate(4deg); flex-shrink: 0`)}>{r.points > 0 ? '+' : ''}{r.points}</span>
+              <span key={r.points} className="n-pop" style={sx(`min-width: 46px; height: 40px; padding: 0 8px; box-sizing: border-box; border-radius: 12px; border: 2.5px solid #17122B; background: ${PTS_BG[r.points]}; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 19px; display: flex; align-items: center; justify-content: center; transform: rotate(4deg); flex-shrink: 0`)}>{r.points > 0 ? '+' : ''}{r.points}</span>
             </div>
           );
         })}

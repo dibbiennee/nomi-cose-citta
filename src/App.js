@@ -200,7 +200,9 @@ export default function App() {
       const nuovi = Object.keys(room.players).filter((id) => !prev.players?.[id] && id !== engine.uid);
       if (nuovi.length) toast(`${room.players[nuovi[0]].name} è nella stanza`);
     }
-    if (prev.hostId !== room.hostId && room.hostId === engine.uid) toast('Ora sei tu l\'host');
+    if (prev.hostId !== room.hostId && room.players[room.hostId]) {
+      toast(room.hostId === engine.uid ? 'Ora sei tu l\'host' : `Ora decide ${room.players[room.hostId].name}`);
+    }
   }, [room, engine, toast]);
 
   const leave = useCallback(async () => {

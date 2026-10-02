@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, signInAnonymously } from 'firebase/auth';
 import { getDatabase, connectDatabaseEmulator, ref, get, set, update, goOffline } from 'firebase/database';
-import { createEngine, RoomError, SPIN_MS, COUNTDOWN_MS, HOST_GRACE_MS } from './room.js';
+import { createEngine, RoomError, SPIN_MS, COUNTDOWN_MS, HOST_GRACE_MS, IDLE_MS } from './room.js';
 
 const PROJECT = process.env.GCLOUD_PROJECT || 'demo-ncc';
 const apps = [];
@@ -185,6 +185,14 @@ test('partita intera: lettera, STOP, voti, punteggi, ritardatario, host che esce
   await b.engine.showPodium(code);
   assert.equal((await b.room(code)).status, 'final');
 
+  // A fine partita l'host può tornare in lobby e cambiare le impostazioni prima di rigiocare.
+  await assert.rejects(c.engine.backToLobby(code), (e) => e.code === 'nothost');
+  await b.engine.backToLobby(code);
+  room = await b.room(code);
+  assert.equal(room.status, 'lobby');
+  assert.equal(room.round, undefined);
+  await b.engine.updateSettings(code, { ...room.settings, rounds: 1 });
+
   await b.engine.rematch(code);
   room = await b.room(code);
   assert.equal(room.status, 'spin');
@@ -219,4 +227,35 @@ test('uscita: l\'host esce dalla lobby e passa il posto, l\'ultimo chiude la sta
   await b.engine.leaveRoom(code);
   room = await b.room(code);
   assert.equal(room, null);
+});
+
+test('host collegato ma fermo: dopo un minuto il posto passa al giocatore successivo', { timeout: 30000 }, async () => {
+  const [a, b, c] = await Promise.all(['Anna', 'Bea', 'Ciro'].map(phone));
+  const code = await a.engine.createRoom(a.profile, { cats: [{ key: 'nomi', label: 'Nomi' }, { key: 'cose', label: 'Cose' }], rounds: 2, maxPlayers: 4, timer: 60, hard: true });
+  await b.engine.joinRoom(code, b.profile);
+  await c.engine.joinRoom(code, c.profile);
+  await a.engine.startGame(code);
+  await sleep(SPIN_MS + COUNTDOWN_MS + 100);
+  await b.engine.goPlay(code);
+  await b.engine.saveAnswers(code, { nomi: 'x', cose: 'y' });
+  await b.engine.pressStop(code);
+  let room = await a.room(code);
+  assert.equal(room.status, 'review');
+  assert.ok(room.round.stepAt > Date.now() - 5000);
+
+  // Prima del minuto nessuno può prendere il posto, e nessuno può spostare indietro l'orologio.
+  await denied(set(ref(b.db, `rooms/${code}/hostId`), b.uid));
+  await denied(set(ref(c.db, `rooms/${code}/round/stepAt`), 1));
+
+  // Simulo un minuto di attesa: l'host (che può scrivere round) sposta stepAt indietro.
+  await set(ref(a.db, `rooms/${code}/round/stepAt`), Date.now() - IDLE_MS - 5000);
+  const offB = b.engine.subscribe(code, () => {});
+  const offC = c.engine.subscribe(code, () => {});
+  await waitFor(async () => (await a.room(code)).hostId === b.uid, 8000); // Bea è entrata prima di Ciro
+  offB(); offC();
+  room = await a.room(code);
+  assert.ok(room.round.stepAt > Date.now() - 5000, 'il nuovo host ha un minuto pieno');
+  await denied(set(ref(a.db, `rooms/${code}/hostId`), a.uid)); // l'host di prima non se lo riprende da solo
+  await b.engine.nextCategory(code); // e il nuovo host fa andare avanti la partita
+  assert.equal((await a.room(code)).round.reviewIdx, 1);
 });

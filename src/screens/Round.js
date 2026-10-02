@@ -36,7 +36,7 @@ export default function Round({ g }) {
     <div className="n-screen" style={sx('position: absolute; inset: 0; display: flex; flex-direction: column')}>
       <header className="n-up" style={sx('padding: 26px 20px 6px; display: flex; flex-direction: column; gap: 4px')}>
         <span style={sx('font-size: 13px; font-weight: 800; letter-spacing: 0.12em; color: #5E5880')}>LETTERA {round.letter} · ROUND {round.n} DI {room.settings.rounds}</span>
-        <h1 style={sx("margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 36px; line-height: 1.05")}>{lead ? (lead.id === uid ? 'Sei in testa!' : <><span className="ph">{lead.name}</span> è in&nbsp;testa</>) : ''}</h1>
+        <h1 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 36px; line-height: 1.05")}>{lead ? (lead.id === uid ? 'Sei in testa!' : <><span className="ph">{lead.name}</span> è in&nbsp;testa</>) : ''}</h1>
       </header>
       <div className="n-scroll" style={sx('flex-grow: 1; overflow-y: auto; padding: 22px 20px 20px; display: flex; flex-direction: column; gap: 20px')}>
         {ranked.map((p, i) => {
@@ -50,7 +50,7 @@ export default function Round({ g }) {
                 <span style={sx('flex-grow: 1; min-width: 0; font-size: 17px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{p.id === uid ? 'Tu' : p.name}</span>
                 {p.waiting ? <span style={sx('font-size: 12px; font-weight: 700; color: #5E5880; white-space: nowrap')}>entra al prossimo</span>
                   : <span className="n-pop" style={sx(`height: 26px; padding: 0 9px; border-radius: 8px; border: 2px solid #17122B; background: #6EE7A8; font-size: 13px; font-weight: 800; display: flex; align-items: center; transform: rotate(-3deg); white-space: nowrap; animation-delay: ${600 + i * 90}ms`)}>+{plus}</span>}
-                <span style={sx("font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 30px; min-width: 56px; text-align: right")}>{Math.round(prev + plus * count)}</span>
+                <span style={sx("font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 30px; min-width: 56px; text-align: right")}>{Math.round(prev + plus * count)}</span>
               </div>
               <div style={sx('position: relative; height: 44px')}>
                 <div style={sx('position: absolute; left: 0; right: 0; top: 13px; height: 18px; box-sizing: border-box; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; overflow: hidden')}><div className="n-grow" style={sx(`width: ${pct}; height: 100%; background: ${['#FFD23F', '#FF8A65', '#5CD0FF', '#B79CFF', '#6EE7A8', '#FF7EB6'][p.color || 0]}; animation-delay: ${i * 90}ms`)} /></div>

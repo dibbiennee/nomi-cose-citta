@@ -13,7 +13,7 @@ export default function Invite({ code, room, profile, setProfile, onJoin, busy }
   return (
     <div className="n-screen" style={sx('position: absolute; inset: 0; background: #B79CFF; padding: 28px 24px 28px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; overflow-y: auto')}>
       <span style={sx('height: 34px; padding: 0 14px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; display: flex; align-items: center; white-space: nowrap')}>STANZA {code}</span>
-      <h1 className="n-pop" style={sx("margin: 18px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; line-height: 1.05; text-align: center")}>{host ? <><span className="ph">{host.name}</span> ti&nbsp;aspetta!</> : 'Ti aspettano!'}</h1>
+      <h1 className="n-pop" style={sx("margin: 18px 0 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 34px; line-height: 1.05; text-align: center")}>{host ? <><span className="ph">{host.name}</span> ti&nbsp;aspetta!</> : 'Ti aspettano!'}</h1>
       <div style={sx('margin-top: 18px; display: flex; padding-left: 10px')}>
         {players.slice(0, 6).map(([id, p], i) => (
           <span key={id} className="n-bob" style={sx(`display: block; margin-left: -10px; animation-delay: ${i * 200}ms`)}><Face p={p} size={56} /></span>
