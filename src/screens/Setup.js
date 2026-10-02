@@ -3,6 +3,8 @@ import { sx, INK, CUSTOM_COLORS, BACK_ICON } from '../ui/kit';
 import { DEFAULT_CATEGORIES, DEFAULT_SETTINGS } from '../engine/rules';
 
 const TIMERS = [[60, '60s'], [90, '90s'], [120, '2 min'], [0, 'Libero']];
+// Partite già pronte: più categorie vuol dire una correzione più lunga.
+const PRESETS = [['Veloce', 3], ['Classica', 5], ['Maratona', 8]];
 
 /** Nuova stanza (crea) o Impostazioni dalla lobby (modifica, solo host). */
 export default function Setup({ initial, editing, onBack, onSave, toast }) {
@@ -57,8 +59,21 @@ export default function Setup({ initial, editing, onBack, onSave, toast }) {
         <h1 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 26px")}>{editing ? 'Impostazioni' : 'Nuova stanza'}</h1>
       </header>
       <div className="n-scroll" style={sx('flex-grow: 1; overflow-y: auto; padding: 14px 20px 24px; display: flex; flex-direction: column; gap: 24px')}>
-        <section className="n-up" style={sx('display: flex; flex-direction: column; gap: 12px')}>
+        <section className="n-up" style={sx('flex-shrink: 0; display: flex; flex-direction: column; gap: 12px')}>
           <div style={sx('display: flex; justify-content: space-between; align-items: baseline')}><h2 style={sx('margin: 0; font-size: 17px; font-weight: 800')}>Categorie</h2><span style={sx('font-size: 13px; font-weight: 600; color: #5E5880')}>{cats.length} scelte</span></div>
+          <div style={sx('display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px')} role="radiogroup" aria-label="Partite già pronte">
+            {PRESETS.map(([name, n]) => {
+              const keys = DEFAULT_CATEGORIES.slice(0, n).map((c) => c.key);
+              const on = cats.length === n && keys.every((k) => cats.includes(k));
+              return (
+                <button key={name} className="n-press" role="radio" aria-checked={on} onClick={() => setCats(keys)}
+                  style={sx(`height: 56px; border-radius: 14px; border: 2.5px solid ${on ? INK : '#CFC8EA'}; background: ${on ? '#FFD23F' : '#FFFFFF'}; color: #17122B; box-shadow: ${on ? '0 3px 0 ' + INK : 'none'}; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; transition: all .2s`)}>
+                  <span style={sx('font-size: 15px; font-weight: 800')}>{name}</span>
+                  <span style={sx('font-size: 12px; font-weight: 600; color: #5E5880')}>{n} categorie</span>
+                </button>
+              );
+            })}
+          </div>
           <div style={sx('display: flex; flex-wrap: wrap; gap: 8px')}>
             {all.map((c) => {
               const on = cats.includes(c.key);
@@ -74,7 +89,7 @@ export default function Setup({ initial, editing, onBack, onSave, toast }) {
             <button type="submit" className="n-press" aria-label="Aggiungi categoria" style={sx(`width: 50px; height: 50px; border-radius: 16px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 24px; font-weight: 800; cursor: pointer; opacity: ${newCat.trim() ? '1' : '0.4'}`)}>+</button>
           </form>
         </section>
-        <section className="n-up" style={sx('border-radius: 22px; border: 2.5px solid #17122B; background: #FFFFFF; overflow: hidden; animation-delay: .08s')}>
+        <section className="n-up" style={sx('flex-shrink: 0; border-radius: 22px; border: 2.5px solid #17122B; background: #FFFFFF; overflow: hidden; animation-delay: .08s')}>
           {stepper('Round', rounds, () => setRounds(Math.max(1, rounds - 1)), () => setRounds(Math.min(10, rounds + 1)), 'Meno round', 'Più round')}
           {stepper('Giocatori max', maxPlayers, () => setMaxPlayers(Math.max(2, maxPlayers - 1)), () => setMaxPlayers(Math.min(12, maxPlayers + 1)), 'Meno giocatori', 'Più giocatori')}
           <button role="switch" aria-checked={hard} aria-label="Niente lettere difficili: esclude H, J, K, Q, W, X, Y" onClick={() => setHard(!hard)} style={sx('width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 14px 14px 16px; border: 0; background: transparent; color: #17122B; cursor: pointer; text-align: left; white-space: normal')}>
@@ -82,7 +97,7 @@ export default function Setup({ initial, editing, onBack, onSave, toast }) {
             <span style={sx(`width: 54px; height: 32px; box-sizing: border-box; border-radius: 999px; border: 2.5px solid #17122B; background: ${hard ? '#6EE7A8' : '#FFFFFF'}; position: relative; flex-shrink: 0; transition: background .3s`)}><span style={sx(`position: absolute; top: 2px; left: 2px; width: 23px; height: 23px; border-radius: 50%; background: #17122B; transform: ${hard ? 'translateX(22px)' : 'translateX(0)'}; transition: transform .35s cubic-bezier(.2,.9,.3,1.4)`)} /></span>
           </button>
         </section>
-        <section className="n-up" style={sx('display: flex; flex-direction: column; gap: 10px; animation-delay: .14s')}>
+        <section className="n-up" style={sx('flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; animation-delay: .14s')}>
           <h2 style={sx('margin: 0; font-size: 17px; font-weight: 800')}>Tempo per round</h2>
           <div style={sx('display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px')} role="radiogroup" aria-label="Tempo per round">
             {TIMERS.map(([v, label]) => {

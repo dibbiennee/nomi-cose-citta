@@ -50,7 +50,10 @@ export default function Play({ g }) {
             return (
               <div key={p.id} style={sx(`display: flex; align-items: center; gap: 6px; opacity: ${p.online ? '1' : '0.45'}`)} aria-label={`${p.id === uid ? 'Tu' : p.name}: ${done} su ${nCats}`}>
                 <Face p={p} size={30} small />
-                <span style={sx(`font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: ${done === nCats ? '#0E7A45' : '#5E5880'}`)}>{done}/{nCats}</span>
+                {done === nCats && p.id !== uid
+                  // Qualcuno ha riempito tutto: può premere STOP da un momento all'altro. Non si mostrano le risposte.
+                  ? <span key="pronto" className="n-pop" style={sx('height: 24px; padding: 0 9px; border-radius: 999px; border: 2px solid #17122B; background: #6EE7A8; font-size: 12px; font-weight: 800; display: flex; align-items: center; white-space: nowrap')}>può fermare</span>
+                  : <span style={sx(`font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: ${done === nCats ? '#0E7A45' : '#5E5880'}`)}>{done}/{nCats}</span>}
               </div>
             );
           })}

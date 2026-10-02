@@ -12,7 +12,7 @@ import Play, { StopOverlay } from './screens/Play';
 import Review from './screens/Review';
 import Round from './screens/Round';
 import { Awards, Final } from './screens/Finale';
-import { ErrorScreen, RulesSheet, JoinSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading } from './screens/Avvisi';
+import { ErrorScreen, RulesSheet, JoinSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
 
 const PROFILE_KEY = 'ncc-profilo';
 function loadProfile() {
@@ -287,6 +287,7 @@ export default function App() {
     <main className="n-app">
       <React.Fragment key={screenKey}>{screen}</React.Fragment>
       {stopping && g && status === 'review' && <StopOverlay g={g} />}
+      {g && view === 'room' && !g.me?.waiting && <IdleNotice g={g} />}
       {sheet === 'rules' && <RulesSheet onClose={() => setSheet(null)} />}
       {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} onJoin={(c) => { setSheet(null); joinWith(c); }} />}
       {sheet === 'scores' && g && <ScoresSheet g={g} onClose={() => setSheet(null)} onExit={() => setSheet('exit')} />}

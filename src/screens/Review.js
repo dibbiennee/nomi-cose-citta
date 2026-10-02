@@ -35,6 +35,7 @@ export default function Review({ g }) {
   const res = scoreCategory(ids, catAnswers, votes, round.letter);
   const bubbles = useReactions(room, g.now);
   const voters = Math.max(1, ids.length - 1);
+  const need = Math.floor(voters / 2) + 1; // bocciata se vota contro più di metà degli altri (isRejected)
 
   const next = () => {
     if (!isHost) { g.toast(`Va avanti ${g.hostName}`); return; }
@@ -56,13 +57,14 @@ export default function Review({ g }) {
         </div>
       </header>
       <div className="n-scroll" style={sx('flex-grow: 1; overflow-y: auto; padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 12px')}>
+        <p style={sx('margin: 0; font-size: 13px; font-weight: 700; color: #5E5880')}>{need === 1 ? 'Basta 1 «non vale» per bocciare una parola.' : `Servono ${need} «non vale» per bocciare una parola.`}</p>
         {g.scoring.map((p, i) => {
           const r = res[p.id], isMe = p.id === uid;
           const rejected = r.status === 'rejected';
           const valid = ['solo', 'duplicate', 'unique'].includes(r.status);
           const canVote = !isMe && r.status !== 'empty' && r.status !== 'wrongLetter';
           const myVote = !!votes[p.id]?.[uid];
-          const tag = TAGS[r.status] + (!rejected && r.votesAgainst ? ` · ${r.votesAgainst} ${r.votesAgainst === 1 ? 'voto' : 'voti'} contro su ${voters}` : '');
+          const tag = TAGS[r.status] + (valid && r.votesAgainst ? ` · ${r.votesAgainst} su ${need} per bocciarla` : '');
           return (
             <div key={`${cat.key}-${p.id}`} className={rejected ? 'n-no' : idx % 2 ? 'n-up2' : 'n-up'}
               style={sx(`display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 20px; border: 2.5px solid #17122B; background: ${rejected ? '#FFE3DB' : '#FFFFFF'}; animation-delay: ${rejected ? 0 : i * 70}ms; transition: background .25s`)}>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { sx, Face, Sheet } from '../ui/kit';
+import { HOST_STEPS, IDLE_MS, withPresence } from '../engine/room';
+import { nextHost } from '../engine/rules';
 
 const ERR = {
   notfound: (e) => ({ title: 'Stanza non trovata', text: `Il codice ${e.code || ''} non esiste più, oppure la partita è già finita.`, btn: 'Torna alla home', btnBg: '#FFD23F', color: '#B79CFF', eyes: 'M13 17l7 7M20 17l-7 7M28 17l7 7M35 17l-7 7', mouth: 'M17 36q7-6 14 0' }),
@@ -113,6 +115,29 @@ export function Loading() {
   return (
     <div style={sx('position: absolute; inset: 0; background: #FFD23F; display: flex; align-items: center; justify-content: center')} role="status" aria-label="Caricamento">
       <Face p={{ face: 0, color: 0 }} size={72} blink className="n-bob" />
+    </div>
+  );
+}
+
+/**
+ * Host collegato che non va avanti: negli ultimi 10 secondi tutti vedono chi prenderà il posto e quando.
+ * Così il passaggio automatico (dopo un minuto) è una regola visibile e non una sorpresa.
+ */
+export function IdleNotice({ g }) {
+  const { room, round, uid, now } = g;
+  if (!HOST_STEPS.includes(room.status) || !round?.stepAt) return null;
+  const left = round.stepAt + IDLE_MS - now;
+  if (left > 10000 || left < -3000) return null;
+  const heirId = nextHost(withPresence(room), room.hostId);
+  if (!heirId || !room.players[heirId]) return null;
+  const s = Math.max(0, Math.ceil(left / 1000));
+  const heir = room.players[heirId].name;
+  const text = g.isHost ? <>Vai avanti tu, o tra <b>{s} s</b> decide {heir}</>
+    : heirId === uid ? <>{g.hostName} non va avanti: tra <b>{s} s</b> tocca a te</>
+      : <>{g.hostName} non va avanti: tra <b>{s} s</b> decide {heir}</>;
+  return (
+    <div className="n-down" role="status" style={sx('position: absolute; left: 10px; right: 10px; top: 10px; z-index: 45; border-radius: 18px; border: 2.5px solid #17122B; background: #FFD23F; color: #17122B; padding: 12px 16px; box-shadow: 0 5px 0 #17122B; font-size: 15px; font-weight: 700; text-align: center')}>
+      {text}
     </div>
   );
 }
