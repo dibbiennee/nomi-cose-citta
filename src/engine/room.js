@@ -10,11 +10,11 @@
 //              stepAt = ora dell'ultimo passo della partita: serve a capire se l'host si è fermato
 //   answers    { [uid]: { [catKey]: "parola" } }
 //   votes      { [catKey]: { [targetUid]: { [voterUid]: true } } }
-//   reactions  { [pushId]: { uid, text, at } }
+//   reactions  { [uid]: { text, at } }      una alla volta per giocatore
 //   kicked     { [uid]: true }
 
 import {
-  ref, get, set, update, remove, push, onValue, onDisconnect, runTransaction, serverTimestamp,
+  ref, get, set, update, remove, onValue, query, orderByChild, limitToFirst, onDisconnect, runTransaction, serverTimestamp,
 } from 'firebase/database';
 import {
   DEFAULT_SETTINGS, makeCode, pickLetter, scoreRound, nextHost, sanitizeSettings,
@@ -101,9 +101,24 @@ export function createEngine(db, uid) {
     presence = null;
   }
 
+  /** Pulizia senza server: chi crea una stanza cancella fino a 5 stanze create più di 12 ore fa. */
+  const OLD_MS = 12 * 3600 * 1000;
+  async function cleanOldRooms() {
+    try {
+      // Le regole permettono solo di leggere le 5 stanze più vecchie; si cancellano quelle oltre le 12 ore.
+      const snap = await get(query(ref(db, 'rooms'), orderByChild('createdAt'), limitToFirst(5)));
+      const patch = {};
+      snap.forEach((r) => { if ((r.val().createdAt || 0) < now() - OLD_MS - 60000) patch[r.key] = null; });
+      // Una cancellazione alla volta: se una fallisce (stanza appena toccata) le altre passano lo stesso.
+      await Promise.all(Object.keys(patch).map((k) => remove(roomRef(k)).catch(() => {})));
+      return Object.keys(patch).length;
+    } catch (e) { return 0; }
+  }
+
   return {
     uid,
     now,
+    cleanOldRooms,
 
     /** Crea una stanza e ne restituisce il codice. */
     async createRoom(profile, settings = DEFAULT_SETTINGS) {
@@ -118,7 +133,7 @@ export function createEngine(db, uid) {
             presence: { [uid]: true },
           };
         }, { applyLocally: false });
-        if (res.committed) { trackPresence(code); return code; }
+        if (res.committed) { trackPresence(code); cleanOldRooms(); return code; }
       }
       throw new Error('Impossibile creare la stanza, riprova');
     },
@@ -293,9 +308,16 @@ export function createEngine(db, uid) {
     async closeRound(code, by) {
       const res = await runTransaction(roomRef(code, 'round/stoppedBy'), (cur) => (cur ? undefined : by), { applyLocally: false });
       if (!res.committed) return false;
-      await update(roomRef(code), { status: 'review', 'round/stoppedAt': serverTimestamp(), 'round/stepAt': serverTimestamp() });
-      if (by !== 'time') await runTransaction(roomRef(code, `players/${uid}/stats/stops`), (n) => (n || 0) + 1);
+      await this.finishStop(code);
       return true;
+    },
+
+    /**
+     * Porta il round in correzione dopo lo STOP. Lo fa chi ha fermato il round; se perde la connessione
+     * proprio in quel momento (stoppedBy scritto, stato ancora 'play'), lo fa un altro telefono.
+     */
+    async finishStop(code) {
+      await update(roomRef(code), { status: 'review', 'round/stoppedAt': serverTimestamp(), 'round/stepAt': serverTimestamp() });
     },
 
     /** Vota "non vale" (o toglie il voto) sulla parola di un altro. */
@@ -305,7 +327,8 @@ export function createEngine(db, uid) {
     },
 
     async react(code, text) {
-      await push(roomRef(code, 'reactions'), { uid, text: String(text).slice(0, 20), at: serverTimestamp() });
+      // Una reazione per giocatore alla volta (le regole ne accettano una ogni 1,5 secondi).
+      await set(roomRef(code, `reactions/${uid}`), { text: String(text).slice(0, 20) || '?', at: serverTimestamp() });
     },
 
     // ---------- solo host: avanzamento ----------
@@ -327,6 +350,9 @@ export function createEngine(db, uid) {
         patch[`players/${id}/stats/uniq`] = (p.stats?.uniq || 0) + stats[id].uniq;
         patch[`players/${id}/stats/dup`] = (p.stats?.dup || 0) + stats[id].dup;
       }
+      // Gli STOP li conta l'host qui, insieme ai punti: un giocatore non può scriverseli da solo.
+      const by = room.round.stoppedBy;
+      if (by && by !== 'time' && room.players[by]) patch[`players/${by}/stats/stops`] = (room.players[by].stats?.stops || 0) + 1;
       await update(roomRef(code), patch);
     },
 

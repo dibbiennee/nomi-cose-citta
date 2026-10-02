@@ -184,6 +184,14 @@ export default function App() {
       autoDone.current.play = roundKey;
       engine.goPlay(code).catch(() => { autoDone.current.play = null; });
     }
+    // STOP rimasto a metà (chi l'ha premuto ha perso la connessione): dopo 2 secondi lo completa questo telefono.
+    if (status === 'play' && round.stoppedBy) {
+      if (!autoDone.current.stopSeen || autoDone.current.stopKey !== roundKey) { autoDone.current.stopSeen = now; autoDone.current.stopKey = roundKey; }
+      if (now - autoDone.current.stopSeen > 2000 && autoDone.current.stopDone !== roundKey) {
+        autoDone.current.stopDone = roundKey;
+        engine.finishStop(code).catch(() => { autoDone.current.stopDone = null; });
+      }
+    }
     if (status === 'play' && round.endsAt && now >= round.endsAt && autoDone.current.time !== roundKey) {
       autoDone.current.time = roundKey;
       engine.timeUp(code).catch(() => { autoDone.current.time = null; });

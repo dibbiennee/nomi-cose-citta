@@ -11,11 +11,14 @@ function useReactions(room, now) {
   const seen = useRef(new Set());
   const [list, setList] = useState([]);
   useEffect(() => {
-    const fresh = Object.entries(room.reactions || {}).filter(([id, r]) => !seen.current.has(id) && typeof r.at === 'number' && now - r.at < 2500);
+    // Una casella per giocatore (reactions/{uid}): ogni nuova reazione ha un'ora diversa, quindi la chiave è uid + ora.
+    const fresh = Object.entries(room.reactions || {})
+      .map(([uid, r]) => ({ ...r, uid, id: `${uid}:${r.at}` }))
+      .filter((r) => !seen.current.has(r.id) && typeof r.at === 'number' && now - r.at < 2500);
     if (!fresh.length) return;
-    fresh.forEach(([id]) => seen.current.add(id));
-    setList((l) => l.concat(fresh.map(([id, r]) => ({ id, ...r, left: `${16 + (seen.current.size * 67) % 190}px` }))));
-    fresh.forEach(([id]) => setTimeout(() => setList((l) => l.filter((x) => x.id !== id)), 1900));
+    fresh.forEach((r) => seen.current.add(r.id));
+    setList((l) => l.concat(fresh.map((r) => ({ ...r, left: `${16 + (seen.current.size * 67) % 190}px` }))));
+    fresh.forEach((r) => setTimeout(() => setList((l) => l.filter((x) => x.id !== r.id)), 1900));
   }, [room.reactions, now]);
   return list;
 }

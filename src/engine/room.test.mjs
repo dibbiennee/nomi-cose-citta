@@ -13,12 +13,12 @@ let n = 0;
 
 /** Un telefono: app Firebase separata, accesso anonimo, motore. */
 async function phone(name) {
-  const app = initializeApp({ apiKey: 'demo', projectId: PROJECT, databaseURL: `http://127.0.0.1:9000?ns=${PROJECT}-default-rtdb` }, `p${n++}`);
+  const app = initializeApp({ apiKey: 'demo', projectId: PROJECT, databaseURL: `http://127.0.0.1:${process.env.DBP || 9000}?ns=${PROJECT}-default-rtdb` }, `p${n++}`);
   apps.push(app);
   const auth = getAuth(app);
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectAuthEmulator(auth, `http://127.0.0.1:${process.env.AUP || 9099}`, { disableWarnings: true });
   const db = getDatabase(app);
-  connectDatabaseEmulator(db, '127.0.0.1', 9000);
+  connectDatabaseEmulator(db, '127.0.0.1', +(process.env.DBP || 9000));
   const { user } = await signInAnonymously(auth);
   const engine = createEngine(db, user.uid);
   const profile = { name, color: n % 6, face: n % 6 };
@@ -126,7 +126,6 @@ test('partita intera: lettera, STOP, voti, punteggi, ritardatario, host che esce
   room = await a.room(code);
   assert.equal(room.status, 'review');
   assert.equal(room.round.stoppedBy, b.uid);
-  assert.equal(room.players[b.uid].stats.stops, 1);
 
   // Le ultime lettere si salvano ancora per poco, poi no.
   await a.engine.saveAnswers(code, { nomi: L + 'arco', citta: L + 'ilano' });
@@ -153,6 +152,7 @@ test('partita intera: lettera, STOP, voti, punteggi, ritardatario, host che esce
   assert.equal(room.players[late.uid].score, 0);
   assert.equal(room.players[b.uid].stats.uniq, 1);
   assert.equal(room.players[a.uid].stats.dup, 1);
+  assert.equal(room.players[b.uid].stats.stops, 1); // contato dall'host insieme ai punti
 
   // Round 2: il ritardatario ora gioca. L'host chiude la finestra a metà: Bea (entrata prima) diventa host.
   await a.engine.nextRound(code);
@@ -258,4 +258,90 @@ test('host collegato ma fermo: dopo un minuto il posto passa al giocatore succes
   await denied(set(ref(a.db, `rooms/${code}/hostId`), a.uid)); // l'host di prima non se lo riprende da solo
   await b.engine.nextCategory(code); // e il nuovo host fa andare avanti la partita
   assert.equal((await a.room(code)).round.reviewIdx, 1);
+});
+
+// ---------- attacchi dall'audit di sicurezza: le regole devono respingerli ----------
+
+const big = (kb) => 'x'.repeat(kb * 1024);
+const DB_HTTP = `http://127.0.0.1:${process.env.DBP || 9000}`;
+const NS = `?ns=${PROJECT}-default-rtdb`;
+/** Scrittura da amministratore sull'emulatore (salta le regole): serve solo a preparare i casi. */
+const admin = (path, body) => fetch(`${DB_HTTP}/${path}.json${NS}`, { method: 'PUT', headers: { Authorization: 'Bearer owner' }, body: JSON.stringify(body) });
+
+test('attacchi: dimensioni, campi inventati, reazioni a raffica, colori con CSS', async () => {
+  const [a, b, x] = await Promise.all(['Anna', 'Bea', 'Estraneo'].map(phone));
+  const code = await a.engine.createRoom(a.profile);
+  await b.engine.joinRoom(code, b.profile);
+  const R = `rooms/${code}`;
+  await denied(set(ref(a.db, `${R}/settings/zavorra`), big(64)));
+  await denied(set(ref(a.db, `${R}/settings/cats/0/color`), 'red; background-image: url(https://x.y/z.png)'));
+  await denied(set(ref(a.db, `${R}/settings/cats/0/label`), 'x'.repeat(40)));
+  await denied(set(ref(a.db, `${R}/kicked/${x.uid}`), big(4)));
+  await denied(set(ref(b.db, `${R}/players/${b.uid}/extra`), 'x'));
+  // Stanza fantasma: senza hostId nessuno la può creare scrivendo solo il proprio giocatore.
+  await denied(set(ref(x.db, `rooms/ZZZ2/players/${x.uid}`), { name: 'x', color: 0, face: 0, joinedAt: Date.now(), score: 0 }));
+  // createdAt nel futuro e joinedAt falso.
+  await denied(set(ref(a.db, `${R}/createdAt`), Date.now() + 1e9));
+  await denied(set(ref(b.db, `${R}/players/${b.uid}/joinedAt`), 0));
+  // Reazioni: una alla volta, ognuno nella propria casella, niente zavorra.
+  await b.engine.react(code, 'Ahah');
+  await denied(b.engine.react(code, 'Ancora'));
+  await denied(set(ref(b.db, `${R}/reactions/${a.uid}`), { text: 'finta', at: Date.now() }));
+  await sleep(1600);
+  await b.engine.react(code, 'Geniale');
+  await denied(set(ref(a.db, `${R}/reactions/${a.uid}`), { text: 'x', at: Date.now(), zavorra: big(8) }));
+});
+
+test('attacchi in partita: STOP sabotato, STOP e punti truccati, stato all\'indietro', { timeout: 30000 }, async () => {
+  const [a, b, c] = await Promise.all(['Anna', 'Bea', 'Ciro'].map(phone));
+  const code = await a.engine.createRoom(a.profile, { cats: [{ key: 'nomi', label: 'Nomi', color: '#FF8A65' }, { key: 'cose', label: 'Cose', color: '#5CD0FF' }], rounds: 2, maxPlayers: 4, timer: 60, hard: true });
+  await b.engine.joinRoom(code, b.profile);
+  await c.engine.joinRoom(code, c.profile);
+  await a.engine.startGame(code);
+  const R = `rooms/${code}`;
+  await denied(set(ref(a.db, `${R}/status`), 'final')); // l'host non salta le fasi
+  await sleep(SPIN_MS + COUNTDOWN_MS + 100);
+  await b.engine.goPlay(code);
+  // Ciro prova a bloccare lo STOP scrivendo stoppedAt in anticipo, e a fermare l'orologio dell'host.
+  await denied(set(ref(c.db, `${R}/round/stoppedAt`), Date.now()));
+  await denied(set(ref(c.db, `${R}/round/stepAt`), Date.now()));
+  await denied(set(ref(c.db, `${R}/players/${c.uid}/stats/stops`), 999));
+  await denied(set(ref(c.db, `${R}/answers/${c.uid}`), { inventata: 'x' }));
+  await b.engine.saveAnswers(code, { nomi: 'x', cose: 'y' });
+  assert.equal(await b.engine.pressStop(code), true);
+  assert.equal((await a.room(code)).status, 'review');
+  await denied(set(ref(a.db, `${R}/status`), 'play')); // nemmeno l'host torna indietro
+  await denied(set(ref(a.db, `${R}/players/${c.uid}/score`), 1000)); // punti solo nel passaggio a fine round
+  await denied(set(ref(c.db, `${R}/votes/inventata/${a.uid}/${c.uid}`), true));
+  await a.engine.nextCategory(code);
+  await a.engine.nextCategory(code);
+  const room = await a.room(code);
+  assert.equal(room.status, 'round');
+  assert.equal(room.players[b.uid].stats.stops, 1);
+});
+
+test('STOP rimasto a metà: un altro telefono lo completa', { timeout: 30000 }, async () => {
+  const [a, b] = await Promise.all(['Anna', 'Bea'].map(phone));
+  const code = await a.engine.createRoom(a.profile);
+  await b.engine.joinRoom(code, b.profile);
+  await a.engine.startGame(code);
+  await sleep(SPIN_MS + COUNTDOWN_MS + 100);
+  await b.engine.goPlay(code);
+  // Bea scrive stoppedBy e poi "perde la connessione" prima di cambiare lo stato.
+  await set(ref(b.db, `rooms/${code}/round/stoppedBy`), b.uid);
+  assert.equal((await a.room(code)).status, 'play');
+  await a.engine.finishStop(code);
+  const room = await a.room(code);
+  assert.equal(room.status, 'review');
+  assert.equal(room.round.stoppedBy, b.uid);
+});
+
+test('pulizia: chi crea una stanza cancella quelle più vecchie di 12 ore, non le recenti', async () => {
+  const [a, x] = await Promise.all(['Anna', 'Estraneo'].map(phone));
+  const old = Date.now() - 13 * 3600 * 1000;
+  for (const k of ['VEC2', 'VEC3']) await admin(`rooms/${k}`, { hostId: 'zz', status: 'lobby', createdAt: old, settings: { cats: [], rounds: 1, maxPlayers: 2, timer: 0, hard: true }, players: { zz: { name: 'z', color: 0, face: 0, joinedAt: old, score: 0 } } });
+  const recent = await a.engine.createRoom(a.profile); // dentro lancia la pulizia
+  await waitFor(async () => (await a.room('VEC2')) === null && (await a.room('VEC3')) === null, 5000);
+  await denied(set(ref(x.db, `rooms/${recent}`), null)); // una stanza recente non la cancella un estraneo
+  assert.ok(await a.room(recent));
 });
