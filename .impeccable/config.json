@@ -38,6 +38,15 @@
         "value": "cubic-bezier(.3, 1.6, .4, 1)",
         "createdAt": "2026-10-01T22:43:20.636Z",
         "reason": "brief dell'utente (nomi-cose-citta-design/PROMPT.md): animazioni da riportare uguali al prototipo Main.dc.html, che usa queste curve"
+      },
+      {
+        "rule": "layout-transition",
+        "value": "*",
+        "files": [
+          "src/screens/Review.js"
+        ],
+        "createdAt": "2026-10-02T08:11:12.299Z",
+        "reason": "Claude, dal prototipo Main.dc.html: il pallino della categoria attiva si allunga (10→26px) e deve spostare gli altri, cosa che transform non fa; 4-12 elementi da 10px, costo trascurabile"
       }
     ]
   }

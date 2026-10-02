@@ -38,7 +38,7 @@ export default function Play({ g }) {
         </div>
         <div style={sx('display: flex; align-items: center; gap: 12px')}>
           <div role="progressbar" aria-label="Tempo rimasto" aria-valuemin={0} aria-valuemax={s.timer || 1} aria-valuenow={s.timer ? tl : 1} style={sx('flex-grow: 1; height: 16px; box-sizing: border-box; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; overflow: hidden')}>
-            <div style={sx(`width: ${s.timer ? (tl / s.timer) * 100 : 100}%; height: 100%; background: ${low ? '#FF5E3A' : '#6EE7A8'}; transition: width 1s linear, background .3s`)} />
+            <div style={sx(`width: 100%; height: 100%; transform: scaleX(${s.timer ? tl / s.timer : 1}); transform-origin: left center; background: ${low ? '#FF5E3A' : '#6EE7A8'}; transition: transform 1s linear, background .3s`)} />
           </div>
           <span className={low ? 'n-pulse' : ''} style={sx(`font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px; min-width: 44px; text-align: right; color: ${low ? '#C4300F' : INK}`)}>{timerText}</span>
         </div>
@@ -76,7 +76,7 @@ export default function Play({ g }) {
       <div style={sx('padding: 12px 20px 26px; border-top: 2px solid #E6E0F7')}>
         <button className={allFilled ? 'n-btn n-wiggle' : 'n-btn'} onClick={stop} aria-disabled={!allFilled} aria-label={allFilled ? 'STOP' : `Ancora ${nCats - myFilled} per lo STOP`}
           style={sx('position: relative; overflow: hidden; width: 100%; height: 66px; border: 2.5px solid #17122B; border-radius: 22px; background: #FFFFFF; color: #17122B; box-shadow: 0 5px 0 #17122B; cursor: pointer; padding: 0')}>
-          <span style={sx(`position: absolute; left: 0; top: 0; bottom: 0; width: ${(myFilled / nCats) * 100}%; background: #FF5E3A; transition: width .45s cubic-bezier(.2,.8,.2,1)`)} />
+          <span style={sx(`position: absolute; left: 0; top: 0; bottom: 0; width: 100%; transform: scaleX(${myFilled / nCats}); transform-origin: left center; background: #FF5E3A; transition: transform .45s cubic-bezier(.2,.8,.2,1)`)} />
           <span style={sx(`position: relative; font-family: 'Bricolage Grotesque Variable', sans-serif; font-size: ${allFilled ? '30px' : '18px'}; font-weight: 800; letter-spacing: 0.02em`)}>{allFilled ? 'STOP!' : `Ancora ${nCats - myFilled} per lo STOP`}</span>
         </button>
       </div>
