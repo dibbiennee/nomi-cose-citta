@@ -15,8 +15,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "dev": "react-scripts start",
-    "test:rules": "node --test src/engine/rules.test.mjs",
-    "test:room": "firebase emulators:exec --project demo-ncc --only auth,database \"node --test --test-force-exit src/engine/room.test.mjs\""
+    "test:rules": "node --test src/engine/rules.test.mjs src/engine/salvataggio.test.mjs",
+    "test:room": "firebase emulators:exec --project demo-ncc --only auth,database \"node --test --test-force-exit src/engine/room.test.mjs src/engine/affidabilita.test.mjs\""
   },
   "eslintConfig": {
     "extends": [

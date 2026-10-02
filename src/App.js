@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ref, onValue } from 'firebase/database';
 import { db, getEngine } from './firebase';
 import { RoomError } from './engine/room';
+import { createAnswerSaver } from './engine/salvataggio';
 import { ranking } from './engine/rules';
 import Home from './screens/Home';
 import Setup from './screens/Setup';
@@ -138,23 +139,33 @@ export default function App() {
   const round = room?.round;
   const roundKey = round ? `${round.n}:${round.letter}:${round.startsAt}` : null;
 
-  // Risposte: locali mentre scrivi, salvate dopo 300 ms. Rientrando a metà round si riprendono dal database.
+  // Risposte: locali mentre scrivi, salvate dopo una pausa di 300 ms, oppure subito se la pagina va in secondo
+  // piano (altra app, schermo bloccato, pagina chiusa). Rientrando a metà round si riprendono dal database.
   const answersRef = useRef({});
-  const saveTimer = useRef(null);
+  const saver = useMemo(() => createAnswerSaver((v) => (engine && code ? engine.saveAnswers(code, v) : null), 300), [engine, code]);
+  useEffect(() => {
+    const flush = () => saver.flush();
+    document.addEventListener('visibilitychange', flush);
+    window.addEventListener('pagehide', flush);
+    return () => {
+      document.removeEventListener('visibilitychange', flush);
+      window.removeEventListener('pagehide', flush);
+      saver.flush();
+    };
+  }, [saver]);
   useEffect(() => {
     const mine = (room?.answers && engine && room.answers[engine.uid]) || {};
     answersRef.current = mine;
     setAnswers(mine);
-    clearTimeout(saveTimer.current);
+    saver.cancel();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roundKey]);
   const setAnswer = useCallback((key, value) => {
     const next = { ...answersRef.current, [key]: value };
     answersRef.current = next;
     setAnswers(next);
-    clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => engine?.saveAnswers(code, answersRef.current).catch(() => {}), 300);
-  }, [engine, code]);
+    saver.set(next);
+  }, [saver]);
 
   // Quando il round si chiude: STOP a tutto schermo e le ultime lettere salvate subito.
   const prevStatus = useRef(null);
@@ -162,7 +173,7 @@ export default function App() {
     const prev = prevStatus.current;
     prevStatus.current = status;
     if (prev === 'play' && status === 'review') {
-      clearTimeout(saveTimer.current);
+      saver.cancel();
       if (engine && round?.stoppedBy !== engine.uid && Object.keys(answersRef.current).length) {
         engine.saveAnswers(code, answersRef.current).catch(() => {});
       }
