@@ -40,3 +40,13 @@ firebase-debug.log
 # Chiavi Firebase di produzione: le carica il deploy da questa cartella, non stanno nel repository
 .env.production
 .impeccable/hook.cache.json
+
+# Bozze del brainstorming
+.superpowers/
+
+# Facce degli amici: mai su GitHub
+/privato
+
+# Pacchetto di revisione (screenshot e zip): si rigenera con review-package/tools/capture.py
+/review-package/
+/review-package.zip
