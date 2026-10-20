@@ -5,15 +5,18 @@ import { platform, canPrompt, onPromptChange, promptInstall } from '../ui/instal
 import { HOST_STEPS, IDLE_MS, withPresence } from '../engine/room';
 import { nextHost } from '../engine/rules';
 
+/** Senza rete le stanze non funzionano, la partita da soli sì. */
+export const NEED_NET = 'Per giocare con gli amici serve internet. Puoi giocare da solo contro i\u00a0robot.';
+
 const ERR = {
   notfound: (e) => ({ title: 'Stanza non trovata', text: `Il codice ${e.code || ''} non esiste più, oppure la partita è già finita.`, btn: 'Torna alla home', btnBg: '#FFD23F', color: '#B79CFF', eyes: 'M13 17l7 7M20 17l-7 7M28 17l7 7M35 17l-7 7', mouth: 'M17 36q7-6 14 0' }),
   full: (e) => ({ title: 'Stanza piena', text: `Ci sono già ${e.max || ''} giocatori. Chiedi all'host di alzare il limite.`, btn: 'Torna alla home', btnBg: '#FFD23F', color: '#FF8A65', eyes: 'M16 18v5M32 18v5', mouth: 'M18 35h12' }),
   started: (e) => ({ title: 'Stanno già giocando', text: `Sei nella stanza ${e.code || ''}. Entri in gioco appena finisce questo round.`, btn: 'Esci', btnBg: '#FFFFFF', color: '#FFD23F', eyes: 'M13 21q3.5-5 7 0M28 21q3.5-5 7 0', mouth: 'M17 32q7 6 14 0', waiting: true }),
   kicked: () => ({ title: 'Sei fuori dalla stanza', text: 'L\'host ti ha rimosso. Puoi creare una stanza tua o entrare in un\'altra.', btn: 'Torna alla home', btnBg: '#FFD23F', color: '#5CD0FF', eyes: 'M14 20h6M28 20h6', mouth: 'M17 36q7-6 14 0' }),
-  offline: () => ({ title: 'Non riesco a collegarmi', text: 'Controlla la connessione e riprova tra un attimo.', btn: 'Torna alla home', btnBg: '#FFD23F', color: '#FF7EB6', eyes: 'M16 18v5M32 18v5', mouth: 'M17 36q7-6 14 0' }),
+  offline: () => ({ title: 'Serve internet', text: NEED_NET, btn: 'Torna alla home', btnBg: '#FFFFFF', solo: true, color: '#FF7EB6', eyes: 'M16 18v5M32 18v5', mouth: 'M17 36q7-6 14 0' }),
 };
 
-export function ErrorScreen({ kind, info = {}, onButton }) {
+export function ErrorScreen({ kind, info = {}, onButton, onSolo }) {
   const err = (ERR[kind] || ERR.notfound)(info);
   return (
     <div className="n-screen" style={sx('position: absolute; inset: 0; padding: 28px 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; text-align: center')}>
@@ -25,7 +28,10 @@ export function ErrorScreen({ kind, info = {}, onButton }) {
       {err.waiting && (
         <span className="n-dots" role="status" style={sx('height: 44px; padding: 0 18px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 2px; white-space: nowrap')}>Aspetto il prossimo round<span>.</span><span style={{ animationDelay: '.2s' }}>.</span><span style={{ animationDelay: '.4s' }}>.</span></span>
       )}
-      <button className="n-btn" onClick={onButton} style={sx(`margin-top: 14px; width: 100%; height: 60px; border: 2.5px solid #17122B; border-radius: 20px; background: ${err.btnBg}; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer`)}>{err.btn}</button>
+      {err.solo && onSolo && (
+        <button className="n-btn" onClick={onSolo} style={sx('margin-top: 14px; width: 100%; height: 60px; border: 2.5px solid #17122B; border-radius: 20px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Gioca da solo</button>
+      )}
+      <button className="n-btn" onClick={onButton} style={sx(`margin-top: ${err.solo && onSolo ? 0 : 14}px; width: 100%; height: 60px; border: 2.5px solid #17122B; border-radius: 20px; background: ${err.btnBg}; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer`)}>{err.btn}</button>
     </div>
   );
 }

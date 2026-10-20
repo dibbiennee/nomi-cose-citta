@@ -14,7 +14,7 @@ import Review from './screens/Review';
 import Round from './screens/Round';
 import { Awards, Final } from './screens/Finale';
 import { createFounderStore } from './club/fondatore';
-import { ErrorScreen, RulesSheet, JoinSheet, FounderSheet, InstallSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
+import { NEED_NET, ErrorScreen, RulesSheet, JoinSheet, FounderSheet, InstallSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
 
 const PROFILE_KEY = 'ncc-profilo';
 function loadProfile() {
@@ -32,7 +32,8 @@ const go = (path) => { if (window.location.pathname !== path) window.history.pus
 export default function App() {
   const [engine, setEngine] = useState(null);
   const [profile, setProfileState] = useState(loadProfile);
-  const [view, setView] = useState('loading'); // loading | home | setup | invite | room | error
+  // Senza un link /r/CODICE la home compare subito, senza aspettare Firebase (che senza rete non risponde).
+  const [view, setView] = useState(() => (codeFromPath(window.location.pathname) ? 'loading' : 'home')); // loading | home | setup | invite | room | error
   const [code, setCode] = useState(null);
   const [room, setRoom] = useState(null);
   const [inviteRoom, setInviteRoom] = useState(null);
@@ -86,16 +87,24 @@ export default function App() {
     } catch (e) { roomError(e, c, eng); }
   }, [enterRoom, roomError, showError]);
 
-  // Accesso anonimo, poi il percorso iniziale.
+  // Accesso anonimo in sottofondo, poi il link /r/CODICE se c'è. Senza rete riprova quando la rete torna:
+  // la home intanto funziona (si gioca da soli), solo un link a una stanza mostra che serve internet.
   useEffect(() => {
     let alive = true;
-    getEngine().then((eng) => {
-      if (!alive) return;
-      setEngine(eng);
-      const c = codeFromPath(window.location.pathname);
-      if (c) openCode(eng, c); else setView('home');
-    }).catch(() => alive && showError('offline'));
-    return () => { alive = false; };
+    let done = false;
+    const start = () => {
+      if (done) return;
+      getEngine().then((eng) => {
+        if (!alive || done) return;
+        done = true;
+        setEngine(eng);
+        const c = codeFromPath(window.location.pathname);
+        if (c) openCode(eng, c);
+      }).catch(() => { if (alive && codeFromPath(window.location.pathname)) showError('offline'); });
+    };
+    start();
+    window.addEventListener('online', start);
+    return () => { alive = false; window.removeEventListener('online', start); };
   }, [openCode, showError]);
 
   // Connessione: l'avviso compare solo dopo che è stata attiva almeno una volta.
@@ -243,9 +252,11 @@ export default function App() {
   }, [toast]);
 
   const needName = () => { if (profile.name.trim()) return false; toast('Scrivi prima il tuo nome'); return true; };
+  const openSolo = () => goHome(); // la scelta della difficoltà arriva col Task 7
+  const needNet = () => { if (engine) return false; toast(NEED_NET); return true; };
 
   const joinWith = async (c) => {
-    if (needName()) { setSheet(null); return; }
+    if (needNet() || needName()) { setSheet(null); return; }
     setBusy(true);
     try { await engine.joinRoom(c, profile); enterRoom(c); } catch (e) { roomError(e, c, engine); } finally { setBusy(false); }
   };
@@ -274,7 +285,7 @@ export default function App() {
   if (view === 'loading' || (view === 'room' && !g)) screen = <Loading />;
   else if (view === 'home') {
     screen = <Home profile={profile} setProfile={setProfile} onRules={() => setSheet('rules')}
-      onCreate={() => { if (!needName()) setView('setup'); }} onJoin={() => setSheet('join')}
+      onCreate={() => { if (!needNet() && !needName()) setView('setup'); }} onJoin={() => setSheet('join')}
       founder={founder} onFounder={() => setSheet('founder')} onInstall={() => setSheet('install')} />;
   } else if (view === 'setup') {
     screen = <Setup toast={toast} onBack={() => setView('home')}
@@ -282,7 +293,7 @@ export default function App() {
   } else if (view === 'invite') {
     screen = <Invite code={code} room={inviteRoom} profile={profile} setProfile={setProfile} busy={busy} onJoin={() => joinWith(code)} />;
   } else if (view === 'error') {
-    screen = <ErrorScreen kind={err?.kind} info={err?.info} onButton={goHome} />;
+    screen = <ErrorScreen kind={err?.kind} info={err?.info} onButton={goHome} onSolo={openSolo} />;
   } else if (g.me.waiting && ['spin', 'play', 'review', 'round'].includes(status)) {
     screen = <ErrorScreen kind="started" info={{ code }} onButton={leave} />;
   } else if (status === 'lobby') {
