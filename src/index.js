@@ -17,3 +17,11 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Service worker: serve solo a rendere il gioco installabile e a mostrare una pagina se manca la rete.
+// Non in sviluppo né nelle build verso l'emulatore, dove darebbe solo fastidio con versioni vecchie.
+if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production' && process.env.REACT_APP_EMULATOR !== '1') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}

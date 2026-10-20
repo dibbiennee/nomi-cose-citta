@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFD23F">
+<title>Senza connessione · Nomi Cose Città</title>
+<style>
+  html, body { height: 100%; margin: 0; }
+  body { background: #FFD23F; color: #17122B; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; box-sizing: border-box; text-align: center; }
+  h1 { font-size: 30px; line-height: 1.1; margin: 0; text-wrap: balance; }
+  p { margin: 0; font-size: 16px; line-height: 1.5; max-width: 300px; text-wrap: pretty; }
+  button { margin-top: 8px; height: 58px; padding: 0 28px; border: 2.5px solid #17122B; border-radius: 20px; background: #17122B; color: #FFD23F; font: 800 18px system-ui, sans-serif; box-shadow: 0 5px 0 #7A5F00; cursor: pointer; }
+  button:active { transform: translateY(4px); box-shadow: 0 1px 0 #7A5F00; }
+  :focus-visible { outline: 3px solid #5B3FD6; outline-offset: 3px; }
+</style>
+</head>
+<body>
+  <img src="/icona-192.png" width="96" height="96" alt="">
+  <h1>Sei senza connessione</h1>
+  <p>Il gioco ha bisogno di internet per collegarti agli amici. Ricollegati e&nbsp;riprova.</p>
+  <button type="button" onclick="location.reload()">Riprova</button>
+</body>
+</html>
