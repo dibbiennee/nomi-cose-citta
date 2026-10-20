@@ -2,7 +2,7 @@
 
 Il gioco di Nomi Cose Città da fare online con gli amici, ognuno dal suo telefono.
 
-Online: https://nomi-cose-citta-wine.vercel.app
+Online: https://nomicosecitta.pro
 
 ## Com'è fatto
 
