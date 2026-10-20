@@ -13,7 +13,8 @@ import Play, { StopOverlay } from './screens/Play';
 import Review from './screens/Review';
 import Round from './screens/Round';
 import { Awards, Final } from './screens/Finale';
-import { ErrorScreen, RulesSheet, JoinSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
+import { createFounderStore } from './club/fondatore';
+import { ErrorScreen, RulesSheet, JoinSheet, FounderSheet, InstallSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
 
 const PROFILE_KEY = 'ncc-profilo';
 function loadProfile() {
@@ -23,6 +24,8 @@ function loadProfile() {
   } catch (e) { /* niente profilo salvato */ }
   return { name: '', color: 0, face: 0 };
 }
+// Sblocco della Modalità Fondatore, salvato su questo telefono. Solo cosmetico: non va mai a Firebase.
+const founderStore = createFounderStore((() => { try { return window.localStorage; } catch (e) { return null; } })());
 const codeFromPath = (path) => { const m = /^\/r\/([A-Za-z0-9]{4})\/?$/.exec(path); return m ? m[1].toUpperCase() : null; };
 const go = (path) => { if (window.location.pathname !== path) window.history.pushState(null, '', path); };
 
@@ -34,7 +37,8 @@ export default function App() {
   const [room, setRoom] = useState(null);
   const [inviteRoom, setInviteRoom] = useState(null);
   const [err, setErr] = useState(null); // { kind, info }
-  const [sheet, setSheet] = useState(null); // rules | join | scores | exit
+  const [sheet, setSheet] = useState(null); // rules | join | founder | install | scores | exit
+  const [founder, setFounder] = useState(founderStore.isActive);
   const [editing, setEditing] = useState(false);
   const [toastText, setToastText] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -270,7 +274,8 @@ export default function App() {
   if (view === 'loading' || (view === 'room' && !g)) screen = <Loading />;
   else if (view === 'home') {
     screen = <Home profile={profile} setProfile={setProfile} onRules={() => setSheet('rules')}
-      onCreate={() => { if (!needName()) setView('setup'); }} onJoin={() => setSheet('join')} />;
+      onCreate={() => { if (!needName()) setView('setup'); }} onJoin={() => setSheet('join')}
+      founder={founder} onFounder={() => setSheet('founder')} onInstall={() => setSheet('install')} />;
   } else if (view === 'setup') {
     screen = <Setup toast={toast} onBack={() => setView('home')}
       onSave={async (settings) => { try { enterRoom(await engine.createRoom(profile, settings)); } catch (e) { toast('Non riesco a creare la stanza, riprova'); } }} />;
@@ -300,7 +305,11 @@ export default function App() {
       {stopping && g && status === 'review' && <StopOverlay g={g} />}
       {g && view === 'room' && !g.me?.waiting && <IdleNotice g={g} />}
       {sheet === 'rules' && <RulesSheet onClose={() => setSheet(null)} />}
-      {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} onJoin={(c) => { setSheet(null); joinWith(c); }} />}
+      {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} onJoin={(c) => { setSheet(null); joinWith(c); }}
+        onFounder={() => { founderStore.activate(); setFounder(true); setSheet('founder'); }} />}
+      {sheet === 'install' && <InstallSheet onClose={() => setSheet(null)} toast={toast} />}
+      {sheet === 'founder' && <FounderSheet onClose={() => setSheet(null)}
+        onRevoke={() => { founderStore.revoke(); setFounder(false); setSheet(null); toast('Modalità Fondatore disattivata'); }} />}
       {sheet === 'scores' && g && <ScoresSheet g={g} onClose={() => setSheet(null)} onExit={() => setSheet('exit')} />}
       {sheet === 'exit' && <ExitSheet onClose={() => setSheet(null)} onLeave={leave} />}
       {!connected && (view === 'room' || view === 'invite') && <OfflineBanner />}

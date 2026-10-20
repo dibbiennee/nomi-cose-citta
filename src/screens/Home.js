@@ -1,5 +1,6 @@
 import React from 'react';
 import { sx, INK, COLORS, FACES, Face } from '../ui/kit';
+import { isStandalone } from '../ui/installa';
 
 const WORDS = [['N', 'O', 'M', 'I'], ['C', 'O', 'S', 'E'], ['C', 'I', 'T', 'T', 'À']];
 const WCOL = ['#FF8A65', '#5CD0FF', '#B79CFF'];
@@ -36,11 +37,12 @@ export function ProfilePicker({ profile, setProfile, faceSize = 108, inputBg = '
   );
 }
 
-export default function Home({ profile, setProfile, onCreate, onJoin, onRules }) {
+export default function Home({ profile, setProfile, onCreate, onJoin, onRules, founder, onFounder, onInstall }) {
   let k = 0;
   return (
     <div className="n-screen" style={sx('position: absolute; inset: 0; background: #FFD23F; padding: 20px 24px 28px; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto')}>
-      <div style={sx('display: flex; justify-content: flex-end')}>
+      <div style={sx('display: flex; justify-content: flex-end; gap: 10px')}>
+        {founder && <button className="n-btn" onClick={onFounder} style={sx('height: 44px; padding: 0 16px; margin-right: auto; border-radius: 999px; border: 2.5px solid #17122B; background: #B79CFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Fondatore</button>}
         <button className="n-btn" onClick={onRules} style={sx('height: 44px; padding: 0 16px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Come si gioca</button>
       </div>
       <h1 style={sx('position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0')}>Nomi Cose Città</h1>
@@ -64,6 +66,7 @@ export default function Home({ profile, setProfile, onCreate, onJoin, onRules })
       <div className="n-up" style={sx('display: flex; flex-direction: column; gap: 14px; margin-top: auto; padding-top: 24px; animation-delay: .6s')}>
         <button className="n-btn" onClick={onCreate} style={sx('height: 62px; border: 2.5px solid #17122B; border-radius: 20px; background: #17122B; color: #FFD23F; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #7A5F00; cursor: pointer')}>Crea una stanza</button>
         <button className="n-btn" onClick={onJoin} style={sx('height: 58px; border-radius: 20px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Ho un codice</button>
+        {!isStandalone() && <button onClick={onInstall} style={sx('min-height: 44px; margin-bottom: -10px; border: 0; background: transparent; color: #17122B; font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer')}>Usalo come un'app</button>}
       </div>
     </div>
   );

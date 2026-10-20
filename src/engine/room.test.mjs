@@ -345,3 +345,25 @@ test('pulizia: chi crea una stanza cancella quelle più vecchie di 12 ore, non l
   await denied(set(ref(x.db, `rooms/${recent}`), null)); // una stanza recente non la cancella un estraneo
   assert.ok(await a.room(recent));
 });
+
+test('Fondatore: CANT non diventa mai una stanza e non dà privilegi su Firebase', async () => {
+  const [a, b] = await Promise.all(['Anna', 'Bea'].map(phone));
+  // Il caso estrae C, A, N, T per il primo tentativo: il motore lo scarta e ne prova un altro.
+  const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const seq = [...'CANT'].map((ch) => (abc.indexOf(ch) + 0.5) / abc.length);
+  const realRandom = Math.random;
+  Math.random = () => (seq.length ? seq.shift() : realRandom());
+  let code;
+  try { code = await a.engine.createRoom(a.profile); } finally { Math.random = realRandom; }
+  assert.notEqual(code, 'CANT');
+  assert.equal(await a.room('CANT'), null);
+
+  // Scrivere a mano un campo "fondatore" sul proprio giocatore viene respinto: non esiste un ruolo così.
+  await b.engine.joinRoom(code, b.profile);
+  await denied(set(ref(b.db, `rooms/${code}/players/${b.uid}/fondatore`), true));
+  await denied(update(ref(b.db, `rooms/${code}/players/${b.uid}`), { fondatore: true, score: 999 }));
+  // Il codice non fa diventare host né apre la stanza agli altri: le regole restano quelle di sempre.
+  await denied(set(ref(b.db, `rooms/${code}/hostId`), b.uid));
+  await denied(set(ref(b.db, `rooms/${code}/players/${a.uid}/score`), 0));
+  assert.equal((await a.room(code)).hostId, a.uid);
+});

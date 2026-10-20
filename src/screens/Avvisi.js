@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { sx, Face, Sheet } from '../ui/kit';
+import { isFounderCode } from '../club/fondatore';
+import { platform, canPrompt, onPromptChange, promptInstall } from '../ui/installa';
 import { HOST_STEPS, IDLE_MS, withPresence } from '../engine/room';
 import { nextHost } from '../engine/rules';
 
@@ -51,19 +53,88 @@ export function RulesSheet({ onClose }) {
   );
 }
 
-export function JoinSheet({ onClose, onJoin }) {
+/** Codice stanza, oppure CANT per la Modalità Fondatore (che il motore non usa mai come stanza). */
+export function JoinSheet({ onClose, onJoin, onFounder }) {
   const [code, setCode] = useState('');
   const ok = code.length === 4;
   return (
     <Sheet onClose={onClose} gap={18} label="Entra in una stanza">
       <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px")}>Entra in una stanza</h2>
-      <form style={sx('display: flex; flex-direction: column; gap: 18px')} onSubmit={(e) => { e.preventDefault(); if (ok) onJoin(code); }}>
+      <form style={sx('display: flex; flex-direction: column; gap: 18px')} onSubmit={(e) => { e.preventDefault(); if (!ok) return; if (isFounderCode(code)) onFounder(); else onJoin(code); }}>
         <label style={sx('display: flex; flex-direction: column; gap: 10px; font-size: 14px; font-weight: 700; color: #5E5880')}>Scrivi il codice di 4&nbsp;caratteri
           <input type="text" value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4))} maxLength={4} placeholder="AB12" autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false} autoFocus enterKeyHint="go"
             style={sx("height: 78px; border-radius: 20px; border: 2.5px solid #17122B; background: #F6F3FF; color: #17122B; font-family: 'JetBrains Mono', monospace; font-size: 40px; font-weight: 700; letter-spacing: 0.4em; text-align: center; text-transform: uppercase; outline: none; padding-left: 0.4em; min-width: 0")} />
         </label>
         <button type="submit" className="n-btn" aria-disabled={!ok} style={sx(`height: 60px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer; opacity: ${ok ? '1' : '0.45'}; transition: opacity .2s`)}>Entra</button>
       </form>
+    </Sheet>
+  );
+}
+
+/** Conferma e stato della Modalità Fondatore. Lo sblocco vale solo su questo telefono (vedi club/fondatore.js). */
+export function FounderSheet({ onClose, onRevoke }) {
+  return (
+    <Sheet onClose={onClose} gap={14} label="Modalità Fondatore">
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px; line-height: 1.1; text-wrap: balance")}>Modalità Fondatore attiva</h2>
+      <p style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; text-wrap: pretty')}>Sei nel club. Qui arriveranno i&nbsp;personaggi, le&nbsp;espressioni e&nbsp;gli accessori riservati a&nbsp;voi. Vale solo su questo telefono.</p>
+      <button type="button" className="n-btn" onClick={onClose} style={sx('height: 58px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Andiamo</button>
+      <button type="button" onClick={onRevoke} style={sx('min-height: 44px; border: 0; background: transparent; color: #5E5880; font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer')}>Disattiva su questo telefono</button>
+    </Sheet>
+  );
+}
+
+const SHARE_ICON = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#17122B" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ verticalAlign: '-3px' }}><path d="M12 15V3" /><path d="M7 8l5-5 5 5" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /></svg>
+);
+const STEPS = {
+  safari: [<>Tocca {SHARE_ICON} <b>Condividi</b> nella barra di&nbsp;Safari.</>, <>Scorri e scegli <b>Aggiungi alla&nbsp;schermata&nbsp;Home</b>.</>, <>Tocca <b>Aggiungi</b> in&nbsp;alto a destra.</>],
+  'chrome-ios': [<>Tocca {SHARE_ICON} <b>Condividi</b> nella barra in&nbsp;alto, accanto all'indirizzo.</>, <>Scegli <b>Aggiungi alla&nbsp;schermata&nbsp;Home</b>.</>, <>Tocca <b>Aggiungi</b>.</>],
+  chrome: [<>Apri il menu <b>⋮</b> di Chrome, in&nbsp;alto a destra.</>, <>Scegli <b>Installa app</b> oppure <b>Aggiungi a&nbsp;schermata&nbsp;Home</b>.</>, <>Conferma con <b>Installa</b>.</>],
+};
+
+/** Guida per aggiungere il gioco alla schermata Home. Chiede il browser (già scelto se si riconosce). */
+export function InstallSheet({ onClose, toast }) {
+  const [, redraw] = useState(0);
+  useEffect(() => onPromptChange(() => redraw((n) => n + 1)), []);
+  const { ios, browser: detected } = platform();
+  const [browser, setBrowser] = useState(detected === 'safari' || detected === 'chrome' ? detected : null);
+  const steps = browser === 'safari' ? STEPS.safari : browser === 'chrome' ? STEPS[ios ? 'chrome-ios' : 'chrome'] : null;
+  const quick = browser === 'chrome' && canPrompt();
+  const install = async () => { if (await promptInstall()) { toast('Fatto, lo trovi sulla schermata Home'); onClose(); } };
+  return (
+    <Sheet onClose={onClose} gap={14} label="Usalo come un'app">
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px; line-height: 1.1; text-wrap: balance")}>Mettilo sulla schermata Home</h2>
+      <p style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; text-wrap: pretty')}>Niente store e niente download. Lo apri dall'icona e&nbsp;si vede a tutto schermo, come&nbsp;un'app.</p>
+      {detected === 'app' && (
+        <p style={sx('margin: 0; font-size: 15px; line-height: 1.45; font-weight: 700; text-wrap: pretty')}>Sei dentro un'altra app. Dal suo menu scegli <b>Apri nel browser</b>, poi segui&nbsp;i&nbsp;passi.</p>
+      )}
+      <div role="radiogroup" aria-label="Che browser usi?" style={sx('display: flex; gap: 10px')}>
+        {[['safari', 'Safari'], ['chrome', 'Chrome']].map(([k, label]) => {
+          const on = browser === k;
+          return (
+            <button key={k} type="button" role="radio" aria-checked={on} className="n-btn" onClick={() => setBrowser(k)}
+              style={sx(`flex: 1; height: 48px; border-radius: 14px; border: 2.5px solid #17122B; background: ${on ? '#B79CFF' : '#FFFFFF'}; color: #17122B; font-size: 16px; font-weight: 800; box-shadow: ${on ? '0 1px 0' : '0 4px 0'} #17122B; transform: translateY(${on ? '3px' : '0'}); cursor: pointer`)}>{label}</button>
+          );
+        })}
+      </div>
+      {!browser && <p style={sx('margin: 0; font-size: 15px; font-weight: 700; color: #5E5880')}>Che browser usi? Ti mostro i passi giusti.</p>}
+      {quick && (
+        <button type="button" className="n-btn" onClick={install} style={sx('height: 58px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Aggiungi alla Home</button>
+      )}
+      {steps && !quick && (
+        <ol style={sx('margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px')}>
+          {steps.map((step, i) => (
+            <li key={i} style={sx('display: flex; gap: 12px; align-items: flex-start; font-size: 16px; line-height: 1.45')}>
+              <span aria-hidden="true" style={sx("flex-shrink: 0; width: 30px; height: 30px; box-sizing: border-box; border-radius: 50%; border: 2.5px solid #17122B; background: #FFD23F; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 15px")}>{i + 1}</span>
+              <span style={sx('padding-top: 3px')}>{step}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+      {ios && browser && (
+        <p style={sx('margin: 0; font-size: 14px; line-height: 1.45; color: #5E5880; text-wrap: pretty')}>La prima volta che lo apri dall'icona, scegli di nuovo nome e&nbsp;faccina.</p>
+      )}
+      <button type="button" onClick={onClose} style={sx('min-height: 44px; border: 0; background: transparent; color: #5E5880; font-size: 15px; font-weight: 700; cursor: pointer')}>Chiudi</button>
     </Sheet>
   );
 }

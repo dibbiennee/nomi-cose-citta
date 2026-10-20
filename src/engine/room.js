@@ -19,6 +19,7 @@ import {
 import {
   DEFAULT_SETTINGS, makeCode, pickLetter, scoreRound, nextHost, sanitizeSettings,
 } from './rules.js';
+import { isReservedCode } from '../club/fondatore.js';
 
 export const SPIN_MS = 2000; // la lettera che gira
 export const COUNTDOWN_MS = 3200; // 3, 2, 1, Via!
@@ -124,6 +125,7 @@ export function createEngine(db, uid) {
     async createRoom(profile, settings = DEFAULT_SETTINGS) {
       for (let i = 0; i < 8; i++) {
         const code = makeCode();
+        if (isReservedCode(code)) continue; // CANT e gli altri codici speciali non diventano mai stanze
         const res = await runTransaction(roomRef(code), (cur) => {
           if (cur !== null) return; // codice già in uso: riprova con un altro
           return {
