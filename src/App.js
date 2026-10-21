@@ -15,7 +15,9 @@ import Round from './screens/Round';
 import { Awards, Final } from './screens/Finale';
 import Solo from './screens/Solo';
 import Statistiche from './screens/Statistiche';
-import { track, setLive } from './stats';
+import { track, trackMinutes, setLive, dayKey } from './stats';
+import { visitEvents, hourKey, VISIT_KEY } from './visite';
+import { isStandalone } from './ui/installa';
 import { createFounderStore } from './club/fondatore';
 import { CHARACTER_IDS } from './club/contenuti';
 import { createDictionary } from './solo/dizionario';
@@ -51,6 +53,7 @@ const loadDictionary = () => {
 const ROOM_TIMEOUT_MS = 8000;
 const withTimeout = (promise) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ROOM_TIMEOUT_MS))]);
 const offlineNow = () => typeof navigator !== 'undefined' && navigator.onLine === false;
+let visitCounted = false;
 const hasSavedSolo = () => { try { return Boolean(LOCAL?.getItem(SOLO_KEY)); } catch (e) { return false; } };
 const codeFromPath = (path) => { const m = /^\/r\/([A-Za-z0-9]{4})\/?$/.exec(path); return m ? m[1].toUpperCase() : null; };
 const go = (path) => { if (window.location.pathname !== path) window.history.pushState(null, '', path); };
@@ -81,14 +84,37 @@ export default function App() {
 
   // Statistiche (src/stats.js): servono l'accesso a Firebase; prima che sia pronto restano in coda.
   const pendingStats = useRef([]);
-  const stat = useCallback((key) => {
-    if (netEngine) track(db, key).catch(() => {});
-    else pendingStats.current.push(key);
+  // stat('chiave') conta uno; stat('minuti_online', 12) somma minuti di gioco.
+  const send = (key, minutes) => (minutes ? trackMinutes(db, key, minutes) : track(db, key)).catch(() => {});
+  const stat = useCallback((key, minutes) => {
+    if (netEngine) send(key, minutes);
+    else pendingStats.current.push([key, minutes]);
   }, [netEngine]);
+  const statRef = useRef(stat);
+  statRef.current = stat;
+  const pendingVisit = useRef(null); // memoria della visita da salvare dopo l'invio dei conteggi
   useEffect(() => {
     if (!netEngine) return;
-    pendingStats.current.splice(0).forEach((k) => track(db, k).catch(() => {}));
+    pendingStats.current.splice(0).forEach(([k, m]) => send(k, m));
+    // Solo ora il telefono si ricorda di essere già stato contato: se la pagina si chiude prima (prima apertura
+    // senza rete), alla prossima apertura risulta ancora nuovo.
+    if (pendingVisit.current) {
+      try { LOCAL?.setItem(VISIT_KEY, JSON.stringify(pendingVisit.current)); } catch (e) { /* niente */ }
+      pendingVisit.current = null;
+    }
   }, [netEngine]);
+  // Ogni apertura: telefono nuovo o di ritorno, a che ora, e da dove (link a una stanza, icona sulla Home, sito).
+  useEffect(() => {
+    if (visitCounted) return; // una volta per caricamento della pagina (in sviluppo React esegue gli effetti due volte)
+    visitCounted = true;
+    let stored = null;
+    try { stored = JSON.parse(LOCAL?.getItem(VISIT_KEY)); } catch (e) { stored = null; }
+    const { events, next } = visitEvents(stored, dayKey(Date.now()));
+    pendingVisit.current = next;
+    events.forEach((k) => statRef.current(k));
+    statRef.current(hourKey(Date.now()));
+    statRef.current(isStandalone() ? 'da_icona' : codeFromPath(window.location.pathname) ? 'da_link' : 'diretta');
+  }, []);
   // Chi c'è adesso: home, stanza o partita da soli. La voce sparisce da sola quando il telefono si scollega.
   const place = solo ? 'solo' : view === 'room' ? 'stanza' : 'home';
   useEffect(() => {
@@ -107,12 +133,19 @@ export default function App() {
     toastTimer.current = setTimeout(() => setToastText(null), 2400);
   }, []);
 
+  const profileRef = useRef(profile);
   const setProfile = useCallback((p) => {
+    if (p.char && !profileRef.current.char) statRef.current('raffaella_scelta');
+    profileRef.current = p;
     setProfileState(p);
     try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch (e) { /* va bene anche senza */ }
   }, []);
 
-  const showError = useCallback((kind, info = {}) => { setErr({ kind, info }); setView('error'); setSheet(null); }, []);
+  const ERROR_STATS = { notfound: 'errori_non_trovata', full: 'errori_piena', offline: 'errori_rete' };
+  const showError = useCallback((kind, info = {}) => {
+    if (ERROR_STATS[kind]) statRef.current(ERROR_STATS[kind]);
+    setErr({ kind, info }); setView('error'); setSheet(null);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const goHome = useCallback(() => {
     setView('home'); setCode(null); setRoom(null); setInviteRoom(null); setEditing(false); setSheet(null); setErr(null);
     setSolo(null); setSoloResult(null);
@@ -172,6 +205,12 @@ export default function App() {
     }).catch(() => {});
   }, []);
 
+  // Inizio di ogni partita da soli (anche la rivincita), per la durata.
+  const soloStart = useRef(0);
+  useEffect(() => {
+    if (solo && room?.status === 'spin' && room.round?.n === 1) soloStart.current = Date.now();
+  }, [solo, room]);
+
   // Sul podio della partita da soli: una volta per partita, record salvato se la partita conta.
   const recordSaved = useRef(false);
   useEffect(() => {
@@ -184,6 +223,10 @@ export default function App() {
     const { beaten } = r.counts ? recordStore.save(solo.difficulty, r) : { beaten: false };
     setSoloResult({ ...r, beaten, best: beaten ? r.ppw : before });
     stat('solo_finite');
+    stat(`solo_${solo.difficulty}_finite`);
+    if (r.won) stat(`solo_${solo.difficulty}_vinte`);
+    if (beaten && r.counts) stat('record_battuti');
+    if (soloStart.current) stat('minuti_solo', (Date.now() - soloStart.current) / 60000);
   }, [solo, room, stat]);
 
   // Connessione: l'avviso compare solo dopo che è stata attiva almeno una volta.
@@ -262,6 +305,8 @@ export default function App() {
   }, [saver]);
 
   // Quando il round si chiude: STOP a tutto schermo e le ultime lettere salvate subito.
+  const gameStart = useRef(0);
+  const startedRooms = useRef(new Set());
   // Partite online: l'host conta la partita (all'inizio e al podio), ogni telefono in gioco conta sé stesso.
   const prevOnline = useRef(null);
   useEffect(() => {
@@ -270,12 +315,35 @@ export default function App() {
     prevOnline.current = st;
     if (solo || !room || !engine || st === before) return;
     const isHost = room.hostId === engine.uid;
+    const playing = !room.players?.[engine.uid]?.waiting;
     if (st === 'spin' && room.round?.n === 1) {
-      if (isHost) stat('partite_online');
-      if (!room.players?.[engine.uid]?.waiting) stat('giocatori_online');
+      gameStart.current = Date.now();
+      if (isHost) {
+        stat('partite_online');
+        if (before === 'final') stat('rivincite');
+        else if (!startedRooms.current.has(code)) { startedRooms.current.add(code); stat('stanze_avviate'); }
+        const n = Object.values(room.players || {}).filter((p) => !p.waiting).length;
+        stat(n >= 5 ? 'giocatori_5piu' : `giocatori_${Math.max(2, n)}`);
+      }
+      if (playing) stat('giocatori_online');
     }
-    if (st === 'final' && before === 'awards' && isHost) stat('partite_online_finite');
-  }, [room, solo, engine, stat]);
+    if (st === 'final' && before === 'awards') {
+      if (playing) stat('giocatori_al_podio');
+      if (isHost) {
+        stat('partite_online_finite');
+        if (gameStart.current) stat('minuti_online', (Date.now() - gameStart.current) / 60000);
+      }
+    }
+  }, [room, solo, engine, stat, code]);
+
+  // Chi entra a partita iniziata e deve aspettare: una volta per stanza.
+  const waitedRooms = useRef(new Set());
+  useEffect(() => {
+    if (!solo && code && room?.players?.[engine?.uid]?.waiting && !waitedRooms.current.has(code)) {
+      waitedRooms.current.add(code);
+      stat('errori_iniziata');
+    }
+  }, [room, solo, engine, code, stat]);
 
   const prevStatus = useRef(null);
   useEffect(() => {
@@ -374,10 +442,10 @@ export default function App() {
   };
   const soloRecords = () => Object.fromEntries(DIFFICULTIES.map((d) => [d, recordStore.get(d)]));
 
-  const joinWith = async (c) => {
+  const joinWith = async (c, via) => {
     if (needNet() || needName()) { setSheet(null); return; }
     setBusy(true);
-    try { await withTimeout(engine.joinRoom(c, profile)); enterRoom(c); } catch (e) { roomError(e, c, engine); } finally { setBusy(false); }
+    try { await withTimeout(engine.joinRoom(c, profile)); enterRoom(c); stat(via === 'link' ? 'ingressi_link' : 'ingressi_codice'); } catch (e) { roomError(e, c, engine); } finally { setBusy(false); }
   };
 
   const g = useMemo(() => {
@@ -389,6 +457,7 @@ export default function App() {
     return {
       room, round, code, uid, engine, now, answers, setAnswer, toast, setSheet, act, leave, isOnline,
       solo: solo ? { difficulty: solo.difficulty, ...soloResult } : null,
+      stat,
       players,
       active: players.filter((p) => !p.waiting), // in partita (anche offline, mostrati spenti)
       scoring: players.filter((p) => !p.waiting && p.online), // quelli che contano nella correzione
@@ -399,15 +468,15 @@ export default function App() {
       hostName: room.players[room.hostId]?.name || 'l\'host',
       openSettings: () => setEditing(true),
     };
-  }, [room, round, code, engine, now, answers, setAnswer, toast, act, leave, solo, soloResult]);
+  }, [room, round, code, engine, now, answers, setAnswer, toast, act, leave, solo, soloResult, stat]);
 
   let screen;
   if (view === 'stats') screen = <Statistiche />;
   else if (view === 'loading' || (view === 'room' && !g)) screen = <Loading />;
   else if (view === 'home') {
     screen = <Home profile={profile} setProfile={setProfile} onRules={() => setSheet('rules')}
-      onOnline={() => setSheet('online')}
-      founder={founder} onFounder={() => setSheet('founder')} onInstall={() => setSheet('install')} onSolo={() => setView('solo')} />;
+      onOnline={() => { stat('scelta_online'); setSheet('online'); }}
+      founder={founder} onFounder={() => setSheet('founder')} onInstall={() => { stat('guida_aperta'); setSheet('install'); }} onSolo={() => { stat('scelta_solo'); setView('solo'); }} />;
   } else if (view === 'solo') {
     screen = <Solo records={soloRecords()} initial={soloPrefs} onBack={() => setView('home')} onStart={startSolo} toast={toast} />;
   } else if (view === 'setup') {
@@ -416,7 +485,7 @@ export default function App() {
         try { enterRoom(await withTimeout(netEngine.createRoom(profile, settings))); stat('stanze_create'); } catch (e) { toast(offlineNow() || e.message === 'timeout' ? NEED_NET : 'Non riesco a creare la stanza, riprova'); }
       }} />;
   } else if (view === 'invite') {
-    screen = <Invite code={code} room={inviteRoom} profile={profile} setProfile={setProfile} busy={busy} onJoin={() => joinWith(code)} />;
+    screen = <Invite code={code} room={inviteRoom} profile={profile} setProfile={setProfile} busy={busy} onJoin={() => joinWith(code, 'link')} />;
   } else if (view === 'error') {
     screen = <ErrorScreen kind={err?.kind} info={err?.info} onButton={goHome} onSolo={openSolo} />;
   } else if (g.me.waiting && ['spin', 'play', 'review', 'round'].includes(status)) {
@@ -445,8 +514,8 @@ export default function App() {
       {sheet === 'rules' && <RulesSheet onClose={() => setSheet(null)} />}
       {sheet === 'online' && <OnlineSheet onClose={() => setSheet(null)} onJoin={() => setSheet('join')}
         onCreate={() => { setSheet(null); if (!needNet() && !needName()) setView('setup'); }} />}
-      {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} onJoin={(c) => { setSheet(null); joinWith(c); }}
-        onFounder={() => { founderStore.activate(); setFounder(true); setSheet(null); }} />}
+      {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} onJoin={(c) => { setSheet(null); joinWith(c, 'codice'); }}
+        onFounder={() => { founderStore.activate(); setFounder(true); setSheet(null); stat('fondatore_attivato'); }} />}
       {sheet === 'install' && <InstallSheet onClose={() => setSheet(null)} toast={toast} />}
       {sheet === 'founder' && <FounderSheet onClose={() => setSheet(null)}
         onRevoke={() => { founderStore.revoke(); setFounder(false); setProfile({ ...profile, char: undefined }); setSheet(null); toast('Modalità Fondatore disattivata'); }} />}

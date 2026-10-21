@@ -202,8 +202,8 @@
       "days": {
         "$day": {
           "$key": {
-            ".write": "auth != null && $day.matches(/^20[0-9]{2}-[01][0-9]-[0-3][0-9]$/) && $key.matches(/^(stanze_create|partite_online|partite_online_finite|giocatori_online|solo_facile|solo_medio|solo_difficile|solo_impossibile|solo_finite|installazioni)$/)",
-            ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1)"
+            ".write": "auth != null && $day.matches(/^20[0-9]{2}-[01][0-9]-[0-3][0-9]$/) && $key.matches(/^(aperture|telefoni_nuovi|telefoni_tornati|tornati_d1|tornati_d7|ora_(0[0-9]|1[0-9]|2[0-3])|da_link|da_icona|diretta|scelta_online|scelta_solo|stanze_create|stanze_avviate|partite_online|partite_online_finite|rivincite|giocatori_online|giocatori_al_podio|giocatori_(2|3|4|5piu)|inviti_whatsapp|link_copiati|ingressi_link|ingressi_codice|errori_(non_trovata|piena|iniziata|rete)|solo_(facile|medio|difficile|impossibile)(_finite|_vinte)?|solo_finite|record_battuti|fondatore_attivato|raffaella_scelta|guida_aperta|installazioni|minuti_(online|solo))$/)",
+            ".validate": "newData.isNumber() && ($key.beginsWith('minuti_') ? newData.val() > (data.exists() ? data.val() : 0) && newData.val() <= (data.exists() ? data.val() : 0) + 120 : newData.val() === (data.exists() ? data.val() + 1 : 1))"
           }
         }
       }
