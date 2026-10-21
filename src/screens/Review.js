@@ -57,14 +57,16 @@ export default function Review({ g }) {
         </div>
       </header>
       <div className="n-scroll" style={sx('flex-grow: 1; overflow-y: auto; padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 12px')}>
-        <p style={sx('margin: 0; font-size: 13px; font-weight: 700; color: #5E5880')}>{need === 1 ? 'Basta 1 «non vale» per bocciare una parola.' : `Servono ${need} «non vale» per bocciare una parola.`}</p>
+        {!room.solo && <p style={sx('margin: 0; font-size: 13px; font-weight: 700; color: #5E5880')}>{need === 1 ? 'Basta 1 «non vale» per bocciare una parola.' : `Servono ${need} «non vale» per bocciare una parola.`}</p>}
         {g.scoring.map((p, i) => {
           const r = res[p.id], isMe = p.id === uid;
           const rejected = r.status === 'rejected';
           const valid = ['solo', 'duplicate', 'unique'].includes(r.status);
-          const canVote = !isMe && r.status !== 'empty' && r.status !== 'wrongLetter';
+          // Partita da soli: le parole che il dizionario conosce sono valide e non si votano.
+          const known = !!room.solo?.known?.[cat.key]?.[p.id] && valid;
+          const canVote = !isMe && !known && r.status !== 'empty' && r.status !== 'wrongLetter';
           const myVote = !!votes[p.id]?.[uid];
-          const tag = TAGS[r.status] + (valid && r.votesAgainst ? ` · ${r.votesAgainst} su ${need} per bocciarla` : '');
+          const tag = (r.status === 'rejected' && room.solo ? 'bocciata dai robot' : TAGS[r.status]) + (valid && r.votesAgainst && !room.solo ? ` · ${r.votesAgainst} su ${need} per bocciarla` : '');
           return (
             <div key={`${cat.key}-${p.id}`} className={rejected ? 'n-no' : idx % 2 ? 'n-up2' : 'n-up'}
               style={sx(`display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 20px; border: 2.5px solid #17122B; background: ${rejected ? '#FFE3DB' : '#FFFFFF'}; animation-delay: ${rejected ? 0 : i * 70}ms; transition: background .25s`)}>
@@ -72,6 +74,9 @@ export default function Review({ g }) {
               <span style={sx('flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px')}>
                 <span style={sx('font-size: 12px; font-weight: 700; color: #5E5880')}>{isMe ? 'Tu' : p.name} · {tag}</span>
                 <span style={sx(`font-family: 'Bricolage Grotesque Variable', sans-serif; font-size: 21px; line-height: 1.1; font-weight: 800; text-decoration: ${rejected || r.status === 'wrongLetter' ? 'line-through' : 'none'}; opacity: ${valid ? '1' : '0.45'}; overflow-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden`)}>{r.text || '—'}</span>
+                {known && (
+                  <span style={sx('height: 30px; padding: 0 10px; border-radius: 999px; border: 2px solid #17122B; background: #6EE7A8; font-size: 12px; font-weight: 800; align-self: flex-start; margin-top: 8px; display: flex; align-items: center; white-space: nowrap')}>Nel dizionario</span>
+                )}
                 {canVote && (
                   <button className="n-press" aria-pressed={myVote} aria-label={`${myVote ? 'Annulla il voto su' : 'Non vale:'} ${r.text} di ${p.name}`} onClick={() => g.act(() => g.engine.vote(g.code, cat.key, p.id, !myVote))}
                     style={sx(`height: 44px; padding: 0 12px; border-radius: 12px; border: 2px solid #17122B; background: ${myVote ? '#FF5E3A' : '#FFFFFF'}; color: ${myVote ? '#FFFFFF' : INK}; font-size: 13px; font-weight: 800; cursor: pointer; align-self: flex-start; margin-top: 8px; transition: background .2s`)}>{myVote ? 'Annulla' : 'Non vale'}</button>

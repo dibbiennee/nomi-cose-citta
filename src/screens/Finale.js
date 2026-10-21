@@ -1,6 +1,7 @@
 import React from 'react';
 import { sx, INK, Face } from '../ui/kit';
 import { computeAwards, ranking } from '../engine/rules';
+import { formatPpw } from '../solo/record';
 
 const AWARD = {
   fulmine: { title: 'FULMINE', color: '#FFD23F', text: (n) => (n === 1 ? 'Ha gridato STOP una volta' : `Ha gridato STOP ${n} volte`) },
@@ -82,6 +83,11 @@ export function Final({ g }) {
             );
           })}
         </div>
+        {g.solo?.counts && g.solo.ppw !== undefined && (
+          <p className="n-up" style={sx(`margin: 0 0 14px; padding: ${g.solo.beaten ? '8px 16px' : '0'}; border-radius: 999px; ${g.solo.beaten ? 'border: 2.5px solid #17122B; background: #FFFFFF; box-shadow: 0 4px 0 #17122B;' : ''} font-size: ${g.solo.beaten ? 17 : 15}px; font-weight: 800; text-align: center; animation-delay: 1.6s`)}>
+            {g.solo.beaten ? 'Nuovo record' : 'Record'}: {formatPpw(g.solo.beaten ? g.solo.ppw : g.solo.best)} punti a&nbsp;parola
+          </p>
+        )}
         <div style={sx('width: 100%; box-sizing: border-box; border-top: 2.5px solid #17122B; padding-top: 14px; display: flex; flex-direction: column; gap: 12px')}>
           {ranked.slice(3).map((p, i) => (
             <div key={p.id} className="n-up" style={sx('display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 10px; border-radius: 16px; border: 2.5px solid #17122B; background: #FFFFFF; animation-delay: 1s')}>

@@ -37,7 +37,7 @@ export function ProfilePicker({ profile, setProfile, faceSize = 108, inputBg = '
   );
 }
 
-export default function Home({ profile, setProfile, onCreate, onJoin, onRules, founder, onFounder, onInstall }) {
+export default function Home({ profile, setProfile, onCreate, onJoin, onRules, founder, onFounder, onInstall, onSolo }) {
   let k = 0;
   return (
     <div className="n-screen" style={sx('position: absolute; inset: 0; background: #FFD23F; padding: 20px 24px 28px; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto')}>
@@ -65,6 +65,7 @@ export default function Home({ profile, setProfile, onCreate, onJoin, onRules, f
       </div>
       <div className="n-up" style={sx('display: flex; flex-direction: column; gap: 14px; margin-top: auto; padding-top: 24px; animation-delay: .6s')}>
         <button className="n-btn" onClick={onCreate} style={sx('height: 62px; border: 2.5px solid #17122B; border-radius: 20px; background: #17122B; color: #FFD23F; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #7A5F00; cursor: pointer')}>Crea una stanza</button>
+        <button className="n-btn" onClick={onSolo} style={sx('height: 58px; border-radius: 20px; border: 2.5px solid #17122B; background: #B79CFF; color: #17122B; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Gioca da solo</button>
         <button className="n-btn" onClick={onJoin} style={sx('height: 58px; border-radius: 20px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Ho un codice</button>
         {!isStandalone() && <button onClick={onInstall} style={sx('min-height: 44px; margin-bottom: -10px; border: 0; background: transparent; color: #17122B; font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer')}>Usalo come un'app</button>}
       </div>

@@ -162,3 +162,17 @@ test('il motore da soli non usa Firebase', () => {
   const src = readFileSync(new URL('./motore.js', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /from 'firebase|getEngine|\.\.\/firebase/);
 });
+
+test('una partita finita non riprende alla riapertura: si torna alla home', async () => {
+  const s = setup({ cats: CATS3, botCount: 2 });
+  await s.e.startGame(SOLO_CODE);
+  s.clock.t = s.room.round.startsAt;
+  await s.e.goPlay(SOLO_CODE);
+  await runUntil(s, (r) => r.status === 'review');
+  for (let i = 0; i < 3; i++) await s.e.nextCategory(SOLO_CODE);
+  await s.e.nextRound(SOLO_CODE);
+  await s.e.showPodium(SOLO_CODE);
+  assert.equal(s.room.status, 'final');
+  assert.equal(resumeSoloEngine(s.opts), null);
+  assert.equal(s.storage.has(SOLO_KEY), false);
+});

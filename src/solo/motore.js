@@ -218,11 +218,13 @@ export function createSoloEngine({ profile, settings, difficulty, botCount, dict
   return makeEngine({ state, plans: {}, difficulty, botCount, profile, dict, storage, random, clock });
 }
 
-/** Riprende la partita salvata, se c'è e non è più vecchia di 12 ore. Altrimenti null (e la cancella). */
+/** Riprende la partita salvata, se c'è, non è finita e non è più vecchia di 12 ore. Altrimenti null (e la cancella). */
 export function resumeSoloEngine({ dict, storage, random = Math.random, clock = Date.now }) {
   let saved = null;
   try { saved = JSON.parse(storage?.getItem(SOLO_KEY)); } catch (e) { saved = null; }
-  const valid = saved && saved.state && saved.plans && LEVELS[saved.difficulty] && clock() - saved.savedAt <= MAX_AGE_MS;
+  // Una partita finita (sul podio) non si riprende: alla riapertura si torna alla home.
+  const valid = saved && saved.state && saved.plans && LEVELS[saved.difficulty] && saved.state.status !== 'final'
+    && clock() - saved.savedAt <= MAX_AGE_MS;
   if (!valid) {
     try { storage?.removeItem(SOLO_KEY); } catch (e) { /* niente da togliere */ }
     return null;
