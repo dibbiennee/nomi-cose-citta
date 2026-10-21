@@ -116,3 +116,78 @@ test('statistiche: partite veloci e chi è in coda', async () => {
   await setLive(a.db, a.uid, 'coda');
   assert.equal((await a.read(`live/${a.uid}`)).where, 'coda');
 });
+
+// ---------- motore: stanze veloci e robot ----------
+import { createDictionary } from '../solo/dizionario.js';
+import { ALPHABET } from './rules.js';
+import { goOffline } from 'firebase/database';
+const lists = {};
+for (const { key } of DEFAULT_CATEGORIES) {
+  lists[key] = {};
+  for (const l of ALPHABET) lists[key][l] = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => [`${l}${key}${i}`, i % 3]);
+}
+const dict = createDictionary(lists);
+/** Fa girare i robot dal telefono p finché cond(room) è vera o scade il tempo. */
+async function drive(p, code, cond, ms = 30000) {
+  const t0 = Date.now();
+  for (;;) {
+    const room = await p.read(`rooms/${code}`);
+    if (cond(room) || Date.now() - t0 > ms) return room;
+    if (p.engine.shouldDriveBots(code, room, p.engine.now(), dict)) await p.engine.driveBots(code, room, dict).catch(() => {});
+    await sleep(300);
+  }
+}
+const botsWrote = (room) => ['bot1', 'bot2'].every((id) => Object.keys(room?.answers?.[id] || {}).length > 0);
+
+test('partita veloce con 2 persone e 2 robot fino al podio', async () => {
+  const [a, b] = await Promise.all(['Anna', 'Bea'].map(phone));
+  const code = await a.engine.createQuickRoom(a.profile);
+  let room = await a.read(`rooms/${code}`);
+  assert.equal(room.quick, true);
+  assert.equal(room.settings.maxPlayers, 4);
+  assert.deepEqual(room.settings.cats.map((c) => c.key), ['nomi', 'cose', 'citta']);
+  await b.engine.joinRoom(code, b.profile);
+  await a.engine.updateSettings(code, { ...room.settings, rounds: 1 });
+  await a.engine.addBots(code, 2);
+  room = await a.read(`rooms/${code}`);
+  assert.ok(room.players.bot1.bot && room.players.bot2.bot);
+  assert.ok(![a.name, b.name].includes(room.players.bot1.name));
+  assert.equal(b.engine.shouldDriveBots(code, room, Date.now()), false, 'scrive l\'host');
+  await a.engine.startGame(code);
+  await sleep(SPIN_MS + COUNTDOWN_MS + 100);
+  await a.engine.goPlay(code);
+  room = await drive(a, code, botsWrote);
+  assert.ok(botsWrote(room), 'i robot hanno scritto');
+  await b.engine.pressStop(code, { nomi: `${room.round.letter}parolamia` });
+  room = await drive(a, code, (r) => r.status === 'review' && r.votes !== undefined, 5000);
+  assert.equal(room.status, 'review');
+  for (let i = 0; i < 3; i++) await a.engine.nextCategory(code);
+  assert.equal(await a.read(`rooms/${code}/status`), 'round');
+  await a.engine.nextRound(code);
+  await a.engine.showPodium(code);
+  room = await a.read(`rooms/${code}`);
+  assert.equal(room.status, 'final');
+  assert.ok(typeof room.players.bot1.score === 'number');
+});
+
+test('se l\'host cade durante il round, i robot li fa giocare un altro telefono; un robot non diventa mai host', async () => {
+  const [a, b] = await Promise.all(['Anna', 'Bea'].map(phone));
+  const code = await a.engine.createQuickRoom(a.profile);
+  await b.engine.joinRoom(code, b.profile);
+  await a.engine.addBots(code, 2);
+  await a.engine.startGame(code);
+  await sleep(SPIN_MS + COUNTDOWN_MS + 100);
+  await a.engine.goPlay(code);
+  const offB = b.engine.subscribe(code, () => {}); // come nell'app: ascoltando la stanza si prende il posto dell'host
+  goOffline(a.db);
+  let room = await drive(b, code, (r) => r.presence?.[a.uid] === false, 5000);
+  assert.equal(room.presence[a.uid], false);
+  assert.equal(b.engine.shouldDriveBots(code, room, Date.now()), true, 'tocca a Bea');
+  room = await drive(b, code, botsWrote);
+  assert.ok(botsWrote(room), 'i robot continuano dal telefono di Bea');
+  room = await drive(b, code, (r) => r.hostId === b.uid, 8000);
+  assert.equal(room.hostId, b.uid, 'il nuovo host è Bea, non un robot');
+  offB();
+  await b.engine.leaveRoom(code);
+  assert.equal(await b.read(`rooms/${code}/hostId`), a.uid, 'esce Bea: il posto va ad Anna (scollegata ma in stanza), mai a un robot');
+});

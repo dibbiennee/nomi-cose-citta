@@ -17,10 +17,11 @@ import {
   ref, get, set, update, remove, onValue, query, orderByChild, limitToFirst, onDisconnect, runTransaction, serverTimestamp,
 } from 'firebase/database';
 import {
-  DEFAULT_SETTINGS, makeCode, pickLetter, scoreRound, nextHost, sanitizeSettings,
+  DEFAULT_SETTINGS, DEFAULT_CATEGORIES, makeCode, pickLetter, scoreRound, nextHost, sanitizeSettings,
 } from './rules.js';
 import { isReservedCode } from '../club/fondatore.js';
 import { CHARACTER_IDS } from '../club/contenuti.js';
+import { dueAnswers, dueStop, botVotesFor, pickBots, seededRandom } from './robotOnline.js';
 
 export const SPIN_MS = 2000; // la lettera che gira
 export const COUNTDOWN_MS = 3200; // 3, 2, 1, Via!
@@ -33,6 +34,14 @@ export const HOST_STEPS = ['review', 'round', 'awards'];
 export class RoomError extends Error {
   /** code: 'notfound' | 'full' | 'kicked' | 'nothost' | 'few' */
   constructor(code) { super(code); this.code = code; }
+}
+
+/** Impostazioni della partita veloce: fisse, nessuno le sceglie. */
+export const QUICK_SETTINGS = { cats: DEFAULT_CATEGORIES.slice(0, 3), rounds: 3, timer: 90, hard: true, maxPlayers: 4 };
+
+/** Giocatori umani (senza i robot della partita veloce), con presence: i robot non diventano mai host. */
+function humans(room) {
+  return Object.fromEntries(Object.entries(withPresence(room)).filter(([, p]) => !p.bot));
 }
 
 /** Giocatori con il campo `online` preso da presence. Chi non ha presence conta come online. */
@@ -125,7 +134,7 @@ export function createEngine(db, uid) {
     cleanOldRooms,
 
     /** Crea una stanza e ne restituisce il codice. */
-    async createRoom(profile, settings = DEFAULT_SETTINGS) {
+    async createRoom(profile, settings = DEFAULT_SETTINGS, quick = false) {
       for (let i = 0; i < 8; i++) {
         const code = makeCode();
         if (isReservedCode(code)) continue; // CANT e gli altri codici speciali non diventano mai stanze
@@ -136,11 +145,69 @@ export function createEngine(db, uid) {
             settings: sanitizeSettings(settings),
             players: { [uid]: newPlayer(profile) },
             presence: { [uid]: true },
+            ...(quick ? { quick: true } : {}),
           };
         }, { applyLocally: false });
         if (res.committed) { trackPresence(code); cleanOldRooms(); return code; }
       }
       throw new Error('Impossibile creare la stanza, riprova');
+    },
+
+    /** Stanza della partita veloce: impostazioni fisse e segno quick (permette i robot). */
+    createQuickRoom(profile) { return this.createRoom(profile, QUICK_SETTINGS, true); },
+
+    /** Solo host, partita veloce: completa la stanza con n robot (bot1..botN), sempre online. */
+    async addBots(code, count) {
+      const room = await requireHost(code);
+      if (!room.quick || count <= 0) return;
+      const names = Object.values(room.players).map((p) => p.name);
+      const patch = {};
+      pickBots(count, names, seededRandom(code, 'robot')).forEach((b) => {
+        patch[`players/${b.id}`] = { ...newPlayer(b), bot: true };
+        patch[`presence/${b.id}`] = true;
+      });
+      await update(roomRef(code), patch);
+    },
+
+    /**
+     * Partita veloce: tocca a questo telefono far giocare i robot? All'host, se è collegato; se l'host è
+     * scollegato, al primo umano online. Se le scritture dovute dei robot sono in ritardo, a tutti gli umani
+     * (scrivono le stesse cose, quindi scriverle due volte non cambia niente).
+     */
+    shouldDriveBots(code, room, at, dict) {
+      if (!room?.quick || !room.players?.[uid] || room.players[uid].bot) return false;
+      const bots = Object.keys(room.players).filter((id) => room.players[id].bot);
+      if (!bots.length || !['play', 'review'].includes(room.status)) return false;
+      if (room.hostId === uid && room.presence?.[uid] !== false) return true;
+      if (room.presence?.[room.hostId] === false || !room.players[room.hostId]) return nextHost(humans(room), room.hostId) === uid;
+      // Host collegato ma fermo (app in secondo piano): se da 4 secondi mancano risposte dovute, scrivono tutti.
+      if (!dict || room.status !== 'play') return false;
+      return bots.some((id) => Object.keys(dueAnswers(room, code, id, dict, at - 4000)).length > Object.keys(room.answers?.[id] || {}).length);
+    },
+
+    /** Scrive quello che i robot devono aver fatto adesso: risposte, STOP, voti. Si può chiamare più volte. */
+    async driveBots(code, room, dict) {
+      if (!room?.quick || !room.round) return;
+      const t = now();
+      const bots = Object.keys(room.players).filter((id) => room.players[id].bot);
+      const inGrace = room.status === 'review' && (room.round.stoppedAt || 0) + 3000 > t;
+      if (room.status === 'play' || inGrace) {
+        for (const id of bots) {
+          const due = dueAnswers(room, code, id, dict, t);
+          if (Object.keys(due).length && JSON.stringify(due) !== JSON.stringify(room.answers?.[id] || {})) {
+            await set(roomRef(code, `answers/${id}`), due).catch(() => {});
+          }
+        }
+      }
+      if (room.status === 'play') {
+        const stopper = dueStop(room, code, dict, t);
+        if (stopper) await this.closeRound(code, stopper).catch(() => {});
+      }
+      if (room.status === 'review') {
+        for (const v of botVotesFor(room, code, dict)) {
+          if (!room.votes?.[v.cat]?.[v.target]?.[v.voter]) await set(roomRef(code, `votes/${v.cat}/${v.target}/${v.voter}`), true).catch(() => {});
+        }
+      }
     },
 
     /** Legge la stanza senza entrare (per la schermata di invito). Lancia RoomError('notfound'). */
@@ -181,13 +248,12 @@ export function createEngine(db, uid) {
           const hostGone = !room.players[room.hostId] || room.presence?.[room.hostId] === false;
           if (hostGone) {
             const oldHost = room.hostId;
-            const players = withPresence(room);
-            const heir = nextHost(players, oldHost);
+            const heir = nextHost(humans(room), oldHost);
             // Aspetto un attimo: se l'host ha solo ricaricato la pagina torna online prima.
             if (heir === uid) timer = setTimeout(() => this.claimHost(code, oldHost), room.players[oldHost] ? HOST_GRACE_MS : 0);
           } else if (HOST_STEPS.includes(room.status) && room.round?.stepAt) {
             // L'host è collegato ma non va avanti: dopo un minuto il primo giocatore online dopo di lui prende il posto.
-            const heir = nextHost(withPresence(room), room.hostId);
+            const heir = nextHost(humans(room), room.hostId);
             if (heir === uid) {
               const wait = room.round.stepAt + IDLE_MS - now() + 500;
               timer = setTimeout(() => this.claimIdleHost(code, room.hostId, room.round.stepAt), Math.max(0, wait));
@@ -204,7 +270,7 @@ export function createEngine(db, uid) {
       const room = await readRoom(code).catch(() => null);
       if (!room || room.hostId !== oldHost) return;
       if (room.players[oldHost] && room.presence?.[oldHost] !== false) return; // è tornato
-      if (nextHost(withPresence(room), oldHost) !== uid) return;
+      if (nextHost(humans(room), oldHost) !== uid) return;
       await runTransaction(roomRef(code, 'hostId'), (cur) => (cur === null ? null : cur === oldHost ? uid : undefined));
     },
 
@@ -212,7 +278,7 @@ export function createEngine(db, uid) {
     async claimIdleHost(code, oldHost, stepAt) {
       const room = await readRoom(code).catch(() => null);
       if (!room || room.hostId !== oldHost || room.round?.stepAt !== stepAt || !HOST_STEPS.includes(room.status)) return;
-      if (nextHost(withPresence(room), oldHost) !== uid) return;
+      if (nextHost(humans(room), oldHost) !== uid) return;
       const res = await runTransaction(roomRef(code, 'hostId'), (cur) => (cur === null ? null : cur === oldHost ? uid : undefined));
       // Il nuovo host ha a sua volta un minuto pieno.
       if (res.committed) await set(roomRef(code, 'round/stepAt'), serverTimestamp()).catch(() => {});
@@ -228,11 +294,11 @@ export function createEngine(db, uid) {
       stopPresence();
       const room = await readRoom(code).catch(() => null);
       if (!room || !room.players?.[uid]) return;
-      const others = Object.keys(room.players).filter((id) => id !== uid);
+      const others = Object.keys(humans(room)).filter((id) => id !== uid); // i robot non contano
       const patch = { [`players/${uid}`]: null, [`answers/${uid}`]: null, [`presence/${uid}`]: null };
       // L'ultimo a uscire chiude la stanza (solo l'host può cancellarla: se non lo è, esce e basta).
       if (others.length === 0 && room.hostId === uid) { await remove(roomRef(code)); return; }
-      if (room.hostId === uid) patch.hostId = nextHost(withPresence(room), uid) || others[0];
+      if (room.hostId === uid) patch.hostId = nextHost(humans(room), uid) || others[0];
       await update(roomRef(code), patch);
     },
 
