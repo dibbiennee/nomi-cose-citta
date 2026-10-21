@@ -258,6 +258,15 @@
           ".validate": false
         }
       }
+    },
+    "users": {
+      "$uid": {
+        "owned": {
+          "$item": {
+            ".validate": "newData.val() === true && !data.exists() && (($item === 'cappellino' && newData.parent().parent().child('coins').val() === data.parent().parent().child('coins').val() - 150) || ($item === 'berretto' && newData.parent().parent().child('coins').val() === data.parent().parent().child('coins').val() - 300) || ($item === 'cilindro' && newData.parent().parent().child('coins').val() === data.parent().parent().child('coins').val() - 800) || ($item === 'occhiali_tondi' && newData.parent().parent().child('coins').val() === data.parent().parent().child('coins').val() - 200) || ($item === 'occhiali_sole' && newData.parent().parent().child('coins').val() === data.parent().parent().child('coins').val() - 400) || ($item === 'farfallino' && newData.parent().parent().child('coins').val() === data.parent().parent().child('coins').val() - 250) || ($item === 'sciarpa' && newData.parent().parent().child('coins').val() === data.parent().parent().child('coins').val() - 500) || ($item === 'cornice_stelle' && newData.parent().parent().child('coins').val() === data.parent().parent().child('coins').val() - 700) || ($item === 'cornice_fiamme' && newData.parent().parent().child('coins').val() === data.parent().parent().child('coins').val() - 1200) || (($item === 'corona_oro' || $item === 'occhiali_stella' || $item === 'mantello_oro') && newData.parent().parent().child('primi100').val() === true))"
+          }
+        }
+      }
     }
   }
 }
