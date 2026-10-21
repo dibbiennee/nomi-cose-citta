@@ -107,6 +107,7 @@ export default function App() {
   // Ogni apertura: telefono nuovo o di ritorno, a che ora, e da dove (link a una stanza, icona sulla Home, sito).
   useEffect(() => {
     if (visitCounted) return; // una volta per caricamento della pagina (in sviluppo React esegue gli effetti due volte)
+    if (window.location.pathname === '/statistiche') return; // chi guarda le statistiche non è un'apertura del gioco
     visitCounted = true;
     let stored = null;
     try { stored = JSON.parse(LOCAL?.getItem(VISIT_KEY)); } catch (e) { stored = null; }
