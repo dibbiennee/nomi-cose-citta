@@ -9,11 +9,13 @@ export default function Lobby({ g }) {
   const canStart = isHost && onlineCount >= 2;
 
   const copy = async () => {
+    g.stat?.('link_copiati');
     try { await navigator.clipboard.writeText(link); } catch (e) { g.toast(link); return; }
     setCopied(true);
     setTimeout(() => setCopied(false), 1600);
   };
   const share = () => {
+    g.stat?.('inviti_whatsapp');
     const text = `Giochiamo a Nomi Cose Città? Entra nella mia stanza: ${link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
   };

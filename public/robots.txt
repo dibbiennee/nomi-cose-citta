@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /statistiche
+Disallow: /r/
+
+Sitemap: https://nomicosecitta.pro/sitemap.xml

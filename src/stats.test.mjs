@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, signInAnonymously } from 'firebase/auth';
 import { getDatabase, connectDatabaseEmulator, ref, get, set, goOffline } from 'firebase/database';
-import { STAT_KEYS, dayKey, track, setLive } from './stats.js';
+import { STAT_KEYS, dayKey, track, trackMinutes, setLive } from './stats.js';
 
 const PROJECT = process.env.GCLOUD_PROJECT || 'demo-ncc';
 const apps = [];
@@ -55,4 +55,37 @@ test('dal vivo: ognuno scrive solo la propria presenza, e sparisce quando si sco
   goOffline(a.db);
   for (let i = 0; i < 30 && (await b.read(`live/${a.uid}`)); i++) await sleep(200);
   assert.equal(await b.read(`live/${a.uid}`), null);
+});
+
+test('ogni contatore dell\'elenco è accettato dalle regole, e le fasce orarie solo da 00 a 23', async () => {
+  const a = await phone();
+  const day = dayKey(Date.now());
+  for (const k of STAT_KEYS) await track(a.db, k);
+  assert.equal(await a.read(`stats/days/${day}/ora_23`), 1);
+  assert.equal(await a.read(`stats/days/${day}/giocatori_5piu`), 1);
+  assert.equal(await a.read(`stats/days/${day}/solo_medio_vinte`), 1);
+  await denied(set(ref(a.db, `stats/days/${day}/ora_24`), 1));
+  assert.ok(STAT_KEYS.length > 60);
+});
+
+test('minuti di gioco: si sommano, ma non più di 120 alla volta e mai all\'indietro', async () => {
+  const [a, b] = await Promise.all([phone(), phone()]);
+  const day = dayKey(Date.now());
+  await trackMinutes(a.db, 'minuti_online', 12);
+  await trackMinutes(b.db, 'minuti_online', 7);
+  assert.equal(await a.read(`stats/days/${day}/minuti_online`), 19);
+  await denied(set(ref(a.db, `stats/days/${day}/minuti_online`), 500));
+  await denied(set(ref(a.db, `stats/days/${day}/minuti_online`), 3));
+  await denied(set(ref(a.db, `stats/days/${day}/aperture`), 9), 'gli altri contatori restano a +1');
+});
+
+test('lo stesso telefono conta lo stesso contatore più volte di fila senza perderne nessuno', async () => {
+  const a = await phone();
+  const day = dayKey(Date.now());
+  const g0 = (await a.read(`stats/days/${day}/guida_aperta`)) || 0;
+  const m0 = (await a.read(`stats/days/${day}/minuti_solo`)) || 0;
+  await Promise.all([1, 2, 3, 4, 5].map(() => track(a.db, 'guida_aperta')));
+  await Promise.all([3, 4].map((m) => trackMinutes(a.db, 'minuti_solo', m)));
+  assert.equal(await a.read(`stats/days/${day}/guida_aperta`), g0 + 5);
+  assert.equal(await a.read(`stats/days/${day}/minuti_solo`), m0 + 7);
 });
