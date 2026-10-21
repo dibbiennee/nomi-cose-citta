@@ -59,6 +59,19 @@ export function RulesSheet({ onClose }) {
   );
 }
 
+/** "Gioca online": creare una stanza o entrare con un codice. */
+export function OnlineSheet({ onClose, onCreate, onJoin }) {
+  const big = (bg, fg, shadow) => sx(`height: 60px; border: 2.5px solid #17122B; border-radius: 18px; background: ${bg}; color: ${fg}; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 ${shadow}; cursor: pointer`);
+  return (
+    <Sheet onClose={onClose} gap={14} label="Gioca online">
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px")}>Gioca online</h2>
+      <p style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; text-wrap: pretty')}>Crea una stanza e manda il link agli amici, oppure entra con il codice che ti hanno&nbsp;dato.</p>
+      <button type="button" className="n-btn" onClick={onCreate} style={big('#17122B', '#FFD23F', '#7A5F00')}>Crea una stanza</button>
+      <button type="button" className="n-btn" onClick={onJoin} style={big('#FFFFFF', '#17122B', '#17122B')}>Ho un codice</button>
+    </Sheet>
+  );
+}
+
 /** Codice stanza, oppure CANT per la Modalità Fondatore (che il motore non usa mai come stanza). */
 export function JoinSheet({ onClose, onJoin, onFounder }) {
   const [code, setCode] = useState('');

@@ -22,7 +22,7 @@ import { createDictionary } from './solo/dizionario';
 import { createSoloEngine, resumeSoloEngine, SOLO_CODE, SOLO_KEY } from './solo/motore';
 import { createRecordStore } from './solo/record';
 import { DIFFICULTIES } from './solo/robot';
-import { NEED_NET, ErrorScreen, RulesSheet, JoinSheet, FounderSheet, InstallSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
+import { NEED_NET, ErrorScreen, RulesSheet, OnlineSheet, JoinSheet, FounderSheet, InstallSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
 
 const LOCAL = (() => { try { return window.localStorage; } catch (e) { return null; } })();
 // Sblocco della Modalità Fondatore, salvato su questo telefono. Solo cosmetico: non va mai a Firebase.
@@ -69,7 +69,7 @@ export default function App() {
   const [room, setRoom] = useState(null);
   const [inviteRoom, setInviteRoom] = useState(null);
   const [err, setErr] = useState(null); // { kind, info }
-  const [sheet, setSheet] = useState(null); // rules | join | founder | install | scores | exit
+  const [sheet, setSheet] = useState(null); // rules | online | join | founder | install | scores | exit
   const [founder, setFounder] = useState(founderStore.isActive);
   const [editing, setEditing] = useState(false);
   const [toastText, setToastText] = useState(null);
@@ -406,7 +406,7 @@ export default function App() {
   else if (view === 'loading' || (view === 'room' && !g)) screen = <Loading />;
   else if (view === 'home') {
     screen = <Home profile={profile} setProfile={setProfile} onRules={() => setSheet('rules')}
-      onCreate={() => { if (!needNet() && !needName()) setView('setup'); }} onJoin={() => setSheet('join')}
+      onOnline={() => setSheet('online')}
       founder={founder} onFounder={() => setSheet('founder')} onInstall={() => setSheet('install')} onSolo={() => setView('solo')} />;
   } else if (view === 'solo') {
     screen = <Solo records={soloRecords()} initial={soloPrefs} onBack={() => setView('home')} onStart={startSolo} toast={toast} />;
@@ -443,6 +443,8 @@ export default function App() {
       {stopping && g && status === 'review' && <StopOverlay g={g} />}
       {g && view === 'room' && !solo && !g.me?.waiting && <IdleNotice g={g} />}
       {sheet === 'rules' && <RulesSheet onClose={() => setSheet(null)} />}
+      {sheet === 'online' && <OnlineSheet onClose={() => setSheet(null)} onJoin={() => setSheet('join')}
+        onCreate={() => { setSheet(null); if (!needNet() && !needName()) setView('setup'); }} />}
       {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} onJoin={(c) => { setSheet(null); joinWith(c); }}
         onFounder={() => { founderStore.activate(); setFounder(true); setSheet(null); }} />}
       {sheet === 'install' && <InstallSheet onClose={() => setSheet(null)} toast={toast} />}

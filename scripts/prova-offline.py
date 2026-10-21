@@ -44,7 +44,7 @@ async def main():
 
         await pg.goto(URL + '/')
         try:
-            await pg.get_by_role('button', name='Crea una stanza').wait_for(timeout=6000); check('senza rete la home del gioco si apre', True)
+            await pg.get_by_role('button', name='Gioca online').wait_for(timeout=6000); check('senza rete la home del gioco si apre', True)
         except Exception:
             check('senza rete la home del gioco si apre (compare: ' + (await pg.title()) + ')', False)
         try:
@@ -95,6 +95,7 @@ async def main():
             except Exception:
                 check('giocatore di ritorno senza rete: un link a una stanza dice che serve internet', False)
             await pg4.get_by_role('textbox', name='Il tuo nome').fill('Edo')
+            await pg4.get_by_role('button', name='Gioca online').click()
             await pg4.get_by_role('button', name='Crea una stanza').click()
             try:
                 await pg4.get_by_role('button', name='Crea stanza').click(timeout=2000)

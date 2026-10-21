@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { sx, INK, COLORS, FACES, Face } from '../ui/kit';
 import { isStandalone } from '../ui/installa';
 import { CLUB } from '../club/contenuti';
@@ -50,36 +50,49 @@ export function ProfilePicker({ profile, setProfile, faceSize = 108, inputBg = '
   );
 }
 
-export default function Home({ profile, setProfile, onCreate, onJoin, onRules, founder, onFounder, onInstall, onSolo }) {
+/** Schermi bassi (iPhone con le barre di Safari, telefoni piccoli): tutto deve stare nella prima schermata. */
+function useCompact() {
+  const low = () => typeof window !== 'undefined' && window.innerHeight < 780;
+  const [compact, setCompact] = useState(low);
+  useEffect(() => {
+    const onResize = () => setCompact(low());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return compact;
+}
+
+export default function Home({ profile, setProfile, onOnline, onRules, founder, onFounder, onInstall, onSolo }) {
   let k = 0;
+  const c = useCompact();
+  const tile = c ? { w: 48, h: 52, f: 29, r: 13 } : { w: 52, h: 58, f: 32, r: 14 };
   return (
-    <div className="n-screen" style={sx('position: absolute; inset: 0; background: #FFD23F; padding: 20px 24px 28px; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto')}>
+    <div className="n-screen" style={sx(`position: absolute; inset: 0; background: #FFD23F; padding: ${c ? '10px 24px 8px' : '20px 24px 28px'}; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto`)}>
       <div style={sx('display: flex; justify-content: flex-end; gap: 10px')}>
         {founder && <button className="n-btn" onClick={onFounder} style={sx('height: 44px; padding: 0 16px; margin-right: auto; border-radius: 999px; border: 2.5px solid #17122B; background: #B79CFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Fondatore</button>}
         <button className="n-btn" onClick={onRules} style={sx('height: 44px; padding: 0 16px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Come si gioca</button>
       </div>
       <h1 style={sx('position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0')}>Nomi Cose Città</h1>
-      <div aria-hidden="true" style={sx('display: flex; flex-direction: column; gap: 12px; align-items: center; padding: 22px 0 0')}>
+      <div aria-hidden="true" style={sx(`display: flex; flex-direction: column; gap: ${c ? 6 : 12}px; align-items: center; padding: ${c ? 8 : 22}px 0 0`)}>
         {WORDS.map((w, wi) => (
           <span key={wi} style={sx('display: flex; gap: 8px; padding: 4px; margin: -4px')}>
             {w.map((ch, i) => {
               const d = k++;
               return (
                 <span key={i} className="n-pop" style={sx(`display: inline-block; padding: 4px; margin: -4px; animation-delay: ${d * 55}ms`)}>
-                  <span className="n-float" style={sx(`width: 52px; height: 58px; box-sizing: border-box; border-radius: 14px; border: 2.5px solid #17122B; background: ${WCOL[wi]}; color: #17122B; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 32px; box-shadow: 0 5px 0 #17122B; transform: rotate(${ROTS[(i + wi) % 5]}); animation-delay: ${d * 180}ms`)}>{ch}</span>
+                  <span className="n-float" style={sx(`width: ${tile.w}px; height: ${tile.h}px; box-sizing: border-box; border-radius: ${tile.r}px; border: 2.5px solid #17122B; background: ${WCOL[wi]}; color: #17122B; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: ${tile.f}px; box-shadow: 0 ${c ? 4 : 5}px 0 #17122B; transform: rotate(${ROTS[(i + wi) % 5]}); animation-delay: ${d * 180}ms`)}>{ch}</span>
                 </span>
               );
             })}
           </span>
         ))}
       </div>
-      <div className="n-up" style={sx('margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 14px; animation-delay: .5s')}>
-        <ProfilePicker profile={profile} setProfile={setProfile} founder={founder} />
+      <div className="n-up" style={sx(`margin-top: ${c ? 12 : 30}px; display: flex; flex-direction: column; align-items: center; gap: ${c ? 10 : 14}px; animation-delay: .5s`)}>
+        <ProfilePicker profile={profile} setProfile={setProfile} founder={founder} faceSize={c ? 96 : 108} inputH={c ? 52 : 58} />
       </div>
-      <div className="n-up" style={sx('display: flex; flex-direction: column; gap: 14px; margin-top: auto; padding-top: 24px; animation-delay: .6s')}>
-        <button className="n-btn" onClick={onCreate} style={sx('height: 62px; border: 2.5px solid #17122B; border-radius: 20px; background: #17122B; color: #FFD23F; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #7A5F00; cursor: pointer')}>Crea una stanza</button>
-        <button className="n-btn" onClick={onSolo} style={sx('height: 58px; border-radius: 20px; border: 2.5px solid #17122B; background: #B79CFF; color: #17122B; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Gioca da solo</button>
-        <button className="n-btn" onClick={onJoin} style={sx('height: 58px; border-radius: 20px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Ho un codice</button>
+      <div className="n-up" style={sx(`display: flex; flex-direction: column; gap: ${c ? 10 : 14}px; margin-top: auto; padding-top: ${c ? 16 : 24}px; animation-delay: .6s`)}>
+        <button className="n-btn" onClick={onOnline} style={sx(`height: ${c ? 56 : 62}px; border: 2.5px solid #17122B; border-radius: 20px; background: #17122B; color: #FFD23F; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #7A5F00; cursor: pointer`)}>Gioca online</button>
+        <button className="n-btn" onClick={onSolo} style={sx(`height: ${c ? 56 : 62}px; border: 2.5px solid #17122B; border-radius: 20px; background: #B79CFF; color: #17122B; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer`)}>Gioca da solo</button>
         {!isStandalone() && <button onClick={onInstall} style={sx('min-height: 44px; margin-bottom: -10px; border: 0; background: transparent; color: #17122B; font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer')}>Usalo come un'app</button>}
       </div>
     </div>
