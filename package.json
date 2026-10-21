@@ -15,7 +15,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "dev": "react-scripts start",
-    "test:rules": "node --test src/engine/rules.test.mjs src/engine/salvataggio.test.mjs src/club/fondatore.test.mjs src/solo/*.test.mjs scripts/sw.test.mjs",
+    "test:rules": "node --test src/engine/rules.test.mjs src/engine/salvataggio.test.mjs src/club/fondatore.test.mjs src/solo/*.test.mjs scripts/sw.test.mjs src/engine/robotOnline.test.mjs",
     "test:room": "firebase emulators:exec --project demo-ncc --only auth,database \"node --test --test-force-exit src/engine/room.test.mjs src/engine/affidabilita.test.mjs src/stats.test.mjs src/engine/veloce.test.mjs\""
   },
   "eslintConfig": {
