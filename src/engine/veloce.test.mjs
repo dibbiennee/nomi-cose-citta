@@ -191,3 +191,57 @@ test('se l\'host cade durante il round, i robot li fa giocare un altro telefono;
   await b.engine.leaveRoom(code);
   assert.equal(await b.read(`rooms/${code}/hostId`), a.uid, 'esce Bea: il posto va ad Anna (scollegata ma in stanza), mai a un robot');
 });
+
+// ---------- coda ----------
+import { createQueue } from './coda.js';
+/** Mette in coda i telefoni e restituisce, per ognuno, la stanza assegnata (o null dopo maxMs). */
+async function queueUp(phones, opts = {}, maxMs = 12000) {
+  const got = new Map();
+  const queues = phones.map((p) => createQueue(p.db, p.engine, p.uid, { waitMs: 2000, ...opts }));
+  await Promise.all(phones.map((p, i) => queues[i].join(p.profile, (st) => {
+    if (st.room) {
+      assert.ok(!got.has(p.uid), `${p.name} assegnato due volte`);
+      got.set(p.uid, st.room);
+    }
+  })));
+  const t0 = Date.now();
+  while (got.size < phones.length && Date.now() - t0 < maxMs) await sleep(200);
+  await Promise.all(queues.map((q) => q.leave()));
+  return phones.map((p) => got.get(p.uid) || null);
+}
+
+test('coda: 4 persone nella stessa stanza veloce, di cui una è l\'host', async () => {
+  const phones = await Promise.all(['Q1', 'Q2', 'Q3', 'Q4'].map(phone));
+  const rooms = await queueUp(phones);
+  assert.ok(rooms.every((r) => r && r === rooms[0]), JSON.stringify(rooms));
+  const room = await phones[0].read(`rooms/${rooms[0]}`);
+  assert.equal(room.quick, true);
+  assert.ok(phones.some((p) => p.uid === room.hostId));
+});
+
+test('coda: 6 persone, una stanza da 4 e una da 2, nessuno in due stanze', async () => {
+  const phones = await Promise.all(['S1', 'S2', 'S3', 'S4', 'S5', 'S6'].map(phone));
+  const rooms = await queueUp(phones);
+  assert.ok(rooms.every(Boolean), JSON.stringify(rooms));
+  const counts = {};
+  rooms.forEach((r) => { counts[r] = (counts[r] || 0) + 1; });
+  assert.deepEqual(Object.values(counts).sort(), [2, 4]);
+});
+
+test('coda: da soli, dopo l\'attesa una stanza veloce tutta per sé', async () => {
+  const [p] = await Promise.all(['Solo'].map(phone));
+  const t0 = Date.now();
+  const [code] = await queueUp([p]);
+  assert.ok(code);
+  assert.ok(Date.now() - t0 >= 1800, 'prima aspetta');
+  const room = await p.read(`rooms/${code}`);
+  assert.equal(room.hostId, p.uid);
+  assert.equal(await p.read(`queue/${p.uid}`), null, 'uscendo dalla coda la voce sparisce');
+});
+
+test('coda: due organizzatori insieme non mettono nessuno in due stanze', async () => {
+  const phones = await Promise.all(['D1', 'D2', 'D3', 'D4'].map(phone));
+  const rooms = await queueUp(phones, { isOrganizer: () => true });
+  assert.ok(rooms.every(Boolean), JSON.stringify(rooms));
+  for (const code of new Set(rooms)) assert.ok(await phones[0].read(`rooms/${code}/hostId`), `la stanza ${code} esiste`);
+});
