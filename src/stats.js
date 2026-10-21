@@ -11,8 +11,9 @@ export const STAT_KEYS = [
   'solo_facile', 'solo_medio', 'solo_difficile', 'solo_impossibile', // partite da soli iniziate
   'solo_finite', // partite da soli arrivate al podio
   'installazioni', // gioco aggiunto alla schermata Home
+  'partite_veloci', // partite formate dalla coda della partita veloce
 ];
-export const LIVE_PLACES = ['home', 'stanza', 'solo'];
+export const LIVE_PLACES = ['home', 'stanza', 'solo', 'coda'];
 
 /** Il giorno in Italia, AAAA-MM-GG: le statistiche si leggono con l'orario di chi gioca. */
 export const dayKey = (ms) => new Date(ms).toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
@@ -23,7 +24,7 @@ export function track(db, key) {
   return runTransaction(ref(db, `stats/days/${dayKey(Date.now())}/${key}`), (v) => (v || 0) + 1, { applyLocally: false });
 }
 
-/** Dove si trova questo telefono adesso (home, stanza, solo). La voce sparisce da sola quando si scollega. */
+/** Dove si trova questo telefono adesso (home, stanza, solo, coda). La voce sparisce da sola quando si scollega. */
 export async function setLive(db, uid, where) {
   const me = ref(db, `live/${uid}`);
   await onDisconnect(me).remove();
