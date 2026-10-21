@@ -28,3 +28,12 @@ test('gruppo: 4 subito; meno di 4 solo dopo l\'attesa della più vecchia', () =>
   assert.equal(nextGroup(q(['a', now - 50000, 'ROOM']), now), null, 'le voci assegnate non contano');
   assert.equal(nextGroup({}, now), null);
 });
+
+test('una voce libera da troppo tempo (telefono che non risponde) si salta: organizza la successiva, e non entra nel gruppo', () => {
+  const now = 100000;
+  const queue = q(['vecchio', now - 40000], ['a', now - 1000], ['b', now - 900], ['c', now - 800], ['d', now - 700]);
+  assert.equal(organizer(queue, now, 2000), 'a');
+  assert.deepEqual(nextGroup(queue, now, 2000), ['a', 'b', 'c', 'd']);
+  assert.equal(organizer(queue), 'vecchio', 'senza orario non si sa chi è vecchio');
+  assert.equal(organizer(q(['a', now - 6000]), now, 2000), 'a', 'entro attesa più 5 secondi non è ancora considerato fermo');
+});
