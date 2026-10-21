@@ -2,7 +2,7 @@
 const parole = {
   A: [['Armadio', 0], ['Ago', 0], ['Anello', 0], ['Accendino', 0], ['Aquilone', 0], ['Asciugamano', 0], ['Aspirapolvere', 1], ['Altalena', 1], ['Antenna', 1], ['Amaca', 1], ['Attaccapanni', 1], ['Anfora', 1], ['Accetta', 1], ['Arpa', 1], ['Annaffiatoio', 1], ['Abat-jour', 2], ['Alambicco', 2], ['Astrolabio', 2], ['Abaco', 2], ['Ampolla', 2], ['Arcolaio', 2], ['Archibugio', 2]],
   B: [['Bicchiere', 0], ['Borsa', 0], ['Bottiglia', 0], ['Bicicletta', 0], ['Bambola', 0], ['Bilancia', 1], ['Borraccia', 1], ['Barattolo', 1], ['Bastone', 1], ['Baule', 1], ['Binocolo', 1], ['Brocca', 1], ['Bussola', 1], ['Bracciale', 1], ['Berretto', 1], ['Badile', 2], ['Battipanni', 2], ['Bisturi', 2], ['Borsello', 2], ['Bandoneon', 2], ['Bidè', 2]],
-  C: [['Coltello', 0], ['Cuscino', 0], ['Chiave', 0], ['Computer', 0], ['Cucchiaio', 0], ['Candela', 0], ['Cappello', 0], ['Cassetto', 1], ['Cavatappi', 1], ['Clessidra', 1], ['Colapasta', 1], ['Compasso', 1], ['Calamaio', 2], ['Cesoia', 2], ['Caleidoscopio', 2], ['Clavicembalo', 2], ['Cerbottana', 2], ['Cannocchiale', 2]],
+  C: [['Coltello', 0], ['Cuscino', 0], ['Chiave', 0], ['Computer', 0], ['Cucchiaio', 0], ['Candela', 0], ['Cappello', 0], ['Cassetto', 1], ['Cavatappi', 1], ['Clessidra', 1], ['Colapasta', 1], ['Compasso', 1], ['Calamaio', 2], ['Cesoia', 2], ['Caleidoscopio', 2], ['Clavicembalo', 2], ['Cerbottana', 2], ['Cannocchiale', 1]],
   D: [['Dado', 0], ['Divano', 0], ['Dentifricio', 0], ['Disco', 0], ['Diario', 0], ['Dizionario', 0], ['Ditale', 1], ['Doccia', 1], ['Drone', 1], ['Deodorante', 1], ['Dondolo', 1], ['Damigiana', 2], ['Dagherrotipo', 2], ['Diapason', 2], ['Doppiere', 2], ['Dinamo', 2], ['Decanter', 2]],
   E: [['Elicottero', 0], ['Evidenziatore', 0], ['Elastico', 0], ['Etichetta', 0], ['Estintore', 1], ['Enciclopedia', 1], ['Elmetto', 1], ['Espositore', 1], ['Elica', 1], ['Ecografo', 2], ['Eufonio', 2], ['Erpice', 2], ['Embrice', 2], ['Epidiascopio', 2], ['Ecoscandaglio', 2]],
   F: [['Forchetta', 0], ['Forbici', 0], ['Frigorifero', 0], ['Fazzoletto', 0], ['Fischietto', 0], ['Ferro', 0], ['Fiammifero', 1], ['Flauto', 1], ['Fermaglio', 1], ['Frullatore', 1], ['Fionda', 1], ['Fibbia', 1], ['Frusta', 1], ['Faretra', 2], ['Feluca', 2], ['Fiasca', 2], ['Fonografo', 2], ['Fermacarte', 2]],
@@ -13,7 +13,7 @@ const parole = {
   K: [['Kayak', 0], ['Kimono', 1], ['Kart', 1], ['K-way', 1], ['Kilt', 1], ['Kazoo', 2]],
   L: [['Libro', 0], ['Lampada', 0], ['Letto', 0], ['Lavatrice', 0], ['Lavagna', 0], ['Lucchetto', 1], ['Lente', 1], ['Lanterna', 1], ['Lima', 1], ['Lampadario', 1], ['Lavello', 1], ['Laccio', 1], ['Leggio', 2], ['Liuto', 2], ['Lume', 2], ['Lesina', 2], ['Lucerna', 2]],
   M: [['Matita', 0], ['Martello', 0], ['Maglietta', 0], ['Macchina', 0], ['Moneta', 0], ['Mobile', 0], ['Molletta', 1], ['Mestolo', 1], ['Mattarello', 1], ['Microfono', 1], ['Mappamondo', 1], ['Mouse', 1], ['Metronomo', 2], ['Mortaio', 2], ['Mandolino', 2], ['Macinino', 2], ['Monocolo', 2]],
-  N: [['Nave', 0], ['Nastro', 0], ['Navigatore', 0], ['Notebook', 0], ['Neon', 1], ['Nécessaire', 1], ['Nappa', 1], ['Nacchera', 1], ['Navicella', 1], ['Narghilè', 2], ['Naspo', 2], ['Nassa', 2], ['Nebulizzatore', 2], ['Nottolino', 2], ['Nettapipe', 2]],
+  N: [['Nave', 0], ['Nastro', 0], ['Navigatore', 1], ['Notebook', 0], ['Neon', 1], ['Nécessaire', 1], ['Nappa', 1], ['Nacchera', 1], ['Navicella', 1], ['Narghilè', 2], ['Naspo', 2], ['Nassa', 2], ['Nebulizzatore', 2], ['Nottolino', 2], ['Nettapipe', 2]],
   O: [['Orologio', 0], ['Ombrello', 0], ['Occhiali', 0], ['Orecchino', 0], ['Ombrellone', 1], ['Organo', 1], ['Ovatta', 1], ['Oboe', 1], ['Oliera', 1], ['Obiettivo', 1], ['Oblò', 1], ['Ottomana', 2], ['Ocarina', 2], ['Odometro', 2], ['Otre', 2], ['Orinale', 2]],
   P: [['Penna', 0], ['Pettine', 0], ['Piatto', 0], ['Pallone', 0], ['Portafoglio', 0], ['Pentola', 0], ['Pennello', 1], ['Padella', 1], ['Paracadute', 1], ['Pinza', 1], ['Pantofola', 1], ['Pinzetta', 1], ['Pendolo', 2], ['Pantografo', 2], ['Paravento', 2], ['Pestello', 2], ['Plettro', 2]],
   Q: [['Quaderno', 0], ['Quadro', 0], ['Quadrante', 1], ['Quadriciclo', 2]],
@@ -25,7 +25,7 @@ const parole = {
   W: [['Walkman', 0], ['Walkie-talkie', 1], ['Wok', 1], ['Webcam', 1], ['Windsurf', 1]],
   X: [['Xilofono', 0]],
   Y: [['Yo-yo', 0], ['Yacht', 1]],
-  Z: [['Zaino', 0], ['Zappa', 0], ['Zerbino', 0], ['Zoccolo', 0], ['Zanzariera', 1], ['Zattera', 1], ['Zip', 1], ['Zuccheriera', 1], ['Zavorra', 1], ['Zampogna', 2], ['Zufolo', 2], ['Zangola', 2], ['Zimbello', 2], ['Zecchino', 2], ['Zircone', 2]],
+  Z: [['Zaino', 0], ['Zappa', 0], ['Zerbino', 0], ['Zoccolo', 0], ['Zanzariera', 1], ['Zattera', 1], ['Zip', 1], ['Zuccheriera', 1], ['Zavorra', 1], ['Zampogna', 2], ['Zufolo', 2], ['Zangola', 2], ['Zecchino', 2], ['Zircone', 2]],
 };
 
 export default parole;

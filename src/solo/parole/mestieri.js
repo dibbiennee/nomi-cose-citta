@@ -11,7 +11,7 @@ const parole = {
   I: [['Infermiere', 0], ['Insegnante', 0], ['Ingegnere', 0], ['Idraulico', 0], ['Imbianchino', 0], ['Impiegato', 0], ['Interprete', 1], ['Illustratore', 1], ['Istruttore', 1], ['Imprenditore', 1], ['Ispettore', 1], ['Investigatore', 1], ['Intagliatore', 2], ['Impagliatore', 2], ['Itticoltore', 2], ['Incisore', 2], ['Imbalsamatore', 2], ['Ittiologo', 2]],
   J: [['Judoka', 1], ['Jockey', 2]],
   K: [['Karateka', 1]],
-  L: [['Lattaio', 0], ['Libraio', 0], ['Lavapiatti', 0], ['Lavandaio', 0], ['Logopedista', 1], ['Lattoniere', 1], ['Lettore', 1], ['Linguista', 1], ['Lucidatore', 1], ['Lavavetri', 1], ['Lustrascarpe', 2], ['Liutaio', 2], ['Linotipista', 2], ['Lanaiolo', 2], ['Lampionaio', 2]],
+  L: [['Lattaio', 0], ['Libraio', 0], ['Lavapiatti', 0], ['Lavandaio', 1], ['Logopedista', 1], ['Lattoniere', 1], ['Lettore', 1], ['Linguista', 1], ['Lucidatore', 1], ['Lavavetri', 1], ['Lustrascarpe', 2], ['Liutaio', 2], ['Linotipista', 2], ['Lanaiolo', 2], ['Lampionaio', 2]],
   M: [['Medico', 0], ['Meccanico', 0], ['Muratore', 0], ['Maestro', 0], ['Macellaio', 0], ['Musicista', 0], ['Magistrato', 1], ['Manager', 1], ['Massaggiatore', 1], ['Marinaio', 1], ['Matematico', 1], ['Manovale', 1], ['Modello', 1], ['Maniscalco', 2], ['Mugnaio', 2], ['Mondina', 2], ['Materassaio', 2], ['Merciaio', 2], ['Mietitore', 2], ['Mosaicista', 2]],
   N: [['Notaio', 0], ['Netturbino', 0], ['Nutrizionista', 0], ['Negoziante', 0], ['Nuotatore', 0], ['Neurologo', 1], ['Naturalista', 1], ['Navigatore', 1], ['Narratore', 1], ['Neurochirurgo', 1], ['Neonatologo', 2], ['Nostromo', 2], ['Nocchiero', 2], ['Norcino', 2], ['Nefrologo', 2], ['Numismatico', 2]],
   O: [['Operaio', 0], ['Oculista', 0], ['Ortolano', 0], ['Ottico', 0], ['Ostetrica', 1], ['Orologiaio', 1], ['Orefice', 1], ['Ortopedico', 1], ['Oncologo', 1], ['Organista', 1], ['Operatore ecologico', 1], ['Oste', 1], ['Ombrellaio', 2], ['Ortottista', 2], ['Oboista', 2], ['Otorinolaringoiatra', 2], ['Ornitologo', 2], ['Oceanografo', 2]],
@@ -20,12 +20,12 @@ const parole = {
   R: [['Regista', 0], ['Ragioniere', 0], ['Rappresentante', 0], ['Ristoratore', 0], ['Radiologo', 1], ['Restauratore', 1], ['Redattore', 1], ['Receptionist', 1], ['Ricercatore', 1], ['Rettore', 1], ['Rapper', 1], ['Rigattiere', 2], ['Ramaio', 2], ['Ricamatore', 2], ['Rilegatore', 2], ['Reumatologo', 2]],
   S: [['Sarto', 0], ['Segretario', 0], ['Scrittore', 0], ['Scienziato', 0], ['Soldato', 0], ['Sindaco', 0], ['Salumiere', 0], ['Sommelier', 1], ['Scultore', 1], ['Sociologo', 1], ['Stilista', 1], ['Steward', 1], ['Sacerdote', 1], ['Sceneggiatore', 1], ['Spazzacamino', 2], ['Scalpellino', 2], ['Stalliere', 2], ['Selciatore', 2], ['Setaiolo', 2], ['Sellaio', 2], ['Stagnino', 2]],
   T: [['Tassista', 0], ['Tabaccaio', 0], ['Tecnico', 0], ['Tennista', 0], ['Traduttore', 1], ['Tatuatore', 1], ['Tipografo', 1], ['Tornitore', 1], ['Tappezziere', 1], ['Tranviere', 1], ['Tesoriere', 1], ['Tessitore', 2], ['Tintore', 2], ['Tagliapietre', 2], ['Tonnarotto', 2], ['Torrefattore', 2]],
-  U: [['Usciere', 0], ['Ufficiale', 0], ['Urologo', 0], ["Uomo d'affari", 0], ['Urbanista', 1], ['Umorista', 1], ['Ufficiale giudiziario', 1], ['Ufficiale di marina', 1], ['Utensilista', 2], ['Uccellatore', 2], ['Uditore', 2], ['Umanista', 2], ['Ussaro', 2], ['Uomo sandwich', 2], ['Ufficiale sanitario', 2]],
+  U: [['Usciere', 0], ['Ufficiale', 0], ['Urologo', 1], ["Uomo d'affari", 0], ['Urbanista', 1], ['Umorista', 1], ['Ufficiale giudiziario', 1], ['Ufficiale di marina', 1], ['Utensilista', 2], ['Uccellatore', 2], ['Uditore', 2], ['Umanista', 2], ['Ussaro', 2], ['Uomo sandwich', 2], ['Ufficiale sanitario', 2]],
   V: [['Veterinario', 0], ['Vigile', 0], ['Vigile del fuoco', 0], ['Venditore', 0], ['Vetraio', 1], ['Velista', 1], ['Vignaiolo', 1], ['Vivaista', 1], ['Videomaker', 1], ['Vetrinista', 1], ['Verniciatore', 1], ['Vinaio', 1], ['Vetturino', 2], ['Vasaio', 2], ['Vulcanologo', 2], ['Vaccaro', 2], ['Venditore ambulante', 2]],
   W: [['Webmaster', 1], ['Wedding planner', 1]],
   X: [['Xilografo', 2]],
   Y: [['Youtuber', 0]],
-  Z: [['Zoologo', 0], ['Zappatore', 0], ['Zampognaro', 0], ['Zootecnico', 0], ['Zincatore', 1], ['Zoccolaio', 1], ['Zatteriere', 1], ['Zonista', 1], ['Zecchiere', 2], ['Zincografo', 2], ['Zooiatra', 2], ['Zuavo', 2], ['Zigrinatore', 2], ['Zoografo', 2], ['Zappaterra', 2], ['Zincotipista', 2]],
+  Z: [['Zoologo', 0], ['Zappatore', 0], ['Zampognaro', 0], ['Zootecnico', 0], ['Zincatore', 1], ['Zoccolaio', 1], ['Zatteriere', 1], ['Zecchiere', 2], ['Zincografo', 2], ['Zooiatra', 2], ['Zoografo', 2], ['Zappaterra', 2], ['Zincotipista', 2]],
 };
 
 export default parole;
