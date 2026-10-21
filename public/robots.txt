@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /statistiche
 Disallow: /r/
+Disallow: /condizioni-acquisto
 
 Sitemap: https://nomicosecitta.pro/sitemap.xml
