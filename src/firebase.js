@@ -6,9 +6,14 @@ import {
 import { createEngine } from './engine/room.js';
 import { ensureSignedIn } from './account/accesso.js';
 
+// Sul dominio del gioco l'accesso passa dal dominio stesso (vercel.json inoltra /__/auth a Firebase): Google mostra
+// "nomicosecitta.pro" invece dell'indirizzo tecnico, e Safari non blocca l'app installata. Altrove resta quello di Firebase.
+const GAME_DOMAIN = 'nomicosecitta.pro';
+const onGameDomain = typeof window !== 'undefined' && window.location.hostname === GAME_DOMAIN;
+
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  authDomain: onGameDomain ? GAME_DOMAIN : process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
   databaseURL: process.env.REACT_APP_FIREBASE_DATABASE_URL,
   projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
   storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
