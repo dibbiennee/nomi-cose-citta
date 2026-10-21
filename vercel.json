@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/__/auth/:path*",
+      "destination": "https://nomi-cose-citta-416e9.firebaseapp.com/__/auth/:path*"
+    },
+    {
       "source": "/r/:code",
       "destination": "/index.html"
     },
