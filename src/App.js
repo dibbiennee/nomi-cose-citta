@@ -382,7 +382,7 @@ export default function App() {
       {g && view === 'room' && !solo && !g.me?.waiting && <IdleNotice g={g} />}
       {sheet === 'rules' && <RulesSheet onClose={() => setSheet(null)} />}
       {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} onJoin={(c) => { setSheet(null); joinWith(c); }}
-        onFounder={() => { founderStore.activate(); setFounder(true); setSheet('founder'); }} />}
+        onFounder={() => { founderStore.activate(); setFounder(true); setSheet(null); }} />}
       {sheet === 'install' && <InstallSheet onClose={() => setSheet(null)} toast={toast} />}
       {sheet === 'founder' && <FounderSheet onClose={() => setSheet(null)}
         onRevoke={() => { founderStore.revoke(); setFounder(false); setSheet(null); toast('Modalità Fondatore disattivata'); }} />}

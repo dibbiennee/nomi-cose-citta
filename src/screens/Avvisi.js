@@ -81,9 +81,8 @@ export function JoinSheet({ onClose, onJoin, onFounder }) {
 export function FounderSheet({ onClose, onRevoke }) {
   return (
     <Sheet onClose={onClose} gap={14} label="Modalità Fondatore">
-      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px; line-height: 1.1; text-wrap: balance")}>Modalità Fondatore attiva</h2>
-      <p style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; text-wrap: pretty')}>Sei nel club. Qui arriveranno i&nbsp;personaggi, le&nbsp;espressioni e&nbsp;gli accessori riservati a&nbsp;voi. Vale solo su questo telefono.</p>
-      <button type="button" className="n-btn" onClick={onClose} style={sx('height: 58px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Andiamo</button>
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px; line-height: 1.1; text-wrap: balance")}>Modalità Fondatore</h2>
+      <button type="button" className="n-btn" onClick={onClose} style={sx('height: 58px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Chiudi</button>
       <button type="button" onClick={onRevoke} style={sx('min-height: 44px; border: 0; background: transparent; color: #5E5880; font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer')}>Disattiva su questo telefono</button>
     </Sheet>
   );
