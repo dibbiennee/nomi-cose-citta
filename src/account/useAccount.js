@@ -3,7 +3,7 @@ import { ref, onValue, get } from 'firebase/database';
 import { onIdTokenChanged, getRedirectResult, GoogleAuthProvider, signInWithCredential, isSignInWithEmailLink } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { isRegistered, linkGoogle, sendEmailLink, completeEmailLink, signOutToAnonymous, deleteAccount, reauthGoogle, usesGoogle, EMAIL_KEY, MODE_KEY } from './accesso';
-import { createProfile, earnGame, claimDaily, buyItem, equip, setUsername, claimInvites, joinWaitlist, leaveWaitlist, deleteProfile, gameCoins } from './profilo';
+import { createProfile, earnCoins, claimDaily, buyItem, equip, setUsername, claimInvites, joinWaitlist, leaveWaitlist, isOnWaitlist, deleteProfile, gameCoins } from './profilo';
 import { isStandalone } from '../ui/installa';
 import { dayKey } from '../stats';
 
@@ -12,6 +12,7 @@ import { dayKey } from '../stats';
 // ricarica: il motore delle stanze è legato all'identità e così riparte pulito.
 export const PENDING_KEY = 'ncc-monete-in-sospeso'; // monete dell'ultima partita giocata senza account
 export const INVITE_KEY = 'ncc-invito'; // chi ci ha invitato, letto da /?invito=
+export const QUEUE_KEY = 'ncc-monete-da-accreditare'; // monete di partite finite senza che arrivassero (rete assente)
 const DELETE_KEY = 'ncc-cancella'; // la cancellazione aspetta il ritorno dal redirect di Google
 const LS = (() => { try { return window.localStorage; } catch (e) { return null; } })();
 const lsGet = (k) => { try { return LS?.getItem(k); } catch (e) { return null; } };
@@ -89,11 +90,12 @@ export function useAccount({ ready, stat, toast }) {
   }, [ready, uid, toast, finishRemoval]);
 
   // Profilo dal vivo; alla prima volta da registrato si crea (benvenuto, monete in sospeso, invito).
+  // Se la creazione non riesce (rete, o un'altra iscrizione nello stesso istante) si riprova dopo qualche secondo.
   useEffect(() => {
     if (!registered || !uid) { setProfile(null); return undefined; }
     let creating = false;
-    return onValue(ref(db, `users/${uid}`), async (s) => {
-      if (s.exists()) { setProfile(s.val()); return; }
+    let timer = null;
+    const create = async () => {
       if (creating || removing.current) return;
       creating = true;
       try {
@@ -102,16 +104,31 @@ export function useAccount({ ready, stat, toast }) {
         lsSet(INVITE_KEY, null);
         statRef.current('account_creati');
         toast(r.primi100 ? `Benvenuto! ${r.coins} monete e gli accessori esclusivi` : `Benvenuto! ${r.coins} monete per te`);
-      } catch (e) { creating = false; }
+      } catch (e) { timer = setTimeout(create, 4000); }
+      creating = false;
+    };
+    const off = onValue(ref(db, `users/${uid}`), (s) => {
+      if (s.exists()) { setProfile(s.val()); return; }
+      create();
     });
+    return () => { off(); clearTimeout(timer); };
   }, [registered, uid, toast]);
 
-  // Una volta per apertura: bonus del giorno e inviti andati a buon fine.
+  // Una volta per apertura: monete rimaste in coda, bonus del giorno e inviti andati a buon fine.
   const daily = useRef(false);
   useEffect(() => {
     if (!profile || !uid || daily.current) return;
     daily.current = true;
     (async () => {
+      // Monete di una partita finita senza rete, o prima di entrare in un account che esisteva già. Si accredita una
+      // partita alla volta (le regole accettano al massimo 20 al minuto) e il resto va perso: sono monete da gioco.
+      const queued = +(lsGet(QUEUE_KEY) || 0) || +(lsGet(PENDING_KEY) || 0);
+      if (queued > 0) {
+        lsSet(QUEUE_KEY, null);
+        lsSet(PENDING_KEY, null);
+        const got = Math.min(20, queued);
+        if (await earnCoins(db, uid, got).then(() => true, () => false)) toast(`+${got} monete: l'ultima partita`);
+      }
       const d = await claimDaily(db, uid, dayKey(Date.now())).catch(() => null);
       if (d) toast(d.streak > 1 ? `+${d.amount} monete: ${d.streak} giorni di fila` : `+${d.amount} monete: bonus del giorno`);
       const inv = await claimInvites(db, uid).catch(() => 0);
@@ -123,7 +140,12 @@ export function useAccount({ ready, stat, toast }) {
   const earn = useCallback(async (result) => {
     const amount = gameCoins(result);
     if (!registered || !uid) { lsSet(PENDING_KEY, String(amount)); return { amount, kept: false }; }
-    try { await earnGame(db, uid, result); return { amount, kept: true }; } catch (e) { return { amount, kept: false, late: true }; }
+    // Prima in coda, poi si prova: se la rete manca o la pagina si chiude, alla prossima apertura le monete arrivano.
+    lsSet(QUEUE_KEY, String(amount));
+    const wait = new Promise((resolve) => setTimeout(() => resolve('lento'), 8000));
+    const done = await Promise.race([earnCoins(db, uid, amount).then(() => 'ok', () => 'no'), wait]);
+    if (done === 'ok') lsSet(QUEUE_KEY, null);
+    return done === 'ok' ? { amount, kept: true } : { amount, kept: false, late: true };
   }, [registered, uid]);
 
   const afterSwitch = (r) => { if (r && r.merged) window.location.reload(); };
@@ -154,6 +176,7 @@ export function useAccount({ ready, stat, toast }) {
     equip: (tipo, id) => equip(db, uid, tipo, id),
     joinWaitlist: (data) => joinWaitlist(db, uid, data),
     leaveWaitlist: () => leaveWaitlist(db, uid),
+    onWaitlist: () => isOnWaitlist(db, uid).catch(() => false),
     readIscritti: () => get(ref(db, 'meta/iscritti')).then((s) => s.val() || 0).catch(() => null),
     inviteLink: uid ? `${window.location.origin}/?invito=${uid}` : '',
   };

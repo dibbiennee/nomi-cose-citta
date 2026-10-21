@@ -335,9 +335,10 @@
       "$inviter": {
         ".read": "auth != null && auth.uid === $inviter",
         "$new": {
-          ".write": "auth != null && ((auth.uid === $new && $new !== $inviter && !data.exists() && root.child('users').child($new).child('invitedBy').val() === $inviter) || (auth.uid === $inviter && data.val() === true && newData.val() === 'preso'))",
-          ".validate": "newData.val() === true || newData.val() === 'preso'"
-        }
+          ".write": "auth != null && ((auth.uid === $new && $new !== $inviter && !data.exists() && root.child('users').child($new).child('invitedBy').val() === $inviter) || (auth.uid === $inviter && data.val() === true && newData.val() === 'preso') || (!newData.exists() && (auth.uid === $new || auth.uid === $inviter)))",
+          ".validate": "!newData.exists() || newData.val() === true || newData.val() === 'preso'"
+        },
+        ".write": "auth != null && auth.uid === $inviter && !newData.exists()"
       }
     },
     "waitlist": {

@@ -71,6 +71,7 @@ export default function App() {
   const engine = solo || netEngine;
   const [profile, setProfileState] = useState(loadProfile);
   // Senza un link /r/CODICE la home compare subito, senza aspettare Firebase (che senza rete non risponde).
+  const [shopFrom, setShopFrom] = useState('home'); // da dove si è aperto il negozio, per il tasto Indietro
   const [view, setView] = useState(() => (window.location.pathname === '/statistiche' ? 'stats' : codeFromPath(window.location.pathname) ? 'loading' : 'home')); // loading | home | setup | invite | room | error | stats
   const [code, setCode] = useState(null);
   const [room, setRoom] = useState(null);
@@ -587,13 +588,13 @@ export default function App() {
   else if (view === 'loading' || (view === 'room' && !g)) screen = <Loading />;
   else if (view === 'home') {
     screen = <Home profile={gameProfile} setProfile={setHomeProfile} nameLocked={nameLocked} onRules={() => setSheet('rules')}
-      onAccount={() => setView('account')} account={account}
+      onAccount={() => setView('account')} onShop={() => { setShopFrom('home'); setView('negozio'); }} account={account}
       onOnline={() => { stat('scelta_online'); setSheet('online'); }}
       founder={founder} onFounder={() => setSheet('founder')} onInstall={() => { stat('guida_aperta'); setSheet('install'); }} onSolo={() => { stat('scelta_solo'); setView('solo'); }} />;
   } else if (view === 'account') {
-    screen = <Account account={account} onBack={() => setView('home')} onShop={() => setView('negozio')} toast={toast} />;
+    screen = <Account account={account} onBack={() => setView('home')} onShop={() => { setShopFrom('account'); setView('negozio'); }} toast={toast} />;
   } else if (view === 'negozio') {
-    screen = <Negozio account={account} face={gameProfile} onBack={() => setView(account.registered ? 'account' : 'home')} onAccount={() => setView('account')}
+    screen = <Negozio account={account} face={gameProfile} onBack={() => setView(shopFrom)} onAccount={() => setView('account')}
       onWaitlist={(p) => { stat(`richiesta_${p.id}`); setWaitProduct(p); setSheet('waitlist'); }} toast={toast} />;
   } else if (view === 'cerco') {
     screen = <Cerco found={cerco.found} waitedMs={Date.now() - cerco.since} botWaitMs={BOT_WAIT_MS} onCancel={cancelQuick} />;
@@ -634,7 +635,7 @@ export default function App() {
       {sheet === 'rules' && <RulesSheet onClose={() => setSheet(null)} />}
       {sheet === 'primi' && <PrimiSheet primi={primi} onClose={() => setSheet(null)} onSignup={() => { setSheet(null); if (view === 'room') leave(); setView('account'); }} />}
       {sheet === 'waitlist' && waitProduct && <WaitlistSheet product={waitProduct} defaultEmail={account.email} onClose={() => setSheet(null)}
-        onJoin={async (d) => { await account.joinWaitlist(d); stat('lista_attesa'); }} />}
+        onJoin={async (d) => { await account.joinWaitlist(d); stat('lista_attesa'); }} onLeave={account.leaveWaitlist} />}
       {sheet === 'online' && <OnlineSheet onClose={() => setSheet(null)} onJoin={() => setSheet('join')} onQuick={startQuick}
         onCreate={() => { setSheet(null); if (!needNet() && !needName()) setView('setup'); }} />}
       {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} onJoin={(c) => { setSheet(null); joinWith(c, 'codice'); }}

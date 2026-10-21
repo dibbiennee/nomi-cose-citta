@@ -62,16 +62,19 @@ function useCompact() {
   return compact;
 }
 
-export default function Home({ profile, setProfile, onOnline, onRules, founder, onFounder, onInstall, onSolo, onAccount, account, nameLocked }) {
+export default function Home({ profile, setProfile, onOnline, onRules, founder, onFounder, onInstall, onSolo, onAccount, onShop, account, nameLocked }) {
   let k = 0;
   const c = useCompact();
   const tile = c ? { w: 48, h: 52, f: 29, r: 13 } : { w: 52, h: 58, f: 32, r: 14 };
   return (
     <div className="n-screen" style={sx(`position: absolute; inset: 0; background: #FFD23F; padding: ${c ? '10px 24px 8px' : '20px 24px 28px'}; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto`)}>
-      <div style={sx('display: flex; justify-content: flex-end; align-items: center; gap: 8px')}>
-        <button className="n-btn" onClick={onAccount} style={sx(`height: 44px; padding: 0 14px; margin-right: ${founder ? '0' : 'auto'}; border-radius: 999px; border: 2.5px solid #17122B; background: ${account?.registered ? '#FFD23F' : '#FFFFFF'}; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer; white-space: nowrap`)}>{account?.registered ? `${account.coins} monete` : 'Account'}</button>
-        {founder && <button className="n-btn" onClick={onFounder} style={sx('height: 44px; padding: 0 16px; margin-right: auto; border-radius: 999px; border: 2.5px solid #17122B; background: #B79CFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Fondatore</button>}
-        <button className="n-btn" onClick={onRules} style={sx('height: 44px; padding: 0 16px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Come si gioca</button>
+      <div style={sx('display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 6px')}>
+        <div style={sx(`display: flex; gap: 6px; margin-right: ${founder ? '0' : 'auto'}`)}>
+          <button className="n-btn" onClick={onAccount} aria-label={account?.registered ? `Account, ${account.coins} monete` : undefined} style={sx(`height: 44px; padding: 0 12px; border-radius: 999px; border: 2.5px solid #17122B; background: ${account?.registered ? '#FFD23F' : '#FFFFFF'}; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer; white-space: nowrap`)}>{account?.registered ? (window.innerWidth < 380 ? `${account.coins}` : `${account.coins} monete`) : 'Account'}</button>
+          <button className="n-btn" onClick={onShop} style={sx('height: 44px; padding: 0 12px; border-radius: 999px; border: 2.5px solid #17122B; background: #B79CFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer; white-space: nowrap')}>Negozio</button>
+        </div>
+        {founder && <button className="n-btn" onClick={onFounder} style={sx('height: 44px; padding: 0 12px; margin-right: auto; border-radius: 999px; border: 2.5px solid #17122B; background: #B79CFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Fondatore</button>}
+        <button className="n-btn" onClick={onRules} style={sx('height: 44px; padding: 0 12px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Come si gioca</button>
       </div>
       <h1 style={sx('position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0')}>Nomi Cose Città</h1>
       <div aria-hidden="true" style={sx(`display: flex; flex-direction: column; gap: ${c ? 6 : 12}px; align-items: center; padding: ${c ? 8 : 22}px 0 0`)}>

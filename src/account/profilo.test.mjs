@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, signInAnonymously, linkWithCredential, GoogleAuthProvider } from 'firebase/auth';
 import { getDatabase, connectDatabaseEmulator, ref, get, set, update, remove } from 'firebase/database';
-import { createProfile, earnGame, claimDaily, buyItem, equip, setUsername, claimInvites, joinWaitlist, leaveWaitlist, deleteProfile, gameCoins } from './profilo.js';
+import { createProfile, earnGame, claimDaily, buyItem, equip, setUsername, claimInvites, joinWaitlist, leaveWaitlist, isOnWaitlist, deleteProfile, earnCoins, gameCoins } from './profilo.js';
 import { EARN } from '../shop/catalogo.js';
 
 const PROJECT = process.env.GCLOUD_PROJECT || 'demo-ncc';
@@ -28,6 +28,8 @@ async function phone({ anonimo = false } = {}) {
 }
 const denied = (p) => assert.rejects(p, /permission|PERMISSION_DENIED/i);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/** Legge un percorso come amministratore (solo emulatore). */
+const adminRead = (path) => fetch(`http://127.0.0.1:${process.env.DBP || 9100}/${path}.json?ns=${PROJECT}-default-rtdb`, { headers: { Authorization: 'Bearer owner' } }).then((r) => r.json());
 /** Imposta il contatore degli iscritti come amministratore (solo emulatore). */
 async function setIscritti(v) {
   await fetch(`http://127.0.0.1:${process.env.DBP || 9100}/meta/iscritti.json?ns=${PROJECT}-default-rtdb`, { method: 'PUT', headers: { Authorization: 'Bearer owner' }, body: JSON.stringify(v) });
@@ -210,4 +212,41 @@ test('username: niente prenotazioni a raffica, e cambiandolo il vecchio si liber
   assert.equal(await a.read(`usernames/secondo_${t}`), a.uid);
   assert.equal(await setUsername(a.db, a.uid, `SECONDO_${t}`), 'ok', 'cambiare solo le maiuscole');
   assert.equal(await a.read(`users/${a.uid}/username`), `SECONDO_${t}`);
+});
+
+// Minori della revisione
+
+test('monete da accreditare (ultima partita, o partita offline): al massimo 20 e non due volte in un minuto', async () => {
+  await setIscritti(500);
+  const a = await phone();
+  await createProfile(a.db, a.uid, {});
+  assert.equal(await earnCoins(a.db, a.uid, 12), 312);
+  await assert.rejects(earnCoins(a.db, a.uid, 12));
+  assert.equal(await a.read(`users/${a.uid}/coins`), 312);
+});
+
+test('cancellando l\'account spariscono anche gli inviti dove compare', async () => {
+  await setIscritti(500);
+  const [a, b] = await Promise.all([phone(), phone()]);
+  await createProfile(a.db, a.uid, {});
+  await createProfile(b.db, b.uid, { invitedBy: a.uid });
+  assert.equal(await a.read(`invites/${a.uid}/${b.uid}`), true);
+  await deleteProfile(b.db, b.uid);
+  assert.equal(await a.read(`invites/${a.uid}/${b.uid}`), null, 'chi è stato invitato cancella il proprio invito');
+  const c = await phone();
+  await createProfile(c.db, c.uid, { invitedBy: a.uid });
+  await deleteProfile(a.db, a.uid);
+  assert.equal(await adminRead(`invites/${a.uid}`), null, 'chi invita cancella i propri inviti');
+  const d = await phone();
+  await denied(set(ref(d.db, `invites/${a.uid}/${c.uid}`), null), 'un estraneo non cancella gli inviti degli altri');
+});
+
+test('lista d\'attesa: si legge se ci sono, e si esce', async () => {
+  const a = await phone();
+  await createProfile(a.db, a.uid, {});
+  assert.equal(await isOnWaitlist(a.db, a.uid), false);
+  await joinWaitlist(a.db, a.uid, { email: 'a@example.com', product: 'monete_500', consent: true });
+  assert.equal(await isOnWaitlist(a.db, a.uid), true);
+  await leaveWaitlist(a.db, a.uid);
+  assert.equal(await isOnWaitlist(a.db, a.uid), false);
 });

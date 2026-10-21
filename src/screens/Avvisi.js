@@ -102,22 +102,29 @@ export function PrimiSheet({ primi, onClose, onSignup }) {
 }
 
 /** Prodotto a soldi veri non ancora in vendita: "In arrivo" e lista d'attesa con email e consenso esplicito. */
-export function WaitlistSheet({ product, defaultEmail, onClose, onJoin }) {
+export function WaitlistSheet({ product, defaultEmail, onClose, onJoin, onLeave }) {
   const [email, setEmail] = useState(defaultEmail || '');
   const [consent, setConsent] = useState(false);
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   const ok = consent && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
   const submit = async (e) => {
     e.preventDefault();
     if (!ok || busy) return;
     setBusy(true);
-    try { await onJoin({ email: email.trim(), product: product.id, consent: true }); setDone(true); } catch (err) { setBusy(false); }
+    setFailed(false);
+    try { await onJoin({ email: email.trim(), product: product.id, consent: true }); setDone(true); } catch (err) { setBusy(false); setFailed(true); }
   };
   return (
     <Sheet onClose={onClose} gap={14} label="In arrivo">
       <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px")}>In arrivo</h2>
-      {done ? <p role="status" style={sx('margin: 0; font-size: 16px; line-height: 1.5; text-wrap: pretty')}>Fatto: ti scriviamo una volta sola, quando apriranno gli&nbsp;acquisti.</p> : (
+      {done ? (
+        <>
+          <p role="status" style={sx('margin: 0; font-size: 16px; line-height: 1.5; text-wrap: pretty')}>Fatto: ti scriviamo una volta sola, quando apriranno gli&nbsp;acquisti.</p>
+          <button type="button" onClick={async () => { await onLeave().catch(() => {}); onClose(); }} style={sx('min-height: 44px; border: 0; background: transparent; color: #5E5880; font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer')}>Cambiato idea? Togli la mia email dalla&nbsp;lista</button>
+        </>
+      ) : (
         <form onSubmit={submit} style={sx('display: flex; flex-direction: column; gap: 12px')}>
           <p style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; text-wrap: pretty')}>{product.nome} a {product.prezzo} non si può ancora comprare. Vuoi che ti avvisiamo quando&nbsp;apre?</p>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="la-tua@email.it" aria-label="La tua email" autoComplete="email"
@@ -126,6 +133,7 @@ export function WaitlistSheet({ product, defaultEmail, onClose, onJoin }) {
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={sx('width: 24px; height: 24px; margin: 0; flex-shrink: 0; accent-color: #5B3FD6')} />
             <span>Voglio ricevere un'email quando apriranno gli acquisti. Niente altro. <a href="/privacy" style={sx('color: #17122B; font-weight: 700')}>Privacy</a></span>
           </label>
+          {failed && <p role="alert" style={sx('margin: 0; font-size: 14px; font-weight: 700; color: #C4300F')}>Non siamo riusciti a salvare l'email. Controlla la connessione e tocca di nuovo Avvisami.</p>}
           <button type="submit" className="n-btn" aria-disabled={!ok} style={sx(`height: 56px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer; opacity: ${ok ? 1 : 0.45}`)}>Avvisami</button>
         </form>
       )}

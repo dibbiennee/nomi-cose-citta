@@ -48,13 +48,16 @@ export async function createProfile(db, uid, { pendingCoins = 0, invitedBy = nul
   }
 }
 
-/** Monete di fine partita. Rifiutato se arriva entro un minuto dall'ultima. Restituisce il nuovo saldo. */
-export async function earnGame(db, uid, result) {
-  const amount = gameCoins(result);
-  const res = await runTransaction(userRef(db, uid), (cur) => (cur ? { ...cur, coins: cur.coins + amount, lastEarn: serverTimestamp() } : cur), { applyLocally: false });
+/** Accredita monete (al massimo 20, e non più di una volta al minuto). Restituisce il nuovo saldo. */
+export async function earnCoins(db, uid, amount) {
+  const add = Math.min(20, Math.max(0, amount | 0));
+  const res = await runTransaction(userRef(db, uid), (cur) => (cur ? { ...cur, coins: cur.coins + add, lastEarn: serverTimestamp() } : cur), { applyLocally: false });
   if (!res.committed) throw new Error('nessun profilo');
   return res.snapshot.val().coins;
 }
+
+/** Monete di fine partita. Rifiutato se arriva entro un minuto dall'ultima. Restituisce il nuovo saldo. */
+export const earnGame = (db, uid, result) => earnCoins(db, uid, gameCoins(result));
 
 /** Bonus del giorno: 20, +10 per ogni giorno consecutivo fino a 70. null se già preso oggi. */
 export async function claimDaily(db, uid, today) {
@@ -137,9 +140,15 @@ export async function joinWaitlist(db, uid, { email, product, consent }) {
   await update(ref(db, `waitlist/${uid}`), { email: String(email || '').trim().slice(0, 120), consent: consent === true, at: serverTimestamp(), [`products/${product}`]: true });
 }
 export const leaveWaitlist = (db, uid) => remove(ref(db, `waitlist/${uid}`));
+export const isOnWaitlist = (db, uid) => get(ref(db, `waitlist/${uid}`)).then((s) => s.exists());
 
-/** Cancella profilo, username e lista d'attesa. */
+/** Cancella profilo, username, lista d'attesa e gli inviti dove compare (da invitato e da chi invita). */
 export async function deleteProfile(db, uid) {
-  const name = (await get(ref(db, `users/${uid}/username`))).val();
-  await update(ref(db), { [`users/${uid}`]: null, [`waitlist/${uid}`]: null, ...(name ? { [`usernames/${name.toLowerCase()}`]: null } : {}) });
+  const user = (await get(userRef(db, uid))).val() || {};
+  const name = user.username;
+  await update(ref(db), {
+    [`users/${uid}`]: null, [`waitlist/${uid}`]: null, [`invites/${uid}`]: null,
+    ...(user.invitedBy ? { [`invites/${user.invitedBy}/${uid}`]: null } : {}),
+    ...(name ? { [`usernames/${name.toLowerCase()}`]: null } : {}),
+  });
 }

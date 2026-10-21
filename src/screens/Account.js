@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { sx, BACK_ICON } from '../ui/kit';
 import { isStandalone, platform } from '../ui/installa';
 
@@ -19,6 +19,8 @@ export default function Account({ account, onBack, onShop, toast }) {
   const iosApp = isStandalone() && platform().ios;
   const inAppBrowser = platform().browser === 'app';
   const [deleteMsg, setDeleteMsg] = useState('');
+  const [waiting, setWaiting] = useState(false);
+  useEffect(() => { if (account.registered) account.onWaitlist().then(setWaiting); }, [account.registered]); // eslint-disable-line react-hooks/exhaustive-deps
   const run = async (fn) => {
     if (busy) return;
     setBusy(true);
@@ -47,12 +49,9 @@ export default function Account({ account, onBack, onShop, toast }) {
       if (r === 'ok') toast('Username salvato');
     });
   };
-  const share = async () => {
-    const text = `Giochiamo a Nomi Cose Città? Entra col mio invito e ricevi 200 monete: ${account.inviteLink}`;
-    try {
-      if (navigator.share) await navigator.share({ text });
-      else { await navigator.clipboard.writeText(account.inviteLink); toast('Link copiato'); }
-    } catch (e) { /* condivisione annullata */ }
+  const inviteText = `Giochiamo a Nomi Cose Città? Entra col mio invito e ricevi 200 monete: ${account.inviteLink}`;
+  const copyLink = async () => {
+    try { await navigator.clipboard.writeText(account.inviteLink); toast('Link copiato'); } catch (e) { toast('Non sono riuscito a copiarlo'); }
   };
 
   return (
@@ -100,8 +99,16 @@ export default function Account({ account, onBack, onShop, toast }) {
             <section style={card}>
               <h2 style={sx('margin: 0; font-size: 17px; font-weight: 800')}>Invita un amico</h2>
               <p style={note}>Se crea l'account dal tuo link, 200 monete a te e 200 a lui. Fino a 20&nbsp;amici.</p>
-              <button type="button" className="n-btn" onClick={share} style={big('#B79CFF', '#17122B')}>Condividi il tuo invito</button>
+              <a className="n-btn" href={`https://wa.me/?text=${encodeURIComponent(inviteText)}`} target="_blank" rel="noopener noreferrer" style={{ ...big('#6EE7A8', '#17122B'), display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', textDecoration: 'none' }}>Invita su WhatsApp</a>
+              <button type="button" onClick={copyLink} style={sx('min-height: 44px; border: 0; background: transparent; color: #5E5880; font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer')}>Copia il link</button>
             </section>
+            {waiting && (
+              <section style={card}>
+                <h2 style={sx('margin: 0; font-size: 17px; font-weight: 800')}>Lista d'attesa</h2>
+                <p style={note}>Ti avvisiamo con un'email quando apriranno gli&nbsp;acquisti.</p>
+                <button type="button" className="n-btn" disabled={busy} onClick={() => run(async () => { await account.leaveWaitlist(); setWaiting(false); toast('Email tolta dalla lista'); })} style={big('#FFFFFF', '#17122B')}>Togli la mia email dalla lista</button>
+              </section>
+            )}
             <section style={sx('display: flex; flex-direction: column; gap: 10px')}>
               <button type="button" className="n-btn" onClick={() => run(account.signOut)} style={big('#FFFFFF', '#17122B')}>Esci</button>
               {!confirmDelete ? (
