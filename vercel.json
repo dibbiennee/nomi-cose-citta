@@ -3,6 +3,10 @@
     {
       "source": "/r/:code",
       "destination": "/index.html"
+    },
+    {
+      "source": "/statistiche",
+      "destination": "/index.html"
     }
   ],
   "headers": [

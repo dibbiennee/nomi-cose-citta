@@ -18,10 +18,19 @@ root.render(
   </React.StrictMode>
 );
 
-// Service worker: serve solo a rendere il gioco installabile e a mostrare una pagina se manca la rete.
+// Service worker (public/sw.js): rende il gioco installabile e lo tiene sul telefono, così si apre anche senza rete.
 // Non in sviluppo né nelle build verso l'emulatore, dove darebbe solo fastidio con versioni vecchie.
 if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production' && process.env.REACT_APP_EMULATOR !== '1') {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
+}
+
+// Vercel Web Analytics: visite, pagine, paesi e dispositivi, senza cookie. Solo sul sito pubblicato (lo script
+// esiste solo su Vercel), dopo aver attivato Analytics nel progetto.
+if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_EMULATOR !== '1') {
+  const va = document.createElement('script');
+  va.defer = true;
+  va.src = '/_vercel/insights/script.js';
+  document.head.appendChild(va);
 }

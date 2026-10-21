@@ -14,6 +14,8 @@ import Review from './screens/Review';
 import Round from './screens/Round';
 import { Awards, Final } from './screens/Finale';
 import Solo from './screens/Solo';
+import Statistiche from './screens/Statistiche';
+import { track, setLive } from './stats';
 import { createFounderStore } from './club/fondatore';
 import { CHARACTER_IDS } from './club/contenuti';
 import { createDictionary } from './solo/dizionario';
@@ -62,7 +64,7 @@ export default function App() {
   const engine = solo || netEngine;
   const [profile, setProfileState] = useState(loadProfile);
   // Senza un link /r/CODICE la home compare subito, senza aspettare Firebase (che senza rete non risponde).
-  const [view, setView] = useState(() => (codeFromPath(window.location.pathname) ? 'loading' : 'home')); // loading | home | setup | invite | room | error
+  const [view, setView] = useState(() => (window.location.pathname === '/statistiche' ? 'stats' : codeFromPath(window.location.pathname) ? 'loading' : 'home')); // loading | home | setup | invite | room | error | stats
   const [code, setCode] = useState(null);
   const [room, setRoom] = useState(null);
   const [inviteRoom, setInviteRoom] = useState(null);
@@ -76,6 +78,27 @@ export default function App() {
   const [now, setNow] = useState(Date.now());
   const [answers, setAnswers] = useState({});
   const [stopping, setStopping] = useState(false);
+
+  // Statistiche (src/stats.js): servono l'accesso a Firebase; prima che sia pronto restano in coda.
+  const pendingStats = useRef([]);
+  const stat = useCallback((key) => {
+    if (netEngine) track(db, key).catch(() => {});
+    else pendingStats.current.push(key);
+  }, [netEngine]);
+  useEffect(() => {
+    if (!netEngine) return;
+    pendingStats.current.splice(0).forEach((k) => track(db, k).catch(() => {}));
+  }, [netEngine]);
+  // Chi c'è adesso: home, stanza o partita da soli. La voce sparisce da sola quando il telefono si scollega.
+  const place = solo ? 'solo' : view === 'room' ? 'stanza' : 'home';
+  useEffect(() => {
+    if (netEngine && view !== 'stats') setLive(db, netEngine.uid, place).catch(() => {});
+  }, [netEngine, place, view]);
+  useEffect(() => {
+    const onInstalled = () => stat('installazioni');
+    window.addEventListener('appinstalled', onInstalled);
+    return () => window.removeEventListener('appinstalled', onInstalled);
+  }, [stat]);
 
   const toastTimer = useRef(null);
   const toast = useCallback((text) => {
@@ -160,7 +183,8 @@ export default function App() {
     const before = recordStore.get(solo.difficulty).migliore;
     const { beaten } = r.counts ? recordStore.save(solo.difficulty, r) : { beaten: false };
     setSoloResult({ ...r, beaten, best: beaten ? r.ppw : before });
-  }, [solo, room]);
+    stat('solo_finite');
+  }, [solo, room, stat]);
 
   // Connessione: l'avviso compare solo dopo che è stata attiva almeno una volta.
   useEffect(() => {
@@ -238,6 +262,21 @@ export default function App() {
   }, [saver]);
 
   // Quando il round si chiude: STOP a tutto schermo e le ultime lettere salvate subito.
+  // Partite online: l'host conta la partita (all'inizio e al podio), ogni telefono in gioco conta sé stesso.
+  const prevOnline = useRef(null);
+  useEffect(() => {
+    const st = room?.status;
+    const before = prevOnline.current;
+    prevOnline.current = st;
+    if (solo || !room || !engine || st === before) return;
+    const isHost = room.hostId === engine.uid;
+    if (st === 'spin' && room.round?.n === 1) {
+      if (isHost) stat('partite_online');
+      if (!room.players?.[engine.uid]?.waiting) stat('giocatori_online');
+    }
+    if (st === 'final' && before === 'awards' && isHost) stat('partite_online_finite');
+  }, [room, solo, engine, stat]);
+
   const prevStatus = useRef(null);
   useEffect(() => {
     const prev = prevStatus.current;
@@ -328,6 +367,7 @@ export default function App() {
       setSoloPrefs({ difficulty, botCount, settings });
       setSoloResult(null);
       setSolo(e); setCode(SOLO_CODE); setRoom(null); setEditing(false); setSheet(null); setView('room');
+      stat(`solo_${difficulty}`);
       go('/');
       await e.startGame(SOLO_CODE);
     } catch (err2) { toast('Non riesco a preparare la partita, riprova'); }
@@ -362,7 +402,8 @@ export default function App() {
   }, [room, round, code, engine, now, answers, setAnswer, toast, act, leave, solo, soloResult]);
 
   let screen;
-  if (view === 'loading' || (view === 'room' && !g)) screen = <Loading />;
+  if (view === 'stats') screen = <Statistiche />;
+  else if (view === 'loading' || (view === 'room' && !g)) screen = <Loading />;
   else if (view === 'home') {
     screen = <Home profile={profile} setProfile={setProfile} onRules={() => setSheet('rules')}
       onCreate={() => { if (!needNet() && !needName()) setView('setup'); }} onJoin={() => setSheet('join')}
@@ -372,7 +413,7 @@ export default function App() {
   } else if (view === 'setup') {
     screen = <Setup toast={toast} onBack={() => setView('home')}
       onSave={async (settings) => {
-        try { enterRoom(await withTimeout(netEngine.createRoom(profile, settings))); } catch (e) { toast(offlineNow() || e.message === 'timeout' ? NEED_NET : 'Non riesco a creare la stanza, riprova'); }
+        try { enterRoom(await withTimeout(netEngine.createRoom(profile, settings))); stat('stanze_create'); } catch (e) { toast(offlineNow() || e.message === 'timeout' ? NEED_NET : 'Non riesco a creare la stanza, riprova'); }
       }} />;
   } else if (view === 'invite') {
     screen = <Invite code={code} room={inviteRoom} profile={profile} setProfile={setProfile} busy={busy} onJoin={() => joinWith(code)} />;
