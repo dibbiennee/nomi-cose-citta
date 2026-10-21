@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { sx, INK, Face } from '../ui/kit';
+import { sx, INK, Face, BotTag } from '../ui/kit';
 
 export default function Lobby({ g }) {
   const { room, code, uid, isHost, players, onlineCount } = g;
@@ -53,6 +53,7 @@ export default function Lobby({ g }) {
       </section>
       <div className="n-scroll" style={sx('flex-grow: 1; overflow-y: auto; padding: 22px 20px 16px; display: flex; flex-direction: column; gap: 18px')}>
         <div style={sx('display: flex; justify-content: space-between; align-items: baseline')}><h2 style={sx('margin: 0; font-size: 17px; font-weight: 800')}>Chi c'è</h2><span style={sx("font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #5E5880")}>{players.length} di {s.maxPlayers}</span></div>
+        {room.quick && <p style={sx('margin: -4px 0 0; font-size: 14px; line-height: 1.4; font-weight: 700; color: #5E5880; text-wrap: pretty')}>Partita veloce: si parte da soli tra pochi secondi. Se manca qualcuno, completano i&nbsp;robot.</p>}
         <div style={sx('display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 8px; padding-top: 6px')}>
           {players.map((p, i) => {
             const isMe = p.id === uid;
@@ -60,6 +61,7 @@ export default function Lobby({ g }) {
               <div key={p.id} className="n-new" style={sx(`display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; min-width: 0; opacity: ${p.online ? '1' : '0.45'}`)}>
                 <span className="n-bob" style={sx(`display: block; width: 64px; height: 64px; animation-delay: ${i * 180}ms`)}><Face p={p} size={64} stroke={2.4} blink delay={`${i * 180}ms`} /></span>
                 <span style={sx('font-size: 13px; font-weight: 800; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{isMe ? 'Tu' : p.name}</span>
+                {p.bot && <BotTag />}
                 {!p.online && <span style={sx('font-size: 11px; font-weight: 700; color: #5E5880')}>offline</span>}
                 {p.id === room.hostId && <span style={sx('position: absolute; top: -8px; left: 50%; transform: translateX(-50%); height: 20px; padding: 0 8px; border-radius: 999px; border: 2px solid #17122B; background: #FFD23F; font-size: 10px; font-weight: 800; letter-spacing: 0.06em; display: flex; align-items: center')}>HOST</span>}
                 {isHost && !isMe && (

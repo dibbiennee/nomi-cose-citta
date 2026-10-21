@@ -24,7 +24,8 @@ import { createDictionary } from './solo/dizionario';
 import { createSoloEngine, resumeSoloEngine, SOLO_CODE, SOLO_KEY } from './solo/motore';
 import { createRecordStore } from './solo/record';
 import { DIFFICULTIES } from './solo/robot';
-import { NEED_NET, ErrorScreen, RulesSheet, OnlineSheet, JoinSheet, FounderSheet, InstallSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
+import { createQueue, BOT_WAIT_MS, JOIN_WAIT_MS, QUICK_SIZE } from './engine/coda';
+import { NEED_NET, Cerco, ErrorScreen, RulesSheet, OnlineSheet, JoinSheet, FounderSheet, InstallSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
 
 const LOCAL = (() => { try { return window.localStorage; } catch (e) { return null; } })();
 // Sblocco della Modalità Fondatore, salvato su questo telefono. Solo cosmetico: non va mai a Firebase.
@@ -116,7 +117,7 @@ export default function App() {
     statRef.current(isStandalone() ? 'da_icona' : codeFromPath(window.location.pathname) ? 'da_link' : 'diretta');
   }, []);
   // Chi c'è adesso: home, stanza o partita da soli. La voce sparisce da sola quando il telefono si scollega.
-  const place = solo ? 'solo' : view === 'room' ? 'stanza' : 'home';
+  const place = solo ? 'solo' : view === 'room' ? 'stanza' : view === 'cerco' ? 'coda' : 'home';
   useEffect(() => {
     if (netEngine && view !== 'stats') setLive(db, netEngine.uid, place).catch(() => {});
   }, [netEngine, place, view]);
@@ -322,7 +323,8 @@ export default function App() {
         stat('partite_online');
         if (before === 'final') stat('rivincite');
         else if (!startedRooms.current.has(code)) { startedRooms.current.add(code); stat('stanze_avviate'); }
-        const n = Object.values(room.players || {}).filter((p) => !p.waiting).length;
+        if (room.quick && before !== 'final') stat('partite_veloci');
+        const n = Object.values(room.players || {}).filter((p) => !p.waiting && !p.bot).length; // solo persone
         stat(n >= 5 ? 'giocatori_5piu' : `giocatori_${Math.max(2, n)}`);
       }
       if (playing) stat('giocatori_online');
@@ -335,6 +337,67 @@ export default function App() {
       }
     }
   }, [room, solo, engine, stat, code]);
+
+  // ---------- Partita veloce ----------
+  const queueRef = useRef(null);
+  const [cerco, setCerco] = useState({ found: 0, since: 0 });
+  const stopQueue = useCallback(() => { const q = queueRef.current; queueRef.current = null; if (q) q.leave(); }, []);
+  const onQueue = useCallback(async (st) => {
+    if (!st.room) { setCerco((c) => ({ ...c, found: st.waiting })); return; }
+    const q = queueRef.current;
+    try {
+      await withTimeout(netEngine.joinRoom(st.room, profileRef.current));
+      stopQueue();
+      enterRoom(st.room);
+    } catch (e) {
+      if (q) q.requeue(onQueue); // la stanza non si raggiunge: si torna in coda
+    }
+  }, [netEngine, stopQueue, enterRoom]); // eslint-disable-line react-hooks/exhaustive-deps
+  const startQuick = async () => {
+    setSheet(null);
+    if (needNet() || needName()) return;
+    const q = createQueue(db, netEngine, netEngine.uid);
+    queueRef.current = q;
+    setCerco({ found: 1, since: Date.now() });
+    setView('cerco');
+    try { await q.join(profileRef.current, onQueue); } catch (e) { stopQueue(); toast(NEED_NET); setView('home'); }
+  };
+  const cancelQuick = () => { stopQueue(); setView('home'); };
+  useEffect(() => () => stopQueue(), [stopQueue]);
+  useEffect(() => {
+    if (view !== 'cerco') return undefined;
+    const iv = setInterval(() => setCerco((c) => ({ ...c })), 1000); // ridisegna il conto dell'attesa
+    return () => clearInterval(iv);
+  }, [view]);
+
+  // L'host di una stanza veloce la avvia da solo: appena ci sono 4 persone, o dopo l'attesa, completando coi robot.
+  const quickStarted = useRef(new Set());
+  useEffect(() => {
+    if (solo || !room?.quick || room.status !== 'lobby' || !engine || room.hostId !== engine.uid || !code) return;
+    if (quickStarted.current.has(code)) return;
+    const people = Object.values(room.players || {}).filter((p) => !p.bot).length;
+    if (people < QUICK_SIZE && now < (room.createdAt || 0) + JOIN_WAIT_MS) return;
+    quickStarted.current.add(code);
+    const bots = QUICK_SIZE - Object.keys(room.players || {}).length;
+    (async () => {
+      try { if (bots > 0) await engine.addBots(code, bots); await engine.startGame(code); } catch (e) { quickStarted.current.delete(code); }
+    })();
+  }, [room, solo, engine, code, now]);
+
+  // Robot della stanza veloce: ogni telefono calcola gli stessi piani, scrive chi deve (vedi shouldDriveBots).
+  const [quickDict, setQuickDict] = useState(null);
+  const hasBots = !solo && !!room?.quick && Object.values(room?.players || {}).some((p) => p.bot);
+  useEffect(() => { if (hasBots && !quickDict) loadDictionary().then(setQuickDict).catch(() => {}); }, [hasBots, quickDict]);
+  const roomRef = useRef(room);
+  roomRef.current = room;
+  useEffect(() => {
+    if (!hasBots || !quickDict || !engine || !code) return undefined;
+    const iv = setInterval(() => {
+      const r = roomRef.current;
+      if (r && engine.shouldDriveBots(code, r, engine.now(), quickDict)) engine.driveBots(code, r, quickDict).catch(() => {});
+    }, 500);
+    return () => clearInterval(iv);
+  }, [hasBots, quickDict, engine, code]);
 
   // Chi entra a partita iniziata e deve aspettare: una volta per stanza.
   const waitedRooms = useRef(new Set());
@@ -477,6 +540,8 @@ export default function App() {
     screen = <Home profile={profile} setProfile={setProfile} onRules={() => setSheet('rules')}
       onOnline={() => { stat('scelta_online'); setSheet('online'); }}
       founder={founder} onFounder={() => setSheet('founder')} onInstall={() => { stat('guida_aperta'); setSheet('install'); }} onSolo={() => { stat('scelta_solo'); setView('solo'); }} />;
+  } else if (view === 'cerco') {
+    screen = <Cerco found={cerco.found} waitedMs={Date.now() - cerco.since} botWaitMs={BOT_WAIT_MS} onCancel={cancelQuick} />;
   } else if (view === 'solo') {
     screen = <Solo records={soloRecords()} initial={soloPrefs} onBack={() => setView('home')} onStart={startSolo} toast={toast} />;
   } else if (view === 'setup') {
@@ -512,7 +577,7 @@ export default function App() {
       {stopping && g && status === 'review' && <StopOverlay g={g} />}
       {g && view === 'room' && !solo && !g.me?.waiting && <IdleNotice g={g} />}
       {sheet === 'rules' && <RulesSheet onClose={() => setSheet(null)} />}
-      {sheet === 'online' && <OnlineSheet onClose={() => setSheet(null)} onJoin={() => setSheet('join')}
+      {sheet === 'online' && <OnlineSheet onClose={() => setSheet(null)} onJoin={() => setSheet('join')} onQuick={startQuick}
         onCreate={() => { setSheet(null); if (!needNet() && !needName()) setView('setup'); }} />}
       {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} onJoin={(c) => { setSheet(null); joinWith(c, 'codice'); }}
         onFounder={() => { founderStore.activate(); setFounder(true); setSheet(null); stat('fondatore_attivato'); }} />}

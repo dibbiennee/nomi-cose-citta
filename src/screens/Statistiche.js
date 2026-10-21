@@ -110,6 +110,7 @@ export default function Statistiche() {
           <Tile label="In home" value={live === null ? '…' : count('home')} />
           <Tile label="In una stanza" value={live === null ? '…' : count('stanza')} bg="#B79CFF" />
           <Tile label="Da soli" value={live === null ? '…' : count('solo')} bg="#6EE7A8" />
+          <Tile label="In coda" value={live === null ? '…' : count('coda')} bg="#5CD0FF" sub="partita veloce" />
         </div>
         <p style={note}>Chi gioca da solo senza rete non risulta: si conta solo chi è collegato.</p>
       </section>
@@ -141,7 +142,7 @@ export default function Statistiche() {
             <h2 style={h2}>Online</h2>
             <div style={sx('display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px')}>
               <Tile label="Stanze create" value={sum('stanze_create')} sub={`mai partite: ${Math.max(0, sum('stanze_create') - sum('stanze_avviate'))}`} />
-              <Tile label="Partite" value={sum('partite_online')} sub={`finite ${finishedOnline}, rivincite ${sum('rivincite')}`} />
+              <Tile label="Partite" value={sum('partite_online')} sub={`finite ${finishedOnline}, rivincite ${sum('rivincite')}, veloci ${sum('partite_veloci')}`} />
               <Tile label="Durata media" value={finishedOnline ? `${Math.round(sum('minuti_online') / finishedOnline)} min` : '—'} />
               <Tile label="Inviti" value={sum('inviti_whatsapp') + sum('link_copiati')} sub={`WhatsApp ${sum('inviti_whatsapp')}, link ${sum('link_copiati')}`} />
             </div>

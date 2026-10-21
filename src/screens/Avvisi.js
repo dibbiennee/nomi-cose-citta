@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { sx, Face, Sheet } from '../ui/kit';
+import { sx, Face, Sheet, BotTag } from '../ui/kit';
 import { isFounderCode } from '../club/fondatore';
 import { platform, canPrompt, onPromptChange, promptInstall } from '../ui/installa';
 import { HOST_STEPS, IDLE_MS, withPresence } from '../engine/room';
@@ -60,15 +60,30 @@ export function RulesSheet({ onClose }) {
 }
 
 /** "Gioca online": creare una stanza o entrare con un codice. */
-export function OnlineSheet({ onClose, onCreate, onJoin }) {
+export function OnlineSheet({ onClose, onCreate, onJoin, onQuick }) {
   const big = (bg, fg, shadow) => sx(`height: 60px; border: 2.5px solid #17122B; border-radius: 18px; background: ${bg}; color: ${fg}; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 ${shadow}; cursor: pointer`);
   return (
     <Sheet onClose={onClose} gap={14} label="Gioca online">
       <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px")}>Gioca online</h2>
-      <p style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; text-wrap: pretty')}>Crea una stanza e manda il link agli amici, oppure entra con il codice che ti hanno&nbsp;dato.</p>
+      <p style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; text-wrap: pretty')}>Gioca subito con chi c'è, crea una stanza per i tuoi amici, oppure entra con il codice che ti hanno&nbsp;dato.</p>
+      <button type="button" className="n-btn" onClick={onQuick} style={big('#B79CFF', '#17122B', '#17122B')}>Partita veloce</button>
+      <p style={sx('margin: -6px 0 4px; font-size: 13px; line-height: 1.4; color: #5E5880; text-wrap: pretty')}>Ti mettiamo con altri giocatori. Se mancano, completano i&nbsp;robot.</p>
       <button type="button" className="n-btn" onClick={onCreate} style={big('#17122B', '#FFD23F', '#7A5F00')}>Crea una stanza</button>
       <button type="button" className="n-btn" onClick={onJoin} style={big('#FFFFFF', '#17122B', '#17122B')}>Ho un codice</button>
     </Sheet>
+  );
+}
+
+/** Partita veloce: in coda finché non si forma la partita. Dopo l'attesa completano i robot. */
+export function Cerco({ found, waitedMs, botWaitMs, onCancel }) {
+  const late = waitedMs >= botWaitMs;
+  return (
+    <div className="n-screen" style={sx('position: absolute; inset: 0; padding: 28px 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center')}>
+      <span className="n-spin" aria-hidden="true" style={sx('width: 64px; height: 64px; box-sizing: border-box; border-radius: 50%; border: 6px solid #EDE8FB; border-top-color: #5B3FD6')} />
+      <h1 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 32px; line-height: 1.1")}>{late ? 'Completo con i robot' : 'Cerco giocatori…'}</h1>
+      <p role="status" style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880')}>{late ? 'Tra un attimo si parte.' : `Trovati ${Math.min(found, 4)} su 4`}</p>
+      <button type="button" className="n-btn" onClick={onCancel} style={sx('margin-top: 10px; width: 100%; max-width: 320px; height: 56px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFFFFF; color: #17122B; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Annulla</button>
+    </div>
   );
 }
 
@@ -166,7 +181,7 @@ export function ScoresSheet({ g, onClose, onExit }) {
         <div key={p.id} style={sx(`display: flex; align-items: center; gap: 12px; padding: 8px 14px 8px 10px; border-radius: 16px; border: 2.5px solid #17122B; background: ${p.id === g.uid ? '#FFF3C4' : '#FFFFFF'}; flex-shrink: 0`)}>
           <span style={sx("font-family: 'JetBrains Mono', monospace; font-weight: 700; width: 20px; text-align: center")}>{i + 1}°</span>
           <Face p={p} size={36} small />
-          <span style={sx('flex-grow: 1; min-width: 0; font-size: 16px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{p.id === g.uid ? 'Tu' : p.name}</span>
+          <span style={sx('flex-grow: 1; min-width: 0; font-size: 16px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{p.id === g.uid ? 'Tu' : p.name}</span>{p.bot && <BotTag />}
           <span style={sx("font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 22px")}>{p.score || 0}</span>
         </div>
       ))}

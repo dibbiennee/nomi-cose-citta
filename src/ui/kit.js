@@ -86,3 +86,8 @@ export function hostButtonStyle(isHost) {
 export const BACK_ICON = (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
 );
+
+/** Etichetta accanto al nome dei robot della partita veloce: con sconosciuti non si fanno passare per persone. */
+export function BotTag() {
+  return <span style={sx('display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 6px; border-radius: 999px; border: 1.5px solid #17122B; background: #EDE8FB; color: #17122B; font-size: 11px; font-weight: 800; vertical-align: middle; flex-shrink: 0; white-space: nowrap')}>robot</span>;
+}

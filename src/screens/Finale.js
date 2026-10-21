@@ -1,5 +1,5 @@
 import React from 'react';
-import { sx, INK, Face } from '../ui/kit';
+import { sx, INK, Face, BotTag } from '../ui/kit';
 import { computeAwards, ranking } from '../engine/rules';
 import { formatPpw } from '../solo/record';
 
@@ -29,7 +29,7 @@ export function Awards({ g }) {
             <div key={a.key} className="n-card" style={sx(`position: relative; padding: 18px 16px 16px; border-radius: 24px; border: 2.5px solid #17122B; background: #FFFFFF; box-shadow: 0 6px 0 #17122B; display: flex; align-items: center; gap: 14px; transform: rotate(${['-2deg', '1.5deg', '-1deg'][i]}); animation-delay: ${300 + i * 550}ms; flex-shrink: 0`)}>
               <span style={sx(`position: absolute; top: -13px; left: 16px; height: 26px; box-sizing: border-box; padding: 0 10px; border-radius: 8px; border: 2px solid #17122B; background: ${def.color}; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; display: flex; align-items: center`)}>{def.title}</span>
               <Face p={p} size={60} style={{ flexShrink: 0 }} mood={a.key === 'copione' ? 'disperato' : 'ride'} />
-              <span style={sx('display: flex; flex-direction: column; gap: 2px; min-width: 0')}><span style={sx("font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 24px")}>{a.playerId === uid ? 'Tu' : p.name}</span><span style={sx('font-size: 14px; color: #5E5880; line-height: 1.35')}>{def.text(a.value)}</span></span>
+              <span style={sx('display: flex; flex-direction: column; gap: 2px; min-width: 0')}><span style={sx("font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 24px")}>{a.playerId === uid ? 'Tu' : p.name}{p.bot && <BotTag />}</span><span style={sx('font-size: 14px; color: #5E5880; line-height: 1.35')}>{def.text(a.value)}</span></span>
             </div>
           );
         })}
@@ -75,7 +75,7 @@ export function Final({ g }) {
                   {i === 0 && <svg className="n-drop" width="44" height="30" viewBox="0 0 44 30" aria-hidden="true" style={sx('position: absolute; top: -26px; left: 50%; margin-left: -22px; z-index: 2; animation-delay: 1.9s')}><path d="M4 26 2 8l11 8 9-13 9 13 11-8-2 18z" fill="#FFFFFF" stroke="#17122B" strokeWidth="3" strokeLinejoin="round" /></svg>}
                   <Face p={p} size={sp.size} stroke={2.4} mood={i === 0 ? 'trionfo' : p.id === lastId ? 'disperato' : 'normale'} className={i === 0 && p.char ? 'n-jump' : undefined} />
                 </span>
-                <span style={sx('font-size: 15px; font-weight: 800; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{name(p)}</span>
+                <span style={sx('font-size: 15px; font-weight: 800; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{name(p)}</span>{p.bot && <BotTag />}
                 <div className="n-rise" style={sx(`width: 100%; height: ${sp.h}; box-sizing: border-box; border-radius: 20px 20px 0 0; border: 2.5px solid #17122B; border-bottom: 0; background: ${sp.block}; color: ${sp.fg}; display: flex; flex-direction: column; align-items: center; gap: 2px; padding-top: 12px; animation-delay: ${sp.delay}`)}>
                   <span style={sx("font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 44px; line-height: 1")}>{i + 1}</span>
                   <span style={sx("font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; white-space: nowrap")}>{p.score || 0}&nbsp;pt</span>
@@ -94,7 +94,7 @@ export function Final({ g }) {
             <div key={p.id} className="n-up" style={sx('display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 10px; border-radius: 16px; border: 2.5px solid #17122B; background: #FFFFFF; animation-delay: 1s')}>
               <span style={sx("font-family: 'JetBrains Mono', monospace; font-weight: 700; width: 22px; text-align: center")}>{i + 4}°</span>
               <Face p={p} size={32} small mood={p.id === lastId ? 'disperato' : 'normale'} />
-              <span style={sx('flex-grow: 1; min-width: 0; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{name(p)}</span>
+              <span style={sx('flex-grow: 1; min-width: 0; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{name(p)}</span>{p.bot && <BotTag />}
               <span style={sx("font-family: 'JetBrains Mono', monospace; font-weight: 700; white-space: nowrap")}>{p.score || 0}&nbsp;pt</span>
             </div>
           ))}

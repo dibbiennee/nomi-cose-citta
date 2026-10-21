@@ -79,7 +79,7 @@ export default function Play({ g }) {
           {g.active.map((p) => {
             const done = p.id === uid ? myFilled : filled(room.answers?.[p.id], cats);
             return (
-              <div key={p.id} style={sx(`display: flex; align-items: center; gap: 6px; opacity: ${p.online ? '1' : '0.45'}`)} aria-label={`${p.id === uid ? 'Tu' : p.name}: ${done} su ${nCats}`}>
+              <div key={p.id} style={sx(`display: flex; align-items: center; gap: 6px; opacity: ${p.online ? '1' : '0.45'}`)} aria-label={`${p.id === uid ? 'Tu' : p.name}${p.bot ? ' (robot)' : ''}: ${done} su ${nCats}`}>
                 <Face p={p} size={30} small />
                 {done === nCats && p.id !== uid
                   // Qualcuno ha riempito tutto: può premere STOP da un momento all'altro. Non si mostrano le risposte.
@@ -119,7 +119,7 @@ export default function Play({ g }) {
 export function StopOverlay({ g }) {
   const by = g.round?.stoppedBy;
   const p = by && by !== 'time' ? g.room.players?.[by] : null;
-  const text = by === g.uid ? 'Hai fermato tu il round' : p ? `${p.name} ha fermato il round` : 'Tempo scaduto';
+  const text = by === g.uid ? 'Hai fermato tu il round' : p ? `${p.name}${p.bot ? ' (robot)' : ''} ha fermato il round` : 'Tempo scaduto';
   return (
     <div className="n-fade" role="alert" style={sx('position: absolute; inset: 0; z-index: 40; background: #FF5E3A; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px')}>
       {p?.char && <Face p={p} size={110} stroke={2.6} mood="urla" className="n-pop" />}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { sx, Face, hostButtonStyle } from '../ui/kit';
+import { sx, Face, hostButtonStyle, BotTag } from '../ui/kit';
 import { ranking } from '../engine/rules';
 
 /** Il conteggio che sale da 0 a 1 in ~1 secondo, come nel prototipo. */
@@ -47,7 +47,7 @@ export default function Round({ g }) {
             <div key={p.id} className="n-up" style={sx(`display: flex; flex-direction: column; gap: 8px; animation-delay: ${i * 90}ms; opacity: ${g.isOnline(p.id) ? '1' : '0.55'}`)}>
               <div style={sx('display: flex; align-items: center; gap: 8px')}>
                 <span style={sx("font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: #5E5880")}>{i + 1}°</span>
-                <span style={sx('flex-grow: 1; min-width: 0; font-size: 17px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{p.id === uid ? 'Tu' : p.name}</span>
+                <span style={sx('flex-grow: 1; min-width: 0; font-size: 17px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{p.id === uid ? 'Tu' : p.name}</span>{p.bot && <BotTag />}
                 {p.waiting ? <span style={sx('font-size: 12px; font-weight: 700; color: #5E5880; white-space: nowrap')}>entra al prossimo</span>
                   : <span className="n-pop" style={sx(`height: 26px; padding: 0 9px; border-radius: 8px; border: 2px solid #17122B; background: #6EE7A8; font-size: 13px; font-weight: 800; display: flex; align-items: center; transform: rotate(-3deg); white-space: nowrap; animation-delay: ${600 + i * 90}ms`)}>+{plus}</span>}
                 <span style={sx("font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 30px; min-width: 56px; text-align: right")}>{Math.round(prev + plus * count)}</span>
