@@ -176,3 +176,13 @@ test('una partita finita non riprende alla riapertura: si torna alla home', asyn
   assert.equal(resumeSoloEngine(s.opts), null);
   assert.equal(s.storage.has(SOLO_KEY), false);
 });
+
+test('personaggio del club: Raffaella resta nella partita da soli, uno inventato no', () => {
+  const opts = { dict, storage: fakeStorage(), random: seeded(1), clock: () => 0 };
+  const base = { settings: { cats: CATS3, rounds: 1, timer: 60, hard: true }, difficulty: 'medio', botCount: 2 };
+  let room = null;
+  createSoloEngine({ ...opts, ...base, profile: { name: 'Edo', color: 1, face: 1, char: 'raffaella' } }).subscribe(SOLO_CODE, (r) => { room = r; });
+  assert.equal(room.players.me.char, 'raffaella');
+  createSoloEngine({ ...opts, ...base, profile: { name: 'Edo', color: 1, face: 1, char: 'pippo' } }).subscribe(SOLO_CODE, (r) => { room = r; });
+  assert.equal(room.players.me.char, undefined);
+});

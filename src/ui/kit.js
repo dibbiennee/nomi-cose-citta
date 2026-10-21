@@ -1,4 +1,5 @@
 import React from 'react';
+import { characterOf } from '../club/contenuti';
 
 export const INK = '#17122B';
 export const COLORS = ['#FFD23F', '#FF8A65', '#5CD0FF', '#B79CFF', '#6EE7A8', '#FF7EB6'];
@@ -33,8 +34,23 @@ export function sx(css) {
   return o;
 }
 
-/** Faccina: cerchio colorato, occhi e bocca. small = versione con tratti più spessi per le misure piccole. */
-export function Face({ p, size = 44, small = false, stroke, blink = false, delay, className, style }) {
+/**
+ * Faccina: cerchio colorato, occhi e bocca. small = versione con tratti più spessi per le misure piccole.
+ * Se il giocatore ha scelto un personaggio del club, al posto della faccina c'è lui, con l'espressione `mood`
+ * (normale, ride, urla, trionfo, disperato): cambiando espressione rimbalza.
+ */
+export function Face({ p, size = 44, small = false, stroke, blink = false, delay, className, style, mood = 'normale' }) {
+  const ch = p && p.char ? characterOf(p.char) : null;
+  if (ch) {
+    const border = Math.max(2, ((stroke || (small ? 3 : 2.6)) * size) / 48);
+    return (
+      <span aria-hidden="true" className={className}
+        style={{ ...sx(`display: inline-block; flex-shrink: 0; width: ${size}px; height: ${size}px; box-sizing: border-box; border-radius: 50%; border: ${border}px solid ${INK}; background: ${COLORS[p.color || 0] || COLORS[0]}; overflow: hidden; vertical-align: middle`), ...style }}>
+        <img key={mood} className="n-swap" src={ch.espressioni[mood] || ch.espressioni.normale} alt="" draggable="false"
+          style={sx('display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; transform: scale(1.12); transform-origin: 50% 38%')} />
+      </span>
+    );
+  }
   const f = FACES[(p && p.face) || 0] || FACES[0];
   const bg = COLORS[(p && p.color) || 0] || COLORS[0];
   const r = small ? 22 : 22.5;

@@ -15,23 +15,29 @@ import Round from './screens/Round';
 import { Awards, Final } from './screens/Finale';
 import Solo from './screens/Solo';
 import { createFounderStore } from './club/fondatore';
+import { CHARACTER_IDS } from './club/contenuti';
 import { createDictionary } from './solo/dizionario';
 import { createSoloEngine, resumeSoloEngine, SOLO_CODE, SOLO_KEY } from './solo/motore';
 import { createRecordStore } from './solo/record';
 import { DIFFICULTIES } from './solo/robot';
 import { NEED_NET, ErrorScreen, RulesSheet, JoinSheet, FounderSheet, InstallSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
 
+const LOCAL = (() => { try { return window.localStorage; } catch (e) { return null; } })();
+// Sblocco della Modalità Fondatore, salvato su questo telefono. Solo cosmetico: non va mai a Firebase.
+const founderStore = createFounderStore(LOCAL);
+
 const PROFILE_KEY = 'ncc-profilo';
 function loadProfile() {
   try {
     const p = JSON.parse(localStorage.getItem(PROFILE_KEY));
-    if (p && typeof p.name === 'string') return { name: p.name.slice(0, 14), color: (p.color | 0) % 6, face: (p.face | 0) % 6 };
+    if (p && typeof p.name === 'string') {
+      const char = CHARACTER_IDS.includes(p.char) && founderStore.isActive() ? p.char : undefined; // personaggio del club
+      return { name: p.name.slice(0, 14), color: (p.color | 0) % 6, face: (p.face | 0) % 6, char };
+    }
   } catch (e) { /* niente profilo salvato */ }
   return { name: '', color: 0, face: 0 };
 }
-const LOCAL = (() => { try { return window.localStorage; } catch (e) { return null; } })();
-// Sblocco della Modalità Fondatore, salvato su questo telefono. Solo cosmetico: non va mai a Firebase.
-const founderStore = createFounderStore(LOCAL);
+
 // Partita da soli: record sul telefono, e parole dei robot caricate solo quando servono (file a parte).
 const recordStore = createRecordStore(LOCAL);
 let dictPromise = null;
@@ -400,7 +406,7 @@ export default function App() {
         onFounder={() => { founderStore.activate(); setFounder(true); setSheet(null); }} />}
       {sheet === 'install' && <InstallSheet onClose={() => setSheet(null)} toast={toast} />}
       {sheet === 'founder' && <FounderSheet onClose={() => setSheet(null)}
-        onRevoke={() => { founderStore.revoke(); setFounder(false); setSheet(null); toast('Modalità Fondatore disattivata'); }} />}
+        onRevoke={() => { founderStore.revoke(); setFounder(false); setProfile({ ...profile, char: undefined }); setSheet(null); toast('Modalità Fondatore disattivata'); }} />}
       {sheet === 'scores' && g && <ScoresSheet g={g} onClose={() => setSheet(null)} onExit={() => setSheet('exit')} />}
       {sheet === 'exit' && <ExitSheet onClose={() => setSheet(null)} onLeave={leave} />}
       {!connected && !solo && (view === 'room' || view === 'invite') && <OfflineBanner />}

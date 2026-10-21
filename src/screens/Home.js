@@ -1,6 +1,7 @@
 import React from 'react';
 import { sx, INK, COLORS, FACES, Face } from '../ui/kit';
 import { isStandalone } from '../ui/installa';
+import { CLUB } from '../club/contenuti';
 
 const WORDS = [['N', 'O', 'M', 'I'], ['C', 'O', 'S', 'E'], ['C', 'I', 'T', 'T', 'À']];
 const WCOL = ['#FF8A65', '#5CD0FF', '#B79CFF'];
@@ -10,18 +11,30 @@ const REFRESH = (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#17122B" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" /><path d="M3 21v-5h5" /></svg>
 );
 
-/** Faccina che si cambia toccandola, colori e nome. La usano la home e l'invito. */
-export function ProfilePicker({ profile, setProfile, faceSize = 108, inputBg = '#FFFFFF', inputH = 58, gap = 10, withBadge = true }) {
+/**
+ * Faccina che si cambia toccandola, colori e nome. La usano la home e l'invito.
+ * Con la Modalità Fondatore (founder) si può scegliere anche un personaggio del club; toccando la faccia si torna alle faccine.
+ */
+export function ProfilePicker({ profile, setProfile, faceSize = 108, inputBg = '#FFFFFF', inputH = 58, gap = 10, withBadge = true, founder = false }) {
   const set = (patch) => setProfile({ ...profile, ...patch });
   return (
     <>
-      <button className="n-press" aria-label="Cambia faccia" onClick={() => set({ face: (profile.face + 1) % FACES.length })}
+      <button className="n-press" aria-label="Cambia faccia" onClick={() => set(profile.char ? { char: undefined } : { face: (profile.face + 1) % FACES.length })}
         style={sx(`width: ${faceSize}px; height: ${faceSize}px; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative`)}>
         <Face p={profile} size={faceSize} stroke={faceSize > 100 ? 2 : 2.2} blink />
         {withBadge && (
           <span style={sx('position: absolute; right: 0; bottom: 2px; width: 36px; height: 36px; box-sizing: border-box; border-radius: 50%; background: #FFFFFF; border: 2.5px solid #17122B; display: flex; align-items: center; justify-content: center')}>{REFRESH}</span>
         )}
       </button>
+      {founder && CLUB.avatar.map((a) => {
+        const on = profile.char === a.id;
+        return (
+          <button key={a.id} type="button" className="n-press" aria-pressed={on} onClick={() => set({ char: on ? undefined : a.id })}
+            style={sx(`height: 44px; padding: 0 16px 0 4px; border-radius: 999px; border: 2.5px solid #17122B; background: ${on ? '#B79CFF' : '#FFFFFF'}; color: #17122B; font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; box-shadow: ${on ? '0 1px 0' : '0 4px 0'} #17122B; transform: translateY(${on ? '3px' : '0'}); cursor: pointer`)}>
+            <Face p={{ char: a.id, color: profile.color }} size={32} small />{on ? `Sei ${a.nome}` : `Gioca come ${a.nome}`}
+          </button>
+        );
+      })}
       <div style={sx(`display: flex; justify-content: center; width: 100%; gap: ${gap}px`)} role="radiogroup" aria-label="Colore">
         {COLORS.map((c, i) => {
           const on = profile.color === i;
@@ -61,7 +74,7 @@ export default function Home({ profile, setProfile, onCreate, onJoin, onRules, f
         ))}
       </div>
       <div className="n-up" style={sx('margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 14px; animation-delay: .5s')}>
-        <ProfilePicker profile={profile} setProfile={setProfile} />
+        <ProfilePicker profile={profile} setProfile={setProfile} founder={founder} />
       </div>
       <div className="n-up" style={sx('display: flex; flex-direction: column; gap: 14px; margin-top: auto; padding-top: 24px; animation-delay: .6s')}>
         <button className="n-btn" onClick={onCreate} style={sx('height: 62px; border: 2.5px solid #17122B; border-radius: 20px; background: #17122B; color: #FFD23F; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #7A5F00; cursor: pointer')}>Crea una stanza</button>

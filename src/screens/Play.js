@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { characterOf } from '../club/contenuti';
 import { sx, INK, Face } from '../ui/kit';
 import { normalize, startsWithLetter } from '../engine/rules';
 
@@ -7,6 +8,35 @@ const CUP = (
 );
 
 const filled = (a, cats) => cats.filter((c) => ((a || {})[c.key] || '').trim()).length;
+
+/**
+ * Un personaggio del club che ha riempito tutto sbircia dal bordo dello schermo: "Ho finito!".
+ * Una volta per giocatore e per round, solo per gli altri (non per te).
+ */
+function ClubPeek({ g }) {
+  const { room, round, uid } = g;
+  const cats = room.settings.cats;
+  const seen = useRef(new Set());
+  const [who, setWho] = useState(null);
+  const ready = g.active.find((p) => p.id !== uid && p.char && filled(room.answers?.[p.id], cats) === cats.length && !seen.current.has(`${round.n}:${round.letter}:${p.id}`));
+  useEffect(() => {
+    if (!ready || who) return undefined;
+    seen.current.add(`${round.n}:${round.letter}:${ready.id}`);
+    setWho(ready);
+    const t = setTimeout(() => setWho(null), 2800);
+    return () => clearTimeout(t);
+  }, [ready, who, round.n, round.letter]);
+  const ch = who && characterOf(who.char);
+  if (!ch) return null;
+  return (
+    <div aria-hidden="true" style={sx('position: absolute; right: 0; bottom: 120px; width: 130px; height: 190px; overflow: hidden; pointer-events: none; z-index: 20')}>
+      <div className="n-peek" style={sx('position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center')}>
+        <span style={sx('height: 30px; padding: 0 12px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 13px; font-weight: 800; display: flex; align-items: center; white-space: nowrap; box-shadow: 0 3px 0 #17122B')}>Ho finito!</span>
+        <img src={ch.espressioni.trionfo} alt="" style={sx('height: 150px; width: auto; margin-top: 4px')} />
+      </div>
+    </div>
+  );
+}
 
 export default function Play({ g }) {
   const { room, round, uid, answers, now } = g;
@@ -27,6 +57,7 @@ export default function Play({ g }) {
 
   return (
     <div className="n-screen" style={sx('position: absolute; inset: 0; display: flex; flex-direction: column')}>
+      <ClubPeek g={g} />
       <header style={sx('padding: 18px 20px 14px; display: flex; flex-direction: column; gap: 14px; background: #FFFFFF; border-bottom: 2.5px solid #17122B')}>
         <div style={sx('display: flex; align-items: center; gap: 14px')}>
           <span className="n-flip" aria-hidden="true" style={sx("width: 58px; height: 64px; box-sizing: border-box; border-radius: 16px; border: 2.5px solid #17122B; background: #FFD23F; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 40px; box-shadow: 0 5px 0 #17122B; flex-shrink: 0")}>{L}</span>
@@ -91,6 +122,7 @@ export function StopOverlay({ g }) {
   const text = by === g.uid ? 'Hai fermato tu il round' : p ? `${p.name} ha fermato il round` : 'Tempo scaduto';
   return (
     <div className="n-fade" role="alert" style={sx('position: absolute; inset: 0; z-index: 40; background: #FF5E3A; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px')}>
+      {p?.char && <Face p={p} size={110} stroke={2.6} mood="urla" className="n-pop" />}
       <span className="n-stop" style={sx("font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: min(124px, 31vw); line-height: 1; color: #FFFFFF; text-shadow: 0 8px 0 #17122B")}>STOP!</span>
       <span className="n-up" style={sx('height: 46px; padding: 0 20px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 17px; font-weight: 800; display: flex; align-items: center; white-space: nowrap; animation-delay: .3s')}>{text}</span>
     </div>

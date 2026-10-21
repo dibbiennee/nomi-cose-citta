@@ -70,7 +70,7 @@ export default function Review({ g }) {
           return (
             <div key={`${cat.key}-${p.id}`} className={rejected ? 'n-no' : idx % 2 ? 'n-up2' : 'n-up'}
               style={sx(`display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 20px; border: 2.5px solid #17122B; background: ${rejected ? '#FFE3DB' : '#FFFFFF'}; animation-delay: ${rejected ? 0 : i * 70}ms; transition: background .25s`)}>
-              <Face p={p} size={44} style={{ flexShrink: 0 }} />
+              <Face p={p} size={44} style={{ flexShrink: 0 }} mood={rejected ? 'disperato' : r.points > 0 ? 'ride' : 'normale'} className={rejected && p.char ? 'n-droop' : undefined} />
               <span style={sx('flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px')}>
                 <span style={sx('font-size: 12px; font-weight: 700; color: #5E5880')}>{isMe ? 'Tu' : p.name} · {tag}</span>
                 <span style={sx(`font-family: 'Bricolage Grotesque Variable', sans-serif; font-size: 21px; line-height: 1.1; font-weight: 800; text-decoration: ${rejected || r.status === 'wrongLetter' ? 'line-through' : 'none'}; opacity: ${valid ? '1' : '0.45'}; overflow-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden`)}>{r.text || '—'}</span>

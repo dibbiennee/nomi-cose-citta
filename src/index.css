@@ -111,4 +111,13 @@ p, li { text-wrap: pretty; hyphens: manual; }
 @keyframes nFall{0%{transform:translateY(-40px) rotate(0)}100%{transform:translateY(460px) rotate(540deg);opacity:0}}
 @keyframes nBob{0%,100%{translate:0 0}50%{translate:0 -8px}}
 @keyframes nReact{0%{opacity:0;transform:translateY(20px) scale(.7)}15%{opacity:1;transform:translateY(0) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateY(-260px) scale(1.05)}}
+/* Personaggi del club: cambio di espressione, sbirciata dal bordo, salto sul podio, sconforto */
+.n-swap{animation:nSwap .45s cubic-bezier(.2,.9,.3,1.4)}
+.n-peek{animation:nPeek 2.8s cubic-bezier(.2,.9,.3,1.2) both}
+.n-jump{animation:nJump .9s cubic-bezier(.3,.7,.4,1) infinite}
+.n-droop{animation:nDroop .9s cubic-bezier(.22,1,.36,1) forwards}
+@keyframes nSwap{0%{transform:scale(1.12)}30%{transform:scale(1.28,.96)}60%{transform:scale(1.05,1.22)}100%{transform:scale(1.12)}}
+@keyframes nPeek{0%{transform:translateX(120%) rotate(18deg)}18%{transform:translateX(0) rotate(-8deg)}26%{transform:translateX(6%) rotate(-3deg)}80%{transform:translateX(6%) rotate(-5deg)}100%{transform:translateX(130%) rotate(20deg)}}
+@keyframes nJump{0%,100%{transform:translateY(0) scale(1.05,.95)}15%{transform:translateY(0) scale(.95,1.06)}50%{transform:translateY(-30px)}85%{transform:translateY(0) scale(1.04,.96)}}
+@keyframes nDroop{to{transform:translateY(8px) rotate(-9deg) scale(.95);filter:saturate(.35) brightness(.92)}}
 @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
