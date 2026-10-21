@@ -30,6 +30,8 @@ const denied = (p) => assert.rejects(p, /permission|PERMISSION_DENIED/i);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /** Legge un percorso come amministratore (solo emulatore). */
 const adminRead = (path) => fetch(`http://127.0.0.1:${process.env.DBP || 9100}/${path}.json?ns=${PROJECT}-default-rtdb`, { headers: { Authorization: 'Bearer owner' } }).then((r) => r.json());
+/** Scrive un percorso come amministratore (solo emulatore). */
+const adminSet = (path, v) => fetch(`http://127.0.0.1:${process.env.DBP || 9100}/${path}.json?ns=${PROJECT}-default-rtdb`, { method: 'PUT', headers: { Authorization: 'Bearer owner' }, body: JSON.stringify(v) });
 /** Imposta il contatore degli iscritti come amministratore (solo emulatore). */
 async function setIscritti(v) {
   await fetch(`http://127.0.0.1:${process.env.DBP || 9100}/meta/iscritti.json?ns=${PROJECT}-default-rtdb`, { method: 'PUT', headers: { Authorization: 'Bearer owner' }, body: JSON.stringify(v) });
@@ -249,4 +251,15 @@ test('lista d\'attesa: si legge se ci sono, e si esce', async () => {
   assert.equal(await isOnWaitlist(a.db, a.uid), true);
   await leaveWaitlist(a.db, a.uid);
   assert.equal(await isOnWaitlist(a.db, a.uid), false);
+});
+
+test('bonus del giorno: anche cambiando la data del telefono, non prima di 20 ore dall\'ultimo', async () => {
+  await setIscritti(500);
+  const a = await phone();
+  await createProfile(a.db, a.uid, {});
+  await claimDaily(a.db, a.uid, '2026-10-20');
+  await adminSet(`users/${a.uid}/lastDailyAt`, Date.now() - 5 * 3600 * 1000);
+  assert.equal(await claimDaily(a.db, a.uid, '2026-10-21'), null, 'cinque ore dopo: troppo presto');
+  await adminSet(`users/${a.uid}/lastDailyAt`, Date.now() - 21 * 3600 * 1000);
+  assert.deepEqual(await claimDaily(a.db, a.uid, '2026-10-21'), { amount: 30, streak: 2 }, 'ventuno ore dopo: va bene, e la serie continua');
 });

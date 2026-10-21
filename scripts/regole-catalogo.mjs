@@ -19,7 +19,8 @@ user.owned = user.owned || {};
 user.owned.$item = { '.validate': rule };
 // Accessori indossati dentro le stanze: per ogni tipo solo gli id di quel tipo.
 const players = rules.rules.rooms.$code.players.$uid;
-players.acc = { $tipo: { '.validate': ['cappello', 'occhiali', 'vestito', 'cornice']
-  .map((t) => `($tipo === '${t}' && newData.val().matches(/^(${ITEMS.filter((i) => i.tipo === t).map((i) => i.id).join('|')})$/))`).join(' || ') } };
+// Si mostra solo ciò che l'account possiede davvero (users/{uid}/owned): niente esclusivi senza i primi 100.
+players.acc = { $tipo: { '.validate': `(${['cappello', 'occhiali', 'vestito', 'cornice']
+  .map((t) => `($tipo === '${t}' && newData.val().matches(/^(${ITEMS.filter((i) => i.tipo === t).map((i) => i.id).join('|')})$/))`).join(' || ')}) && root.child('users').child($uid).child('owned').child(newData.val()).val() === true` } };
 
 writeFileSync(FILE, `${JSON.stringify(rules, null, 2)}\n`);

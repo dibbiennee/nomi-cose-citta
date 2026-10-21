@@ -71,8 +71,10 @@ export default function App() {
   const engine = solo || netEngine;
   const [profile, setProfileState] = useState(loadProfile);
   // Senza un link /r/CODICE la home compare subito, senza aspettare Firebase (che senza rete non risponde).
+  const viewRef = useRef('home');
   const [shopFrom, setShopFrom] = useState('home'); // da dove si è aperto il negozio, per il tasto Indietro
   const [view, setView] = useState(() => (window.location.pathname === '/statistiche' ? 'stats' : codeFromPath(window.location.pathname) ? 'loading' : 'home')); // loading | home | setup | invite | room | error | stats
+  viewRef.current = view;
   const [code, setCode] = useState(null);
   const [room, setRoom] = useState(null);
   const [inviteRoom, setInviteRoom] = useState(null);
@@ -169,9 +171,14 @@ export default function App() {
     try { seen = LOCAL?.getItem('ncc-popup-primi'); } catch (e) { seen = null; }
     if (!account.registered && !seen) {
       try { LOCAL?.setItem('ncc-popup-primi', '1'); } catch (e) { /* niente */ }
-      const n = await account.readIscritti();
-      setPrimi(n !== null && n < 100);
-      setTimeout(() => setSheet('primi'), 3500); // dopo l'animazione del podio
+      // Dopo l'animazione del podio. Il contatore si rilegge proprio allora: "primi 100" solo se è ancora vero, e il
+      // foglio compare solo se la persona è ancora sul podio e non ha altro aperto.
+      setTimeout(async () => {
+        const n = await account.readIscritti();
+        if (viewRef.current !== 'room') return;
+        setPrimi(n !== null && n < 100);
+        setSheet((cur) => cur || 'primi');
+      }, 3500);
     }
   }, [account]);
 

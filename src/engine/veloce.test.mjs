@@ -323,8 +323,12 @@ test('coda: rientrare con una voce vecchia ancora presente funziona', async () =
   await q.leave();
 });
 
-test('accessori: chi entra con un accessorio lo mostra agli altri; un accessorio inventato no', async () => {
+/** Scrive un percorso come amministratore (solo emulatore): per dare a un telefono accessori già comprati. */
+const adminSet = (path, value) => fetch(`http://127.0.0.1:${process.env.DBP || 9100}/${path}.json?ns=${process.env.GCLOUD_PROJECT || 'demo-ncc'}-default-rtdb`, { method: 'PUT', headers: { Authorization: 'Bearer owner' }, body: JSON.stringify(value) });
+
+test('accessori: si mostrano solo quelli che l\'account possiede; inventati o altrui no', async () => {
   const [a, b] = await Promise.all(['Anna', 'Bea'].map(phone));
+  await adminSet(`users/${a.uid}/owned`, { cilindro: true, occhiali_sole: true });
   const code = await a.engine.createRoom({ ...a.profile, acc: { cappello: 'cilindro', occhiali: 'occhiali_sole' } });
   await b.engine.joinRoom(code, { ...b.profile, acc: { cappello: 'trono' } });
   const room = await a.read(`rooms/${code}`);
@@ -332,4 +336,8 @@ test('accessori: chi entra con un accessorio lo mostra agli altri; un accessorio
   assert.equal(room.players[b.uid].acc, undefined);
   await denied(set(ref(b.db, `rooms/${code}/players/${b.uid}/acc/cappello`), 'trono'));
   await denied(set(ref(b.db, `rooms/${code}/players/${b.uid}/acc/scarpe`), 'cilindro'));
+  await denied(set(ref(b.db, `rooms/${code}/players/${b.uid}/acc/cappello`), 'cilindro'), 'Bea non possiede il cilindro');
+  await denied(set(ref(b.db, `rooms/${code}/players/${b.uid}/acc/cappello`), 'corona_oro'), 'né l\'esclusivo');
+  await adminSet(`users/${b.uid}/owned/cappellino`, true);
+  await set(ref(b.db, `rooms/${code}/players/${b.uid}/acc/cappello`), 'cappellino');
 });
