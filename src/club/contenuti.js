@@ -1,9 +1,18 @@
-// Contenuti esclusivi del club, per la Modalità Fondatore. Per ora vuoti: si riempiono quando esistono davvero.
-// Ogni voce sarà { id, nome, src } con immagini dentro il sito; mai foto di persone senza il loro consenso,
-// e nessun personaggio con la faccia vera è obbligatorio. Finché lo sblocco è solo locale (vedi fondatore.js)
-// qui vanno solo cose che potrebbe vedere chiunque legga il codice del sito.
+// Contenuti esclusivi del club, per la Modalità Fondatore.
+// Le immagini stanno in public/club/ e sono pubbliche come il resto del sito: CANT decide solo chi può
+// sceglierle, non chi può vederle. Ci va solo chi ha dato il consenso a una faccia online (Raffaella sì).
+// Ogni personaggio ha cinque espressioni, usate nei momenti della partita (vedi ui/Personaggio.js).
+
+export const MOODS = ['normale', 'ride', 'urla', 'trionfo', 'disperato'];
+
 export const CLUB = {
-  avatar: [], // personaggi del club
-  espressioni: [], // facce per i momenti della partita (STOP, podio, bocciatura)
-  decorazioni: [], // cappelli, occhiali, vestiti
+  avatar: [
+    { id: 'raffaella', nome: 'Raffaella', espressioni: Object.fromEntries(MOODS.map((m) => [m, `/club/raffaella/${m}.webp`])) },
+  ],
+  espressioni: [],
+  decorazioni: [], // cappelli, occhiali, vestiti: progetto degli account
 };
+
+/** Gli id che si possono scrivere nella stanza: lo stesso elenco è in database.rules.json (players/$uid/char). */
+export const CHARACTER_IDS = CLUB.avatar.map((a) => a.id);
+export const characterOf = (id) => CLUB.avatar.find((a) => a.id === id) || null;

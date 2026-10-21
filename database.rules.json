@@ -109,6 +109,9 @@
             "color": {
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
             },
+            "char": {
+              ".validate": "newData.isString() && newData.val().matches(/^(raffaella)$/)"
+            },
             "face": {
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
             },

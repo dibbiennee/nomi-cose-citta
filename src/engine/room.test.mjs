@@ -367,3 +367,19 @@ test('Fondatore: CANT non diventa mai una stanza e non dà privilegi su Firebase
   await denied(set(ref(b.db, `rooms/${code}/players/${a.uid}/score`), 0));
   assert.equal((await a.room(code)).hostId, a.uid);
 });
+
+test('personaggi del club: Raffaella entra e si vede, un personaggio inventato no', async () => {
+  const [a, b, c] = await Promise.all(['Anna', 'Bea', 'Ciro'].map(phone));
+  const code = await a.engine.createRoom({ ...a.profile, char: 'raffaella' });
+  await b.engine.joinRoom(code, { ...b.profile, char: 'pippo' }); // un personaggio che non esiste si ignora
+  await c.engine.joinRoom(code, c.profile);
+  const room = await a.room(code);
+  assert.equal(room.players[a.uid].char, 'raffaella');
+  assert.equal(room.players[b.uid].char, undefined);
+  assert.equal(room.players[c.uid].char, undefined);
+  // Scritto a mano: le regole accettano solo i personaggi dell'elenco.
+  await denied(set(ref(b.db, `rooms/${code}/players/${b.uid}/char`), 'pippo'));
+  await denied(set(ref(b.db, `rooms/${code}/players/${b.uid}/char`), 42));
+  await set(ref(b.db, `rooms/${code}/players/${b.uid}/char`), 'raffaella');
+  assert.equal((await a.room(code)).players[b.uid].char, 'raffaella');
+});

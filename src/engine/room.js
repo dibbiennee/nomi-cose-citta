@@ -20,6 +20,7 @@ import {
   DEFAULT_SETTINGS, makeCode, pickLetter, scoreRound, nextHost, sanitizeSettings,
 } from './rules.js';
 import { isReservedCode } from '../club/fondatore.js';
+import { CHARACTER_IDS } from '../club/contenuti.js';
 
 export const SPIN_MS = 2000; // la lettera che gira
 export const COUNTDOWN_MS = 3200; // 3, 2, 1, Via!
@@ -59,7 +60,9 @@ export function createEngine(db, uid) {
     name: String(profile.name || 'Giocatore').trim().slice(0, 14) || 'Giocatore',
     color: profile.color | 0, face: profile.face | 0,
     joinedAt: serverTimestamp(), score: 0,
-    stats: { stops: 0, uniq: 0, dup: 0 }, ...extra,
+    stats: { stops: 0, uniq: 0, dup: 0 },
+    ...(CHARACTER_IDS.includes(profile.char) ? { char: profile.char } : {}), // personaggio del club, se scelto
+    ...extra,
   });
 
   async function readRoom(code) {
