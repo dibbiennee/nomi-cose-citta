@@ -6,10 +6,12 @@
 // vera partirà, monete e acquisti passeranno a funzioni server.
 import { ref, get, set, update, remove, runTransaction, serverTimestamp } from 'firebase/database';
 import { EARN, ITEMS, itemById, TIPI } from '../shop/catalogo.js';
+import { advanceStreak, milestoneFor } from '../ritorno/serie.js';
+import { challengesFor, completed, ALL_DONE_BONUS } from '../ritorno/sfide.js';
+import { rollChest } from '../ritorno/scrigno.js';
 
 const userRef = (db, uid) => ref(db, `users/${uid}`);
 const USERNAME = /^[A-Za-z0-9_]{5,14}$/;
-const prevDay = (d) => { const t = new Date(`${d}T12:00:00Z`); t.setUTCDate(t.getUTCDate() - 1); return t.toISOString().slice(0, 10); };
 
 /** Monete di una partita finita: 5, +5 se vinci, +1 per parola unica fino a +10. */
 export const gameCoins = ({ won, unique }) => Math.min(20, EARN.base + (won ? EARN.vittoria : 0) + Math.min(EARN.maxUniche, (unique | 0) * EARN.perUnica));
@@ -59,16 +61,19 @@ export async function earnCoins(db, uid, amount) {
 /** Monete di fine partita. Rifiutato se arriva entro un minuto dall'ultima. Restituisce il nuovo saldo. */
 export const earnGame = (db, uid, result) => earnCoins(db, uid, gameCoins(result));
 
-/** Bonus del giorno: 20, +10 per ogni giorno consecutivo fino a 70. null se già preso oggi. */
+/**
+ * Bonus del giorno: 20, +10 per ogni giorno di fila fino a 70. null se già preso oggi.
+ * I giorni di fila li tiene touchDay (campo streak): qui si leggono soltanto, senza cambiarli.
+ */
 export async function claimDaily(db, uid, today) {
   let out = null;
   const res = await runTransaction(userRef(db, uid), (cur) => {
     if (cur === null) return null; // primo giro senza dati: Firebase riprova con il valore vero
     if (cur.lastDaily === today) { out = null; return undefined; }
-    const streak = cur.lastDaily === prevDay(today) ? (cur.streak || 0) + 1 : 1;
+    const streak = Math.max(1, cur.streak || 1);
     const amount = Math.min(EARN.giornalieroMax, EARN.giornaliero + EARN.serie * (streak - 1));
     out = { amount, streak };
-    return { ...cur, coins: cur.coins + amount, lastDaily: today, lastDailyAt: serverTimestamp(), streak };
+    return { ...cur, coins: cur.coins + amount, lastDaily: today, lastDailyAt: serverTimestamp() };
   }, { applyLocally: false }).catch(() => ({ committed: false }));
   return res.committed ? out : null;
 }
@@ -147,8 +152,100 @@ export async function deleteProfile(db, uid) {
   const user = (await get(userRef(db, uid))).val() || {};
   const name = user.username;
   await update(ref(db), {
-    [`users/${uid}`]: null, [`waitlist/${uid}`]: null, [`invites/${uid}`]: null,
+    [`users/${uid}`]: null, [`waitlist/${uid}`]: null, [`invites/${uid}`]: null, [`claims/${uid}`]: null,
     ...(user.invitedBy ? { [`invites/${user.invitedBy}/${uid}`]: null } : {}),
     ...(name ? { [`usernames/${name.toLowerCase()}`]: null } : {}),
   });
+}
+
+// ---- Ritorno giornaliero: serie di giorni, traguardi, sfide e scrigno ----
+
+/**
+ * Registra che oggi la persona ha aperto il gioco: fa avanzare la serie (con lo scudo, una volta al mese).
+ * Restituisce { event, streak, reached } o null se oggi era già registrato o le regole rifiutano (per esempio
+ * troppo presto dall'ultimo giorno registrato: si riprova all'apertura dopo).
+ */
+export async function touchDay(db, uid, today) {
+  const cur = (await get(userRef(db, uid))).val();
+  if (!cur) return null;
+  const r = advanceStreak(cur, today);
+  if (r.event === 'stesso-giorno') return null;
+  const st = r.state;
+  const write = { lastDay: st.lastDay, lastDayAt: serverTimestamp(), streak: st.streak, migliorSerie: st.migliorSerie, serieId: st.serieId };
+  if (st.scudo !== undefined) write.scudo = st.scudo;
+  try { await update(userRef(db, uid), write); } catch (e) { return null; }
+  return { event: r.event, streak: st.streak, reached: r.reached };
+}
+
+/**
+ * Riscuote i traguardi raggiunti: monete (e accessorio dove previsto), una volta per serie. Ogni traguardo è una
+ * scrittura sola, con il segno claims/{uid}/m_{serieId}_{n} che impedisce di riscuoterlo di nuovo.
+ */
+export async function claimMilestones(db, uid, reached) {
+  let coins = 0;
+  const items = [];
+  for (const n of reached) {
+    const m = milestoneFor(n);
+    const cur = (await get(userRef(db, uid))).val();
+    if (!m || !cur || !cur.serieId) continue;
+    const key = `m_${cur.serieId}_${n}`;
+    if ((await get(ref(db, `claims/${uid}/${key}`))).exists()) continue;
+    const write = { [`users/${uid}/coins`]: cur.coins + m.coins, [`claims/${uid}/${key}`]: true };
+    if (m.item) write[`users/${uid}/owned/${m.item}`] = true;
+    try { await update(ref(db), write); } catch (e) { continue; }
+    coins += m.coins;
+    if (m.item) items.push(m.item);
+  }
+  return { coins, items };
+}
+
+/**
+ * Fine partita, in una scrittura sola: monete della partita, scrigno e progresso delle sfide di oggi.
+ * result = { won, unique, mode, rank, players, humans }. Se lo scrigno non può arrivare (giorno non ancora
+ * registrato, dieci scrigni già presi) si danno comunque le monete della partita e si segna il progresso.
+ * Restituisce { coins, chest: {kind, coins, item?}|null, done: ids delle sfide completate }.
+ */
+export async function finishGame(db, uid, { result, today, rng = Math.random }) {
+  const base = gameCoins(result);
+  const attempt = async (withChest) => {
+    let out = null;
+    const res = await runTransaction(userRef(db, uid), (cur) => {
+      if (!cur) return cur;
+      const sameDay = cur.lastDay === today;
+      const used = cur.scrigni && cur.scrigni.g === today ? cur.scrigni.n : 0;
+      const chest = withChest && sameDay && used < EARN.scrigniGiorno ? rollChest(rng, cur.owned || {}) : null;
+      const done = sameDay ? completed(today, result) : [];
+      const next = { ...cur, coins: cur.coins + base + (chest ? chest.coins : 0), lastEarn: serverTimestamp() };
+      if (chest) next.scrigni = { g: today, n: used + 1 };
+      if (chest && chest.item) next.owned = { ...cur.owned, [chest.item]: true };
+      if (done.length) next.sfideFatte = { ...cur.sfideFatte, [today]: { ...(cur.sfideFatte || {})[today], ...Object.fromEntries(done.map((id) => [id, true])) } };
+      out = { coins: base + (chest ? chest.coins : 0), chest, done };
+      return next;
+    }, { applyLocally: false });
+    if (!res.committed) throw new Error('nessun profilo');
+    return out;
+  };
+  try { return await attempt(true); } catch (e) { return attempt(false); } // se le regole non accettano lo scrigno, resta la partita
+}
+
+/**
+ * Riscuote una sfida di oggi già completata: 'ok', 'già' (presa) o 'non fatta' (non è una sfida di oggi o non è
+ * stata completata). L'ultima delle tre porta anche il bonus. Il segno claims/{uid}/s_{giorno}_{id} impedisce il bis.
+ */
+export async function claimChallenge(db, uid, today, id) {
+  const sfida = challengesFor(today).find((c) => c.id === id);
+  const cur = (await get(userRef(db, uid))).val();
+  if (!sfida || !cur || cur.lastDay !== today || !(cur.sfideFatte || {})[today]?.[id]) return 'non fatta';
+  const key = `s_${today}_${id}`;
+  const claimed = Object.keys((await get(ref(db, `claims/${uid}`))).val() || {});
+  if (claimed.includes(key)) return 'già';
+  const all = challengesFor(today).every((c) => c.id === id || claimed.includes(`s_${today}_${c.id}`));
+  const coins = sfida.reward + (all ? ALL_DONE_BONUS : 0);
+  await update(ref(db), {
+    [`users/${uid}/coins`]: cur.coins + coins,
+    [`users/${uid}/lastSfida`]: serverTimestamp(),
+    [`users/${uid}/ultimaSfida`]: key,
+    [`claims/${uid}/${key}`]: true,
+  });
+  return 'ok';
 }

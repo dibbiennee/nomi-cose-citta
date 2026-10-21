@@ -33,4 +33,5 @@ export const EARN = {
   giornaliero: 20, serie: 10, giornalieroMax: 70, // bonus del giorno, che cresce coi giorni consecutivi
   invito: 200, maxInviti: 20,
   benvenutoPrimi: 1000, benvenuto: 300, primi: 100,
+  scrigniGiorno: 10, // scrigni a fine partita al giorno
 };

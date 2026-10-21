@@ -20,7 +20,7 @@ test('vetrina dei prodotti a soldi veri, con i prezzi della spec', () => {
 });
 
 test('valori delle monete della spec', () => {
-  assert.deepEqual(EARN, { base: 5, vittoria: 5, perUnica: 1, maxUniche: 10, giornaliero: 20, serie: 10, giornalieroMax: 70, invito: 200, maxInviti: 20, benvenutoPrimi: 1000, benvenuto: 300, primi: 100 });
+  assert.deepEqual(EARN, { base: 5, vittoria: 5, perUnica: 1, maxUniche: 10, giornaliero: 20, serie: 10, giornalieroMax: 70, invito: 200, maxInviti: 20, benvenutoPrimi: 1000, benvenuto: 300, primi: 100, scrigniGiorno: 10 });
 });
 
 test('lo script scrive la regola dei prezzi con ogni accessorio, e rieseguito non cambia niente', () => {

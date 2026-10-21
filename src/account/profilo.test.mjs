@@ -258,6 +258,7 @@ test('bonus del giorno: anche cambiando la data del telefono, non prima di 20 or
   const a = await phone();
   await createProfile(a.db, a.uid, {});
   await claimDaily(a.db, a.uid, '2026-10-20');
+  await adminSet(`users/${a.uid}/streak`, 2);
   await adminSet(`users/${a.uid}/lastDailyAt`, Date.now() - 5 * 3600 * 1000);
   assert.equal(await claimDaily(a.db, a.uid, '2026-10-21'), null, 'cinque ore dopo: troppo presto');
   await adminSet(`users/${a.uid}/lastDailyAt`, Date.now() - 21 * 3600 * 1000);
