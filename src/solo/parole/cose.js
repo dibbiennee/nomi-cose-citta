@@ -1,0 +1,31 @@
+// Cose (oggetti) per i robot della partita da soli. [parola, rarità]: 0 comune, 1 media, 2 rara.
+const parole = {
+  A: [['Armadio', 0], ['Ago', 0], ['Anello', 0], ['Accendino', 0], ['Aquilone', 0], ['Asciugamano', 0], ['Aspirapolvere', 1], ['Altalena', 1], ['Antenna', 1], ['Amaca', 1], ['Attaccapanni', 1], ['Anfora', 1], ['Accetta', 1], ['Arpa', 1], ['Annaffiatoio', 1], ['Abat-jour', 2], ['Alambicco', 2], ['Astrolabio', 2], ['Abaco', 2], ['Ampolla', 2], ['Arcolaio', 2], ['Archibugio', 2]],
+  B: [['Bicchiere', 0], ['Borsa', 0], ['Bottiglia', 0], ['Bicicletta', 0], ['Bambola', 0], ['Bilancia', 1], ['Borraccia', 1], ['Barattolo', 1], ['Bastone', 1], ['Baule', 1], ['Binocolo', 1], ['Brocca', 1], ['Bussola', 1], ['Bracciale', 1], ['Berretto', 1], ['Badile', 2], ['Battipanni', 2], ['Bisturi', 2], ['Borsello', 2], ['Bandoneon', 2], ['Bidè', 2]],
+  C: [['Coltello', 0], ['Cuscino', 0], ['Chiave', 0], ['Computer', 0], ['Cucchiaio', 0], ['Candela', 0], ['Cappello', 0], ['Cassetto', 1], ['Cavatappi', 1], ['Clessidra', 1], ['Colapasta', 1], ['Compasso', 1], ['Calamaio', 2], ['Cesoia', 2], ['Caleidoscopio', 2], ['Clavicembalo', 2], ['Cerbottana', 2], ['Cannocchiale', 2]],
+  D: [['Dado', 0], ['Divano', 0], ['Dentifricio', 0], ['Disco', 0], ['Diario', 0], ['Dizionario', 0], ['Ditale', 1], ['Doccia', 1], ['Drone', 1], ['Deodorante', 1], ['Dondolo', 1], ['Damigiana', 2], ['Dagherrotipo', 2], ['Diapason', 2], ['Doppiere', 2], ['Dinamo', 2], ['Decanter', 2]],
+  E: [['Elicottero', 0], ['Evidenziatore', 0], ['Elastico', 0], ['Etichetta', 0], ['Estintore', 1], ['Enciclopedia', 1], ['Elmetto', 1], ['Espositore', 1], ['Elica', 1], ['Ecografo', 2], ['Eufonio', 2], ['Erpice', 2], ['Embrice', 2], ['Epidiascopio', 2], ['Ecoscandaglio', 2]],
+  F: [['Forchetta', 0], ['Forbici', 0], ['Frigorifero', 0], ['Fazzoletto', 0], ['Fischietto', 0], ['Ferro', 0], ['Fiammifero', 1], ['Flauto', 1], ['Fermaglio', 1], ['Frullatore', 1], ['Fionda', 1], ['Fibbia', 1], ['Frusta', 1], ['Faretra', 2], ['Feluca', 2], ['Fiasca', 2], ['Fonografo', 2], ['Fermacarte', 2]],
+  G: [['Gomma', 0], ['Giacca', 0], ['Guanto', 0], ['Gonna', 0], ['Gioiello', 0], ['Gessetto', 1], ['Grattugia', 1], ['Gruccia', 1], ['Goniometro', 1], ['Girandola', 1], ['Giradischi', 1], ['Gomitolo', 1], ['Gilet', 1], ['Gavetta', 2], ['Gerla', 2], ['Gong', 2], ['Grimaldello', 2]],
+  H: [['Hoverboard', 0], ['Hard disk', 1], ['Hula hoop', 1], ['Harmonium', 2]],
+  I: [['Imbuto', 0], ['Interruttore', 0], ['Inchiostro', 0], ['Impermeabile', 0], ['Incudine', 1], ['Insegna', 1], ['Imbracatura', 1], ['Idrante', 1], ['Inalatore', 1], ['Ingranaggio', 1], ['Icona', 1], ['Incensiere', 2], ['Igrometro', 2], ['Interfono', 2], ['Impastatrice', 2], ['Inginocchiatoio', 2]],
+  J: [['Jeans', 0], ['Jukebox', 1], ['Joystick', 1], ['Jet', 1], ['Jacuzzi', 1]],
+  K: [['Kayak', 0], ['Kimono', 1], ['Kart', 1], ['K-way', 1], ['Kilt', 1], ['Kazoo', 2]],
+  L: [['Libro', 0], ['Lampada', 0], ['Letto', 0], ['Lavatrice', 0], ['Lavagna', 0], ['Lucchetto', 1], ['Lente', 1], ['Lanterna', 1], ['Lima', 1], ['Lampadario', 1], ['Lavello', 1], ['Laccio', 1], ['Leggio', 2], ['Liuto', 2], ['Lume', 2], ['Lesina', 2], ['Lucerna', 2]],
+  M: [['Matita', 0], ['Martello', 0], ['Maglietta', 0], ['Macchina', 0], ['Moneta', 0], ['Mobile', 0], ['Molletta', 1], ['Mestolo', 1], ['Mattarello', 1], ['Microfono', 1], ['Mappamondo', 1], ['Mouse', 1], ['Metronomo', 2], ['Mortaio', 2], ['Mandolino', 2], ['Macinino', 2], ['Monocolo', 2]],
+  N: [['Nave', 0], ['Nastro', 0], ['Navigatore', 0], ['Notebook', 0], ['Neon', 1], ['Nécessaire', 1], ['Nappa', 1], ['Nacchera', 1], ['Navicella', 1], ['Narghilè', 2], ['Naspo', 2], ['Nassa', 2], ['Nebulizzatore', 2], ['Nottolino', 2], ['Nettapipe', 2]],
+  O: [['Orologio', 0], ['Ombrello', 0], ['Occhiali', 0], ['Orecchino', 0], ['Ombrellone', 1], ['Organo', 1], ['Ovatta', 1], ['Oboe', 1], ['Oliera', 1], ['Obiettivo', 1], ['Oblò', 1], ['Ottomana', 2], ['Ocarina', 2], ['Odometro', 2], ['Otre', 2], ['Orinale', 2]],
+  P: [['Penna', 0], ['Pettine', 0], ['Piatto', 0], ['Pallone', 0], ['Portafoglio', 0], ['Pentola', 0], ['Pennello', 1], ['Padella', 1], ['Paracadute', 1], ['Pinza', 1], ['Pantofola', 1], ['Pinzetta', 1], ['Pendolo', 2], ['Pantografo', 2], ['Paravento', 2], ['Pestello', 2], ['Plettro', 2]],
+  Q: [['Quaderno', 0], ['Quadro', 0], ['Quadrante', 1], ['Quadriciclo', 2]],
+  R: [['Righello', 0], ['Radio', 0], ['Rasoio', 0], ['Racchetta', 0], ['Robot', 0], ['Rastrello', 1], ['Ruota', 1], ['Ramazza', 1], ['Reggiseno', 1], ['Retino', 1], ['Rubinetto', 1], ['Rosario', 1], ['Rullo', 1], ['Ricetrasmittente', 2], ['Rocchetto', 2], ['Rampino', 2], ['Raschietto', 2], ['Reliquiario', 2]],
+  S: [['Sedia', 0], ['Scarpa', 0], ['Specchio', 0], ['Sapone', 0], ['Spazzolino', 0], ['Sciarpa', 0], ['Scopa', 0], ['Sacco', 1], ['Siringa', 1], ['Sgabello', 1], ['Spugna', 1], ['Spillatrice', 1], ['Scalpello', 1], ['Sestante', 2], ['Setaccio', 2], ['Stetoscopio', 2], ['Sonaglio', 2], ['Spinetta', 2], ['Scrigno', 2]],
+  T: [['Tavolo', 0], ['Telefono', 0], ['Tazza', 0], ['Televisore', 0], ['Tenda', 0], ['Tappeto', 0], ['Termometro', 1], ['Temperino', 1], ['Tamburo', 1], ['Trapano', 1], ['Telescopio', 1], ['Tagliere', 1], ['Trottola', 1], ['Tromba', 1], ['Tastiera', 1], ['Tridente', 2], ['Teodolite', 2], ['Tornio', 2], ['Turibolo', 2], ['Trespolo', 2]],
+  U: [['Uncinetto', 0], ['Uniforme', 0], ['Uncino', 0], ['Urna', 0], ['Ukulele', 1], ['Umidificatore', 1], ['Utensile', 1], ['Uscio', 1], ['Utilitaria', 1], ['Ugello', 2], ['Usbergo', 2], ['Ultraleggero', 2], ['Uosa', 2], ['Unguentario', 2]],
+  V: [['Vaso', 0], ['Valigia', 0], ['Ventilatore', 0], ['Violino', 0], ['Vestito', 0], ['Ventaglio', 1], ['Vassoio', 1], ['Vanga', 1], ['Ventosa', 1], ['Vela', 1], ['Visiera', 1], ['Vinile', 1], ['Verricello', 2], ['Vomere', 2], ['Vaporiera', 2], ['Viola', 2], ['Vasistas', 2]],
+  W: [['Walkman', 0], ['Walkie-talkie', 1], ['Wok', 1], ['Webcam', 1], ['Windsurf', 1]],
+  X: [['Xilofono', 0]],
+  Y: [['Yo-yo', 0], ['Yacht', 1]],
+  Z: [['Zaino', 0], ['Zappa', 0], ['Zerbino', 0], ['Zoccolo', 0], ['Zanzariera', 1], ['Zattera', 1], ['Zip', 1], ['Zuccheriera', 1], ['Zavorra', 1], ['Zampogna', 2], ['Zufolo', 2], ['Zangola', 2], ['Zimbello', 2], ['Zecchino', 2], ['Zircone', 2]],
+};
+
+export default parole;

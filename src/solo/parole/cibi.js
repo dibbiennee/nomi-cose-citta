@@ -1,0 +1,30 @@
+// Cibi per i robot della partita da soli. [parola, rarità]: 0 comune, 1 media, 2 rara.
+const parole = {
+  A: [['Arancia', 0], ['Albicocca', 0], ['Ananas', 0], ['Anguria', 0], ['Aglio', 0], ['Arrosto', 0], ['Asparagi', 1], ['Avocado', 1], ['Amatriciana', 1], ['Arancino', 1], ['Acciughe', 1], ['Agnolotti', 1], ['Aringa', 1], ['Amaretti', 1], ['Anolini', 2], ['Arrosticini', 2], ['Anice', 2], ['Alchechengi', 2], ['Agretti', 2], ['Acquacotta', 2]],
+  B: [['Banana', 0], ['Bistecca', 0], ['Biscotti', 0], ['Burro', 0], ['Brioche', 0], ['Basilico', 1], ['Bresaola', 1], ['Broccoli', 1], ['Bruschetta', 1], ['Babà', 1], ['Branzino', 1], ['Baccalà', 1], ['Burrata', 1], ['Bucatini', 1], ['Bottarga', 2], ['Bagna cauda', 2], ['Bigoli', 2], ['Bergamotto', 2], ['Borlotti', 2], ['Biete', 2]],
+  C: [['Carota', 0], ['Cioccolato', 0], ['Ciliegia', 0], ['Cipolla', 0], ['Caffè', 0], ['Cornetto', 0], ['Carciofo', 1], ['Cannoli', 1], ['Cassata', 1], ['Carbonara', 1], ['Cotechino', 1], ['Cozze', 1], ['Cavolfiore', 1], ['Caciocavallo', 2], ['Cicerchia', 2], ['Cassoeula', 2], ['Culurgiones', 2], ['Castagnaccio', 2]],
+  D: [['Dattero', 0], ['Dado', 0], ['Diavola', 0], ['Donut', 0], ['Dentice', 1], ['Ditalini', 1], ['Dragoncello', 1], ['Dolcelatte', 1], ['Dorayaki', 1], ['Datterini', 1], ['Dumpling', 1], ['Daikon', 2], ['Durian', 2], ['Dolcetto', 2], ['Duroni', 2], ['Dukkah', 2]],
+  E: [['Espresso', 0], ['Emmental', 0], ['Erba cipollina', 0], ['Endivia', 0], ['Empanada', 1], ['Edamame', 1], ['Eclair', 1], ['Enchilada', 1], ['Escarola', 1], ['Erbazzone', 2], ['Eperlano', 2], ['Elicoidali', 2], ['Estragone', 2], ['Eglefino', 2], ['Erborinato', 2]],
+  F: [['Fragola', 0], ['Formaggio', 0], ['Fagioli', 0], ['Focaccia', 0], ['Fettuccine', 0], ['Fico', 0], ['Funghi', 0], ['Finocchio', 1], ['Frittata', 1], ['Farro', 1], ['Fave', 1], ['Falafel', 1], ['Fontina', 1], ['Frittelle', 1], ['Friarielli', 2], ['Fregola', 2], ['Fiadone', 2], ['Farinata', 2], ['Fassona', 2]],
+  G: [['Gelato', 0], ['Gnocchi', 0], ['Gorgonzola', 0], ['Grissini', 0], ['Grana', 0], ['Gamberi', 1], ['Granita', 1], ['Gianduiotto', 1], ['Guacamole', 1], ['Genovese', 1], ['Gazpacho', 1], ['Gubana', 2], ['Gattò', 2], ['Garganelli', 2], ['Giuggiole', 2], ['Gricia', 2]],
+  H: [['Hamburger', 0], ['Hot dog', 0], ['Hummus', 1], ['Halloumi', 2]],
+  I: [['Insalata', 0], ['Involtini', 0], ['Indivia', 0], ['Ice tea', 0], ['Insalata russa', 0], ['Iceberg', 0], ['Involtino primavera', 1], ['Ippoglosso', 1], ['Impepata', 1], ['Infuso', 1], ['Insalata caprese', 1], ['Iris', 2], ['Idromele', 2], ['Imbrecciata', 2], ['Insalata pantesca', 2], ['Italico', 2]],
+  J: [['Jalapeño', 1], ['Jota', 2]],
+  K: [['Kiwi', 0], ['Kebab', 0], ['Ketchup', 0], ['Kaki', 1], ['Krapfen', 1], ['Kamut', 2], ['Kimchi', 2], ['Kefir', 2]],
+  L: [['Latte', 0], ['Lasagne', 0], ['Limone', 0], ['Lenticchie', 0], ['Lattuga', 0], ['Lampone', 1], ['Lime', 1], ['Liquirizia', 1], ['Lardo', 1], ['Linguine', 1], ['Lonza', 1], ['Limoncello', 1], ['Lampredotto', 2], ['Lumache', 2], ['Luganega', 2], ['Lampascioni', 2], ['Litchi', 2]],
+  M: [['Mela', 0], ['Mozzarella', 0], ['Maccheroni', 0], ['Melanzana', 0], ['Mortadella', 0], ['Mandarino', 0], ['Marmellata', 0], ['Mascarpone', 1], ['Mango', 1], ['Minestrone', 1], ['Mirtillo', 1], ['Mandorla', 1], ['Muesli', 1], ['Mostarda', 2], ['Malloreddus', 2], ['Mazzancolle', 2], ['Missoltini', 2]],
+  N: [['Noci', 0], ['Nocciole', 0], ['Noodles', 0], ['Nuggets', 0], ['Nespola', 1], ['Nasello', 1], ['Nachos', 1], ['Nduja', 1], ['Nettarina', 1], ['Naan', 1], ['Nero di seppia', 1], ['Nodini', 2], ['Nervetti', 2], ['Nepitella', 2], ['Nocino', 2], ['Nocciolini', 2]],
+  O: [['Olive', 0], ['Orata', 0], ['Origano', 0], ['Orecchiette', 0], ['Olio', 0], ['Ossobuco', 1], ['Ostriche', 1], ['Orzo', 1], ['Omelette', 1], ['Orzotto', 1], ['Ortica', 2], ['Ovoli', 2], ['Oliva ascolana', 2], ['Ombrina', 2], ['Okra', 2]],
+  P: [['Pasta', 0], ['Pizza', 0], ['Pane', 0], ['Pomodoro', 0], ['Patata', 0], ['Pera', 0], ['Prosciutto', 0], ['Pesca', 0], ['Parmigiano', 1], ['Pesto', 1], ['Polenta', 1], ['Panettone', 1], ['Pandoro', 1], ['Peperoni', 1], ['Piadina', 1], ['Pastiera', 1], ['Pizzoccheri', 2], ['Panissa', 2], ['Pardulas', 2], ['Puntarelle', 2], ['Pandolce', 2]],
+  Q: [['Quattro formaggi', 0], ['Quinoa', 1], ['Quaglia', 1], ['Quadrucci', 2], ['Quartirolo', 2]],
+  R: [['Riso', 0], ['Ravioli', 0], ['Ragù', 0], ['Risotto', 0], ['Ricotta', 0], ['Rucola', 1], ['Radicchio', 1], ['Rapa', 1], ['Rosmarino', 1], ['Rombo', 1], ['Rigatoni', 1], ['Ramen', 1], ['Ribollita', 2], ['Ricciarelli', 2], ['Rafano', 2], ['Raveggiolo', 2]],
+  S: [['Spaghetti', 0], ['Salame', 0], ['Sushi', 0], ['Spinaci', 0], ['Salsiccia', 0], ['Sedano', 1], ['Sgombro', 1], ['Seppia', 1], ['Supplì', 1], ['Sfogliatella', 1], ['Scamorza', 1], ['Speck', 1], ['Sarde', 1], ['Sciatt', 2], ['Strangozzi', 2], ['Sbrisolona', 2], ['Sanguinaccio', 2], ['Seadas', 2]],
+  T: [['Tiramisù', 0], ['Tortellini', 0], ['Tonno', 0], ['Torta', 0], ['Toast', 0], ['Tagliatelle', 0], ['Tartufo', 1], ['Taleggio', 1], ['Tacchino', 1], ['Tarallo', 1], ['Trota', 1], ['Trofie', 1], ['Torrone', 1], ['Tigelle', 2], ['Testaroli', 2], ['Taccole', 2], ['Topinambur', 2], ['Tiella', 2]],
+  U: [['Uva', 0], ['Uovo', 0], ['Uvetta', 0], ['Uova di Pasqua', 0], ['Udon', 1], ['Uramaki', 1], ['Uva spina', 1], ['Uova di quaglia', 1], ['Uovo in camicia', 1], ['Umbricelli', 2], ['Ubriaco', 2], ['Uova di lompo', 2], ['Ugli', 2], ['Uccelli scappati', 2], ['Ube', 2]],
+  V: [['Vino', 0], ['Vitello tonnato', 0], ['Vongole', 0], ['Verza', 0], ['Vitello', 0], ['Vaniglia', 1], ['Vellutata', 1], ['Vin brulé', 1], ['Valeriana', 1], ['Ventresca', 1], ['Vermouth', 1], ['Vincisgrassi', 2], ['Vezzena', 2], ['Vincotto', 2], ['Violino di capra', 2], ['Vastedda', 2]],
+  W: [['Wurstel', 0], ['Waffle', 1], ['Wasabi', 1], ['Whisky', 1]],
+  Y: [['Yogurt', 0], ['Yuzu', 2]],
+  Z: [['Zucchine', 0], ['Zucca', 0], ['Zuppa', 0], ['Zucchero', 0], ['Zabaione', 1], ['Zampone', 1], ['Zenzero', 1], ['Zeppole', 1], ['Zuppa inglese', 1], ['Zafferano', 1], ['Zelten', 2], ['Zuccotto', 2], ['Zite', 2], ['Zimino', 2], ['Zaleti', 2]],
+};
+
+export default parole;
