@@ -88,3 +88,9 @@ export function pickBots(n, takenNames, random) {
     color: Math.floor(random() * 6),
   }));
 }
+
+/** Stesse risposte? Chiave per chiave: Firebase restituisce le chiavi in ordine alfabetico, il piano no. */
+export function sameAnswers(a = {}, b = {}) {
+  const ka = Object.keys(a || {}), kb = Object.keys(b || {});
+  return ka.length === kb.length && ka.every((k) => (b || {})[k] === a[k]);
+}

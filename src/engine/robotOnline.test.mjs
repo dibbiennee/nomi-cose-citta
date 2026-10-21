@@ -89,3 +89,11 @@ test('robot con nomi diversi da quelli dei giocatori', () => {
   }
   assert.ok(startsWithLetter('Mnomi1', 'M'));
 });
+
+test('stesse risposte anche con le chiavi in ordine diverso', async () => {
+  const { sameAnswers } = await import('./robotOnline.js');
+  assert.equal(sameAnswers({ nomi: 'A', cose: 'B' }, { cose: 'B', nomi: 'A' }), true);
+  assert.equal(sameAnswers({ nomi: 'A' }, { nomi: 'A', cose: 'B' }), false);
+  assert.equal(sameAnswers({ nomi: 'A' }, { nomi: 'C' }), false);
+  assert.equal(sameAnswers({}, undefined), true);
+});

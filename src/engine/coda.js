@@ -49,11 +49,14 @@ export function createQueue(db, engine, uid, { waitMs = BOT_WAIT_MS, isOrganizer
     busy = true;
     try {
       const code = await engine.createQuickRoom(profile);
+      if (done) { await engine.leaveRoom(code).catch(() => {}); return; } // ha annullato mentre preparavo la stanza
       const claim = (u) => runTransaction(ref(db, `queue/${u}/room`), (cur) => (cur === null ? code : undefined), { applyLocally: false })
         .then((r) => r.committed, () => false);
       // Prima gli altri, tutti insieme, e per ultimo sé stesso: finché la propria voce è libera si resta
       // l'organizzatore, così nessun altro telefono crea nel frattempo una seconda stanza per le stesse persone.
       const others = (await Promise.all(group.filter((u) => u !== uid).map(claim))).filter(Boolean).length;
+      // Ha annullato durante le assegnazioni: esco dalla stanza (se resta vuota si chiude e gli altri tornano in coda).
+      if (done) { await engine.leaveRoom(code).catch(() => {}); return; }
       const mine = group.includes(uid) ? await claim(uid) : false;
       if (!mine) {
         // Un altro organizzatore mi ha assegnato alla sua stanza mentre preparavo la mia. Se nella mia ho già messo
@@ -92,6 +95,7 @@ export function createQueue(db, engine, uid, { waitMs = BOT_WAIT_MS, isOrganizer
       profile = p;
       done = false;
       await onDisconnect(me).remove();
+      await remove(me).catch(() => {}); // una voce vecchia (pagina ricaricata) non deve bloccare il rientro
       await set(me, entry(p));
       off = onValue(ref(db, 'queue'), (s) => { last = s.val() || {}; check(onState); });
       // Anche senza novità nella coda il tempo passa: ogni secondo si ricontrolla l'attesa.

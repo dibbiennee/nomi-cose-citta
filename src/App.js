@@ -322,7 +322,7 @@ export default function App() {
       if (isHost) {
         stat('partite_online');
         if (before === 'final') stat('rivincite');
-        else if (!startedRooms.current.has(code)) { startedRooms.current.add(code); stat('stanze_avviate'); }
+        else if (!room.quick && !startedRooms.current.has(code)) { startedRooms.current.add(code); stat('stanze_avviate'); } // solo le stanze create a mano
         if (room.quick && before !== 'final') stat('partite_veloci');
         const n = Object.values(room.players || {}).filter((p) => !p.waiting && !p.bot).length; // solo persone
         stat(n >= 5 ? 'giocatori_5piu' : `giocatori_${Math.max(2, n)}`);
@@ -388,6 +388,7 @@ export default function App() {
   const [quickDict, setQuickDict] = useState(null);
   const hasBots = !solo && !!room?.quick && Object.values(room?.players || {}).some((p) => p.bot);
   useEffect(() => { if (hasBots && !quickDict) loadDictionary().then(setQuickDict).catch(() => {}); }, [hasBots, quickDict]);
+  useEffect(() => { if (quickDict && netEngine) netEngine.setBotDict(quickDict); }, [quickDict, netEngine]); // per i voti dei robot
   const roomRef = useRef(room);
   roomRef.current = room;
   useEffect(() => {
@@ -398,6 +399,16 @@ export default function App() {
     }, 500);
     return () => clearInterval(iv);
   }, [hasBots, quickDict, engine, code]);
+
+  // Rete di sicurezza: stanza veloce ferma in lobby (l'host ha annullato o è sparito con la presenza ancora attiva).
+  // Chi non è host, dopo l'attesa più 10 secondi, esce e torna a cercare partita.
+  useEffect(() => {
+    if (solo || !room?.quick || room.status !== 'lobby' || room.round || !engine || room.hostId === engine.uid || !code) return;
+    if (now < (room.createdAt || 0) + JOIN_WAIT_MS + 10000) return;
+    engine.leaveRoom(code).catch(() => {});
+    goHome();
+    startQuick();
+  }, [room, solo, engine, code, now]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Chi entra a partita iniziata e deve aspettare: una volta per stanza.
   const waitedRooms = useRef(new Set());

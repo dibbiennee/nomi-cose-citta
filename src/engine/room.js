@@ -21,7 +21,7 @@ import {
 } from './rules.js';
 import { isReservedCode } from '../club/fondatore.js';
 import { CHARACTER_IDS } from '../club/contenuti.js';
-import { dueAnswers, dueStop, botVotesFor, pickBots, seededRandom } from './robotOnline.js';
+import { dueAnswers, dueStop, botVotesFor, pickBots, seededRandom, sameAnswers } from './robotOnline.js';
 
 export const SPIN_MS = 2000; // la lettera che gira
 export const COUNTDOWN_MS = 3200; // 3, 2, 1, Via!
@@ -59,6 +59,21 @@ export function activeIds(room) {
 }
 
 export function createEngine(db, uid) {
+  let botDict = null;
+  /**
+   * Partita veloce: i voti a nome dei robot si possono scrivere da ogni telefono umano (servono per il ripiego quando
+   * l'host non c'è), quindi a fine correzione non ci si fida di quelli salvati: si tolgono e si ricalcolano,
+   * uguali su ogni telefono. Senza dizionario i robot non votano.
+   */
+  function honestVotes(room, code) {
+    const votes = JSON.parse(JSON.stringify(room.votes || {}));
+    if (!room.quick) return votes;
+    for (const cat of Object.keys(votes)) {
+      for (const t of Object.keys(votes[cat])) for (const v of Object.keys(votes[cat][t] || {})) if (room.players?.[v]?.bot) delete votes[cat][t][v];
+    }
+    if (botDict) for (const v of botVotesFor(room, code, botDict)) ((votes[v.cat] ||= {})[v.target] ||= {})[v.voter] = true;
+    return votes;
+  }
   const roomRef = (code, path = '') => ref(db, `rooms/${code}${path ? '/' + path : ''}`);
   let serverOffset = 0;
   onValue(ref(db, '.info/serverTimeOffset'), (s) => { serverOffset = s.val() || 0; });
@@ -194,7 +209,7 @@ export function createEngine(db, uid) {
       if (room.status === 'play' || inGrace) {
         for (const id of bots) {
           const due = dueAnswers(room, code, id, dict, t);
-          if (Object.keys(due).length && JSON.stringify(due) !== JSON.stringify(room.answers?.[id] || {})) {
+          if (Object.keys(due).length && !sameAnswers(due, room.answers?.[id])) {
             await set(roomRef(code, `answers/${id}`), due).catch(() => {});
           }
         }
@@ -209,6 +224,9 @@ export function createEngine(db, uid) {
         }
       }
     },
+
+    /** Dizionario dei robot, per ricalcolare i loro voti a fine correzione (partita veloce). */
+    setBotDict(dict) { botDict = dict; },
 
     /** Legge la stanza senza entrare (per la schermata di invito). Lancia RoomError('notfound'). */
     peekRoom: readRoom,
@@ -413,7 +431,7 @@ export function createEngine(db, uid) {
       if (idx < cats.length - 1) { await update(roomRef(code), { 'round/reviewIdx': idx + 1, 'round/stepAt': serverTimestamp() }); return; }
       // Contano solo i giocatori online e non in attesa: chi è caduto prende 0, come una risposta vuota.
       const ids = activeIds(room);
-      const { points, stats } = scoreRound(ids, cats.map((c) => c.key), room.answers || {}, room.votes || {}, room.round.letter);
+      const { points, stats } = scoreRound(ids, cats.map((c) => c.key), room.answers || {}, honestVotes(room, code), room.round.letter);
       const patch = { status: 'round', 'round/points': points, 'round/stepAt': serverTimestamp() };
       for (const id of ids) {
         const p = room.players[id];

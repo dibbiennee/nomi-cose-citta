@@ -245,3 +245,80 @@ test('coda: due organizzatori insieme non mettono nessuno in due stanze', async 
   assert.ok(rooms.every(Boolean), JSON.stringify(rooms));
   for (const code of new Set(rooms)) assert.ok(await phones[0].read(`rooms/${code}/hostId`), `la stanza ${code} esiste`);
 });
+
+// ---------- correzioni dopo la revisione ----------
+import { scoreRound } from './rules.js';
+import { botVotesFor } from './robotOnline.js';
+
+test('i voti dei robot li decide il motore dell\'host: quelli scritti a mano da un umano non contano, e le risposte dei robot non si cancellano', async () => {
+  const [a, b] = await Promise.all(['Anna', 'Bea'].map(phone));
+  const code = await a.engine.createQuickRoom(a.profile);
+  await b.engine.joinRoom(code, b.profile);
+  await a.engine.updateSettings(code, { ...QUICK, rounds: 1 });
+  await a.engine.addBots(code, 2);
+  a.engine.setBotDict(dict);
+  await a.engine.startGame(code);
+  await sleep(SPIN_MS + COUNTDOWN_MS + 100);
+  await a.engine.goPlay(code);
+  let room = await drive(a, code, botsWrote);
+  const L = room.round.letter;
+  await set(ref(a.db, `rooms/${code}/answers/${a.uid}`), { nomi: `${L}nomi1`, cose: `${L}cose1`, citta: `${L}citta1` });
+  await b.engine.pressStop(code, { nomi: `${L}nomi2` });
+  // Bea scrive "Non vale" a nome suo e di un robot contro la parola giusta di Anna: con 4 giocatori basterebbero 2 voti.
+  await set(ref(b.db, `rooms/${code}/votes/nomi/${a.uid}/${b.uid}`), true);
+  await set(ref(b.db, `rooms/${code}/votes/nomi/${a.uid}/bot1`), true);
+  await denied(set(ref(b.db, `rooms/${code}/answers/bot1`), null), 'le risposte dei robot non le cancella un umano');
+  room = await a.read(`rooms/${code}`);
+  const ids = Object.keys(room.players);
+  const honest = JSON.parse(JSON.stringify(room.votes || {}));
+  for (const cat of Object.keys(honest)) for (const t of Object.keys(honest[cat])) for (const v of Object.keys(honest[cat][t])) if (v.startsWith('bot')) delete honest[cat][t][v];
+  for (const v of botVotesFor(room, code, dict)) ((honest[v.cat] ||= {})[v.target] ||= {})[v.voter] = true;
+  const expected = scoreRound(ids, ['nomi', 'cose', 'citta'], room.answers, honest, L).points[a.uid];
+  for (let i = 0; i < 3; i++) await a.engine.nextCategory(code);
+  assert.equal((await a.read(`rooms/${code}/round/points/${a.uid}`)), expected);
+});
+
+test('coda: chi annulla mentre organizza non lascia gli altri in una stanza che non parte', async () => {
+  const [a, b] = await Promise.all(['Org', 'Altro'].map(phone));
+  let release, called = false;
+  const gate = new Promise((r) => { release = r; });
+  const slow = { ...a.engine, now: a.engine.now, leaveRoom: a.engine.leaveRoom, createQuickRoom: async (p) => { called = true; await gate; return a.engine.createQuickRoom(p); } };
+  const qa = createQueue(a.db, slow, a.uid, { waitMs: 1000 });
+  const qb = createQueue(b.db, b.engine, b.uid, { waitMs: 10000 }); // Altro aspetta a lungo prima di organizzare da solo
+  let bRoom = null;
+  await qa.join(a.profile, () => {});
+  await sleep(50);
+  await qb.join(b.profile, (st) => { if (st.room) bRoom = st.room; });
+  for (let i = 0; i < 40 && !called; i++) await sleep(100);
+  assert.ok(called, 'Org ha cominciato a organizzare');
+  await qa.leave();
+  release();
+  for (let i = 0; i < 200 && !bRoom; i++) await sleep(100);
+  // Altro continua a cercare e, rimasto solo, diventa lui l'organizzatore: la stanza che riceve esiste ed è sua.
+  assert.ok(bRoom, 'Altro non resta in coda per sempre');
+  assert.equal(await b.read(`rooms/${bRoom}/hostId`), b.uid, 'non una stanza abbandonata da Org');
+  await qb.leave();
+});
+
+test('coda: si assegna solo a una stanza veloce ancora in lobby', async () => {
+  const [a, h] = await Promise.all(['Anna', 'Host'].map(phone));
+  await set(ref(a.db, `queue/${a.uid}`), { name: 'Anna', color: 1, face: 1, at: serverTimestamp() });
+  const normal = await makeRoom(h, false);
+  await denied(set(ref(h.db, `queue/${a.uid}/room`), normal), 'stanza normale');
+  const quick = await makeRoom(h, true);
+  await set(ref(h.db, `rooms/${quick}/status`), 'spin').catch(() => {});
+  if ((await h.read(`rooms/${quick}/status`)) !== 'lobby') await denied(set(ref(h.db, `queue/${a.uid}/room`), quick), 'stanza già partita');
+  const fresh = await makeRoom(h, true);
+  await set(ref(h.db, `queue/${a.uid}/room`), fresh);
+  assert.equal(await a.read(`queue/${a.uid}/room`), fresh);
+  await set(ref(a.db, `queue/${a.uid}`), null);
+});
+
+test('coda: rientrare con una voce vecchia ancora presente funziona', async () => {
+  const a = await phone('Anna');
+  await set(ref(a.db, `queue/${a.uid}`), { name: 'Anna', color: 1, face: 1, at: serverTimestamp() });
+  const q = createQueue(a.db, a.engine, a.uid, { waitMs: 1000 });
+  await q.join(a.profile, () => {});
+  assert.ok(await a.read(`queue/${a.uid}`));
+  await q.leave();
+});
