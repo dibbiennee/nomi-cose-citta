@@ -23,6 +23,12 @@ const denied = (p) => assert.rejects(p, /permission|PERMISSION_DENIED/i);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 after(async () => { await Promise.all(apps.map((a) => deleteApp(a).catch(() => {}))); });
 
+test('contatori del ritorno giornaliero: traguardi, serie perse, scudi, sfide e scrigni', () => {
+  const keys = ['serie_3', 'serie_7', 'serie_14', 'serie_30', 'serie_50', 'serie_100', 'serie_persa', 'scudo_usato',
+    'sfida_facile', 'sfida_media', 'sfida_difficile', 'sfide_tutte', 'scrigni_aperti', 'scrigni_rari'];
+  for (const k of keys) assert.ok(STAT_KEYS.includes(k), k);
+});
+
 test('il giorno è quello italiano', () => {
   assert.equal(dayKey(Date.UTC(2026, 9, 21, 22, 30)), '2026-10-22', 'alle 00:30 in Italia è già il 22');
   assert.equal(dayKey(Date.UTC(2026, 9, 21, 10, 0)), '2026-10-21');

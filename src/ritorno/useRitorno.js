@@ -34,9 +34,13 @@ export function useRitorno({ account, stat, toast }) {
     const r = await claimChallenge(db, uid, today, id).catch(() => 'errore');
     busyRef.current = false;
     setBusy(false);
-    if (r === 'ok') { toast(`+${s.reward} monete: sfida fatta`); stat(`sfida_${s.tier}`); }
+    if (r === 'ok') {
+      toast(`+${s.reward} monete: sfida fatta`);
+      stat(`sfida_${s.tier}`);
+      if (sfide.every((x) => x.id === id || x.riscossa)) stat('sfide_tutte');
+    }
     else if (r !== 'già') toast('Non è andata: aspetta qualche secondo e riprova');
-  }, [uid, today, toast, stat]);
+  }, [uid, today, toast, stat, sfide]);
 
   return {
     registered, today, streak, busy, sfide, daPrendere, riscuoti,

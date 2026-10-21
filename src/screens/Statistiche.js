@@ -191,6 +191,16 @@ export default function Statistiche() {
           </section>
 
           <section style={card}>
+            <h2 style={h2}>Ritorno</h2>
+            <p style={note}>Chi arriva ai giorni di fila, chi perde la serie e quante sfide e scrigni si aprono. Serve a capire se i premi fanno tornare la gente.</p>
+            <Bars rows={[['3 giorni di fila', sum('serie_3')], ['7 giorni', sum('serie_7')], ['14 giorni', sum('serie_14')], ['30 giorni', sum('serie_30')], ['50 giorni', sum('serie_50')], ['100 giorni', sum('serie_100')]]} />
+            <h3 style={sx('margin: 4px 0 0; font-size: 15px; font-weight: 800')}>Serie perse e scudi</h3>
+            <Bars rows={[['Serie ripartite da 1', sum('serie_persa')], ['Scudi usati', sum('scudo_usato')]]} />
+            <h3 style={sx('margin: 4px 0 0; font-size: 15px; font-weight: 800')}>Sfide prese e scrigni</h3>
+            <Bars rows={[['Sfide facili', sum('sfida_facile')], ['Sfide medie', sum('sfida_media')], ['Sfide difficili', sum('sfida_difficile')], ['Tutte e tre in un giorno', sum('sfide_tutte')], ['Scrigni aperti', sum('scrigni_aperti')], ['Accessori rari trovati', sum('scrigni_rari')]]} />
+          </section>
+
+          <section style={card}>
             <h2 style={h2}>Il resto</h2>
             <Bars rows={[['Fondatore', sum('fondatore_attivato')], ['Raffaella', sum('raffaella_scelta')], ['Guida aperta', sum('guida_aperta')], ['Installazioni', sum('installazioni')]]} />
           </section>

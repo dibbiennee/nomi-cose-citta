@@ -27,6 +27,9 @@ export const STAT_KEYS = [
   // account e richiesta dei prodotti a soldi veri (ancora in vetrina)
   'account_creati', 'lista_attesa',
   'richiesta_monete_500', 'richiesta_monete_1200', 'richiesta_monete_3500', 'richiesta_username_corto',
+  // ritorno giornaliero: traguardi raggiunti, serie perse, scudi, sfide riscosse (per livello) e scrigni
+  'serie_3', 'serie_7', 'serie_14', 'serie_30', 'serie_50', 'serie_100', 'serie_persa', 'scudo_usato',
+  'sfida_facile', 'sfida_media', 'sfida_difficile', 'sfide_tutte', 'scrigni_aperti', 'scrigni_rari',
 ];
 /** Contatori che si sommano a minuti (fino a 120 alla volta) invece che di uno. */
 export const MINUTE_KEYS = ['minuti_online', 'minuti_solo'];
