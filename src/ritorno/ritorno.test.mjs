@@ -1,7 +1,7 @@
 // Serie di giorni, sfide e scrigno: logica pura. Esegui con: npm run test:rules
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MILESTONES, milestoneFor, advanceStreak, dayBefore, nextMilestone } from './serie.js';
+import { MILESTONES, milestoneFor, advanceStreak, dayBefore, nextMilestone, toDayN, fromDayN } from './serie.js';
 import { POOL, challengesFor, completed, ALL_DONE_BONUS } from './sfide.js';
 import { rollChest, RARI } from './scrigno.js';
 
@@ -138,4 +138,12 @@ test('prossimo traguardo: il primo oltre il giorno di oggi, poi ogni 100', () =>
   assert.deepEqual(nextMilestone(99), { n: 100, coins: 3000, item: 'corona_fiamme' });
   assert.deepEqual(nextMilestone(100), { n: 200, coins: 3000 });
   assert.deepEqual(nextMilestone(250), { n: 300, coins: 3000 });
+});
+
+test('il giorno come numero (per le regole del database) e ritorno alla data', () => {
+  assert.equal(toDayN('1970-01-01'), 0);
+  assert.equal(toDayN('1970-01-02'), 1);
+  assert.equal(toDayN('2026-10-21') - toDayN('2026-10-20'), 1);
+  assert.equal(fromDayN(toDayN('2026-10-21')), '2026-10-21');
+  assert.equal(fromDayN(toDayN('2026-03-29')), '2026-03-29', 'giorno del cambio all\'ora legale');
 });

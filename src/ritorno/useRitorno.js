@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import { dayKey } from '../stats';
 import { claimChallenge } from '../account/profilo';
 import { challengesFor } from './sfide';
-import { nextMilestone } from './serie';
+import { nextMilestone, toDayN } from './serie';
 
 /**
  * Lo stato di "Oggi" per chi ha l'account: giorni di fila, prossimo traguardo, scudo e le tre sfide con il loro
@@ -21,8 +21,9 @@ export function useRitorno({ account, stat, toast }) {
     return onValue(ref(db, `claims/${uid}`), (s) => setClaims(Object.keys(s.val() || {})), () => setClaims([]));
   }, [registered, uid]);
 
-  const fatte = profile?.sfideFatte?.[today] || {};
-  const sfide = challengesFor(today).map((c) => ({ id: c.id, nome: c.nome, tier: c.tier, reward: c.reward, fatta: !!fatte[c.id], riscossa: claims.includes(`s_${today}_${c.id}`) }));
+  const dayN = toDayN(today);
+  const fatte = profile?.sfideFatte?.[`d${dayN}`] || {};
+  const sfide = challengesFor(today).map((c) => ({ id: c.id, nome: c.nome, tier: c.tier, reward: c.reward, fatta: !!fatte[c.id], riscossa: claims.includes(`s_${dayN}_${c.id}`) }));
   const streak = profile?.streak || 0;
   const daPrendere = sfide.filter((s) => s.fatta && !s.riscossa).length;
 
@@ -35,9 +36,10 @@ export function useRitorno({ account, stat, toast }) {
     busyRef.current = false;
     setBusy(false);
     if (r === 'ok') {
-      toast(`+${s.reward} monete: sfida fatta`);
+      const tutte = sfide.every((x) => x.id === id || x.riscossa);
+      toast(`+${s.reward + (tutte ? 50 : 0)} monete: ${tutte ? 'le hai fatte tutte e tre' : 'sfida fatta'}`);
       stat(`sfida_${s.tier}`);
-      if (sfide.every((x) => x.id === id || x.riscossa)) stat('sfide_tutte');
+      if (tutte) stat('sfide_tutte');
     }
     else if (r !== 'già') toast('Non è andata: aspetta qualche secondo e riprova');
   }, [uid, today, toast, stat, sfide]);

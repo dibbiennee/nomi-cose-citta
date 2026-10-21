@@ -72,19 +72,21 @@ la gente.
 ## Decisioni di Claude dopo il controllo del costruttore
 
 - **Serie e bonus in monete sono due cose separate.** La serie conta i **giorni** (giorno di Roma): nuovo campo
-  `lastDay` (testo `AAAA-MM-GG`) che può solo avanzare, e `streak` che sale di 1 solo se `lastDay` è il giorno dopo
-  quello precedente. Le regole non calcolano date di Roma: controllano che `lastDay` sia più grande del precedente e
-  che `streak` salga al massimo di 1 per scrittura. Il **bonus in monete** resta con il suo intervallo di 20 ore.
-  Così chi apre alle 23:50 e alle 00:10 allunga la serie (nuovo giorno) e riceve il bonus alla prossima apertura
-  utile, senza perdere niente.
+  `lastDay`, un **numero** (giorni dall'epoca) che le regole confrontano con l'ora del server, così un telefono non
+  può dichiarare un giorno che non è oggi (accettate l'ora solare e legale di Roma). `streak`, `migliorSerie` e
+  `serieId` cambiano solo nella stessa scrittura che porta un giorno nuovo, di +1 alla volta, e `streak` non supera i
+  giorni di vita dell'account più 2. Nessun blocco di ore tra un giorno e l'altro: chi apre alle 23:50 e alle 00:10
+  allunga la serie alle 00:10. Il **bonus in monete** resta con il suo intervallo di 20 ore e arriva alla prima
+  apertura utile.
 - **Scudo**: campo `scudo` col mese in cui è stato usato (`AAAA-MM`). Copre **un solo giorno saltato** per mese di
-  calendario. Giorni aperti senza rete (partita da soli offline) contano: il giorno si memorizza sul telefono e si
-  invia alla prima apertura con rete. Se nelle statistiche le serie perse sono troppe, si rende lo scudo più
+  calendario. Un giorno aperto senza rete conta se la rete torna lo stesso giorno (la scrittura si riprova al
+  ritorno in primo piano e alla riconnessione); un giorno passato non si può scrivere dopo. Se nelle statistiche le serie perse sono troppe, si rende lo scudo più
   generoso: è una cifra, non una struttura.
 - **Scrigni**: un solo salvataggio a fine partita con monete della partita (fino a 20), scrigno (fino a 40) e
   progresso delle sfide, sotto lo stesso intervallo di 60 secondi di oggi (`lastEarn`). Al massimo **10 scrigni al
-  giorno** (campo `scrigniOggi` con giorno e conteggio, non cancellabile). Il tetto dei rimborsi quotidiani
-  resta quindi sotto le 600 monete anche con i trucchi.
+  giorno** (campo `scrigniOggi` con giorno e conteggio, non cancellabile). Con i trucchi i premi
+  del ritorno restano limitati dal giorno vero (sfide: le tre di oggi; scrigni: dieci al giorno), ma le monete di
+  partita già esistenti (+20 ogni 60 secondi) restano il tetto più largo, com'era prima.
 - **Premi separati, ognuno col suo ramo di regole e il suo campo non cancellabile**: partita più scrigno,
   bonus del giorno, traguardi, sfide. Ogni tipo ha il suo tetto e il suo intervallo.
 - **Traguardi**: campo `migliorSerie` che non scende mai. Il premio in monete di ogni traguardo si riscuote una volta

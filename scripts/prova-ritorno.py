@@ -18,6 +18,10 @@ def db(path, value=None, method='GET'):
 def day(offset=0):
     return (datetime.now(ZoneInfo('Europe/Rome')) + timedelta(days=offset)).strftime('%Y-%m-%d')
 
+def N(offset=0):
+    from datetime import date
+    return (date.fromisoformat(day(offset)) - date(1970, 1, 1)).days
+
 def check(label, cond, extra=''):
     global ok
     print(('PASS ' if cond else 'FAIL ') + label + (f'  [{extra}]' if extra != '' else ''))
@@ -64,11 +68,11 @@ async def main():
             await A.wait_for_timeout(500)
         check('email inviata', bool(link))
         await A.goto(URL + '/?' + link.split('?', 1)[1]); await A.wait_for_timeout(5000)
-        uid = [u for u, v in (db('users') or {}).items() if v.get('createdAt')][-1]
+        uid = max(((u, v['createdAt']) for u, v in (db('users') or {}).items() if v.get('createdAt')), key=lambda x: x[1])[0]
         db(f'users/{uid}/createdAt', int((time.time() - 120 * 86400) * 1000), 'PUT')  # account "vecchio": i tetti legati all'età non bloccano
         await A.reload(); await A.wait_for_timeout(4500)
         u = db(f'users/{uid}')
-        check('primo giorno: serie 1 nel profilo', u.get('streak') == 1 and u.get('lastDay') == day(), {k: u.get(k) for k in ('streak', 'lastDay')})
+        check('primo giorno: serie 1 nel profilo', u.get('streak') == 1 and u.get('lastDay') == N(), {k: u.get(k) for k in ('streak', 'lastDay')})
         check('la home mostra il Giorno 1', (await row_text(A)).startswith('Giorno 1'), await row_text(A))
         await A.screenshot(path=f'{OUT}/1-home.png')
         # dettagli
@@ -86,7 +90,7 @@ async def main():
         check('conto degli scrigni a 1', (u.get('scrigni') or {}).get('n') == 1, u.get('scrigni'))
         check('monete salite', u['coins'] > coins0, f"{coins0} -> {u['coins']}")
         await A.screenshot(path=f'{OUT}/3-podio.png')
-        done = list(((u.get('sfideFatte') or {}).get(day()) or {}).keys())
+        done = list(((u.get('sfideFatte') or {}).get(f'd{N()}') or {}).keys())
         # riscossione, con doppio clic
         await A.get_by_role('button', name=re.compile('^Esci|^Torna|Home')).first.click() if await A.get_by_role('button', name=re.compile('^Esci|^Torna alla home')).count() else None
         await A.wait_for_timeout(1500)
@@ -103,12 +107,12 @@ async def main():
                 print('nota: nessuna sfida di oggi completata da una partita da soli')
             await A.get_by_role('button', name='Chiudi').click(); await A.wait_for_timeout(300)
         # il giorno dopo: la serie continua
-        db(f'users/{uid}', {**db(f'users/{uid}'), 'lastDay': day(-1), 'lastDayAt': int((time.time() - 5 * 3600) * 1000), 'lastDaily': day(-1)}, 'PUT')
+        db(f'users/{uid}', {**db(f'users/{uid}'), 'lastDay': N(-1), 'lastDaily': day(-1)}, 'PUT')
         await A.reload(); await A.wait_for_timeout(4500)
         check('il giorno dopo: Giorno 2', (await row_text(A)).startswith('Giorno 2'), await row_text(A))
         # traguardo dei 3 giorni
         cur = db(f'users/{uid}')
-        db(f'users/{uid}', {**cur, 'lastDay': day(-1), 'lastDayAt': int((time.time() - 5 * 3600) * 1000), 'streak': 2}, 'PUT')
+        db(f'users/{uid}', {**cur, 'lastDay': N(-1), 'streak': 2}, 'PUT')
         before = db(f'users/{uid}/coins')
         await A.reload(); await A.wait_for_timeout(5000)
         t = (await A.locator('body').inner_text()).replace(' ', ' ')
@@ -119,12 +123,12 @@ async def main():
         # un giorno saltato: lo scudo tiene la serie
         cur = db(f'users/{uid}')
         cur.pop('scudo', None)
-        db(f'users/{uid}', {**cur, 'lastDay': day(-2), 'lastDayAt': int((time.time() - 30 * 3600) * 1000), 'streak': 5, 'migliorSerie': 5, 'serieId': day(-6)}, 'PUT')
+        db(f'users/{uid}', {**cur, 'lastDay': N(-2), 'streak': 5, 'migliorSerie': 5, 'serieId': N(-6)}, 'PUT')
         await A.reload(); await A.wait_for_timeout(4500)
         u = db(f'users/{uid}')
         check('scudo: la serie continua a 6', u.get('streak') == 6 and u.get('scudo') == day()[:7], {k: u.get(k) for k in ('streak', 'scudo')})
         # due giorni saltati: riparte
-        db(f'users/{uid}', {**u, 'lastDay': day(-3), 'lastDayAt': int((time.time() - 30 * 3600) * 1000), 'streak': 8, 'migliorSerie': 8}, 'PUT')
+        db(f'users/{uid}', {**u, 'lastDay': N(-3), 'streak': 8, 'migliorSerie': 8}, 'PUT')
         await A.reload(); await A.wait_for_timeout(4500)
         u = db(f'users/{uid}')
         check('due giorni saltati: la serie riparte da 1, il record resta', u.get('streak') == 1 and u.get('migliorSerie') == 8, {k: u.get(k) for k in ('streak', 'migliorSerie')})

@@ -20,6 +20,13 @@ export function milestoneFor(n) {
   return null;
 }
 
+/**
+ * Il giorno come numero (giorni dall'epoca di una data AAAA-MM-GG): le regole del database lo confrontano con l'ora
+ * del server, quindi un telefono non può dichiarare un giorno che non è oggi.
+ */
+export const toDayN = (day) => Math.floor(Date.parse(`${day}T12:00:00Z`) / 86400000);
+export const fromDayN = (n) => new Date(n * 86400000 + 43200000).toISOString().slice(0, 10);
+
 /** Il prossimo traguardo dopo il giorno `streak`: { n, coins, item? }. */
 export function nextMilestone(streak) {
   const m = MILESTONES.find((x) => x.n > streak);

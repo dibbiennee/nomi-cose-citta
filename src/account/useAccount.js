@@ -3,9 +3,10 @@ import { ref, onValue, get } from 'firebase/database';
 import { onIdTokenChanged, getRedirectResult, GoogleAuthProvider, signInWithCredential, isSignInWithEmailLink } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { isRegistered, linkGoogle, sendEmailLink, completeEmailLink, signOutToAnonymous, deleteAccount, reauthGoogle, usesGoogle, EMAIL_KEY, MODE_KEY } from './accesso';
-import { createProfile, earnCoins, touchDay, claimMilestones, finishGame, claimDaily, buyItem, equip, setUsername, claimInvites, joinWaitlist, leaveWaitlist, isOnWaitlist, deleteProfile, gameCoins } from './profilo';
+import { createProfile, earnCoins, touchDay, claimMilestones, missingMilestones, finishGame, claimDaily, buyItem, equip, setUsername, claimInvites, joinWaitlist, leaveWaitlist, isOnWaitlist, deleteProfile, gameCoins } from './profilo';
 import { isStandalone } from '../ui/installa';
 import { dayKey } from '../stats';
+import { toDayN } from '../ritorno/serie';
 
 // L'account dentro l'app: chi sei, il tuo profilo dal vivo (monete, accessori, username), e le azioni.
 // Quando l'accesso cambia identità (account già esistente su un altro telefono, uscita, cancellazione) la pagina si
@@ -115,49 +116,77 @@ export function useAccount({ ready, stat, toast }) {
     return () => { off(); clearTimeout(timer); };
   }, [registered, uid, toast]);
 
-  // Una volta per apertura: monete rimaste in coda, bonus del giorno e inviti andati a buon fine.
-  const daily = useRef(false);
+  // All'apertura, e di nuovo quando il telefono torna in primo piano o ritrova la rete se il giorno è cambiato o
+  // l'apertura non era andata a buon fine: partita rimasta in coda, giorni di fila e traguardi, bonus del giorno
+  // (che dipende dalla serie) e inviti andati a buon fine.
+  const [tick, setTick] = useState(0);
+  const daily = useRef('');
+  const running = useRef(false);
   useEffect(() => {
-    if (!profile || !uid || daily.current) return;
-    daily.current = true;
+    const again = () => setTick((t) => t + 1);
+    const vis = () => { if (document.visibilityState === 'visible') again(); };
+    window.addEventListener('online', again);
+    document.addEventListener('visibilitychange', vis);
+    return () => { window.removeEventListener('online', again); document.removeEventListener('visibilitychange', vis); };
+  }, []);
+  useEffect(() => {
+    const today = dayKey(Date.now());
+    if (!profile || !uid || running.current) return;
+    if (daily.current === today && profile.lastDay === toDayN(today)) return; // già fatto oggi
+    daily.current = today;
+    running.current = true;
     (async () => {
-      // Monete di una partita finita senza rete, o prima di entrare in un account che esisteva già. Si accredita una
-      // partita alla volta (le regole accettano al massimo 20 al minuto) e il resto va perso: sono monete da gioco.
-      const queued = +(lsGet(QUEUE_KEY) || 0) || +(lsGet(PENDING_KEY) || 0);
-      if (queued > 0) {
+      // Una partita finita senza che le monete arrivassero (o prima di entrare in un account che esisteva già):
+      // si riprova con il risultato intero, così scrigno e sfide non si perdono. Una partita alla volta.
+      const raw = lsGet(QUEUE_KEY);
+      let queued = null;
+      try { queued = raw ? JSON.parse(raw) : null; } catch (e) { queued = null; }
+      if (queued && typeof queued === 'object' && queued.result) {
         lsSet(QUEUE_KEY, null);
-        lsSet(PENDING_KEY, null);
-        const got = Math.min(20, queued);
-        if (await earnCoins(db, uid, got).then(() => true, () => false)) toast(`+${got} monete: l'ultima partita`);
+        const r = await finishGame(db, uid, { result: queued.result, today: queued.day }).catch(() => null);
+        if (r) toast(`+${r.coins} monete: l'ultima partita`);
+      } else {
+        const coins = (typeof queued === 'number' ? queued : 0) || +(lsGet(PENDING_KEY) || 0);
+        if (coins > 0) {
+          lsSet(QUEUE_KEY, null);
+          lsSet(PENDING_KEY, null);
+          const got = Math.min(20, coins);
+          if (await earnCoins(db, uid, got).then(() => true, () => false)) toast(`+${got} monete: l'ultima partita`);
+        }
       }
-      // Prima i giorni di fila (e i traguardi), poi il bonus in monete che ne dipende.
-      const t = await touchDay(db, uid, dayKey(Date.now())).catch(() => null);
+      lsSet(PENDING_KEY, null);
+      // Prima i giorni di fila (e i traguardi, anche quelli rimasti indietro), poi il bonus in monete che ne dipende.
+      const t = await touchDay(db, uid, today).catch(() => null);
       if (t) {
         if (t.event === 'riparte') statRef.current('serie_persa');
         if (t.event === 'scudo') statRef.current('scudo_usato');
-        if (t.reached.length) {
-          const got = await claimMilestones(db, uid, t.reached).catch(() => ({ coins: 0, items: [] }));
-          t.reached.forEach((n) => statRef.current(`serie_${n}`));
-          if (got.coins) setFesta({ n: t.reached[t.reached.length - 1], coins: got.coins, items: got.items });
-        }
+        t.reached.forEach((n) => statRef.current(`serie_${n}`));
       }
-      const d = await claimDaily(db, uid, dayKey(Date.now())).catch(() => null);
+      const missing = await missingMilestones(db, uid).catch(() => []);
+      if (missing.length) {
+        const got = await claimMilestones(db, uid, missing).catch(() => ({ coins: 0, items: [] }));
+        if (got.coins) setFesta({ n: Math.max(...missing), coins: got.coins, items: got.items });
+      }
+      const d = await claimDaily(db, uid, today).catch(() => null);
       if (d) toast(d.streak > 1 ? `+${d.amount} monete: ${d.streak} giorni di fila` : `+${d.amount} monete: bonus del giorno`);
       const inv = await claimInvites(db, uid).catch(() => 0);
       if (inv) toast(`+${inv} monete: un amico è arrivato col tuo invito`);
-    })();
-  }, [profile, uid, toast]);
+      running.current = false;
+    })().catch(() => { running.current = false; });
+  }, [profile, uid, toast, tick]);
 
   /** Fine partita: con l'account le monete arrivano, senza restano in sospeso (ultima partita) per quando si registra. */
   const earn = useCallback(async (result) => {
     const amount = gameCoins(result);
     if (!registered || !uid) { lsSet(PENDING_KEY, String(amount)); return { amount, kept: false }; }
-    // Prima in coda, poi si prova: se la rete manca o la pagina si chiude, alla prossima apertura le monete arrivano.
-    lsSet(QUEUE_KEY, String(amount));
+    const today = dayKey(Date.now());
+    // Prima in coda (risultato intero), poi si prova: se la rete manca o la pagina si chiude, alla prossima apertura
+    // arrivano monete, scrigno e sfide. Se la scrittura arriva in ritardo, la coda si svuota quando va a buon fine.
+    lsSet(QUEUE_KEY, JSON.stringify({ result, day: today }));
+    const work = finishGame(db, uid, { result, today }).then((r) => { lsSet(QUEUE_KEY, null); return r; }, () => 'no');
     const wait = new Promise((resolve) => setTimeout(() => resolve('lento'), 8000));
-    const done = await Promise.race([finishGame(db, uid, { result, today: dayKey(Date.now()) }).catch(() => 'no'), wait]);
+    const done = await Promise.race([work, wait]);
     if (done === 'lento' || done === 'no') return { amount, kept: false, late: true };
-    lsSet(QUEUE_KEY, null);
     if (done.chest) { statRef.current('scrigni_aperti'); if (done.chest.kind === 'raro') statRef.current('scrigni_rari'); }
     return { amount, kept: true, chest: done.chest, done: done.done };
   }, [registered, uid]);
