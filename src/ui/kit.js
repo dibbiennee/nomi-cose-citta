@@ -1,5 +1,9 @@
 import React from 'react';
 import { characterOf } from '../club/contenuti';
+import { ACCESSORI } from '../shop/accessori';
+
+// Ordine di disegno degli accessori sopra la faccina: vestito sotto, poi occhiali, cappello, cornice.
+const ACC_ORDER = ['vestito', 'occhiali', 'cappello', 'cornice'];
 
 export const INK = '#17122B';
 export const COLORS = ['#FFD23F', '#FF8A65', '#5CD0FF', '#B79CFF', '#6EE7A8', '#FF7EB6'];
@@ -56,10 +60,13 @@ export function Face({ p, size = 44, small = false, stroke, blink = false, delay
   const r = small ? 22 : 22.5;
   const sw = stroke || (small ? 3 : 2.6);
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" className={className} style={style}>
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" className={className} style={p?.acc ? { overflow: 'visible', ...style } : style}>
       <circle cx="24" cy="24" r={r} fill={bg} stroke={INK} strokeWidth={sw} />
       <path className={blink ? 'n-blink' : undefined} d={f.eyes} fill="none" stroke={INK} strokeWidth={small ? 3.6 : 3.4} strokeLinecap="round" style={delay ? { animationDelay: delay } : undefined} />
       <path d={f.mouth} fill={f.fill} stroke={INK} strokeWidth={small ? 3.2 : 3} strokeLinecap="round" strokeLinejoin="round" />
+      {p?.acc && ACC_ORDER.filter((t) => ACCESSORI[p.acc[t]]).map((t) => (
+        <g key={t}>{ACCESSORI[p.acc[t]].map(([Tag, attrs], i) => <Tag key={i} {...attrs} />)}</g>
+      ))}
     </svg>
   );
 }

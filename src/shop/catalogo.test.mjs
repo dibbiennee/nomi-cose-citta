@@ -32,3 +32,19 @@ test('lo script scrive la regola dei prezzi con ogni accessorio, e rieseguito no
   for (const i of ITEMS) assert.ok(rule.includes(`'${i.id}'`), i.id);
   assert.ok(rule.includes("primi100"));
 });
+
+test('ogni accessorio ha il suo disegno, fatto solo di forme SVG semplici', async () => {
+  const { ACCESSORI } = await import('./accessori.js');
+  for (const i of ITEMS) {
+    const shapes = ACCESSORI[i.id];
+    assert.ok(Array.isArray(shapes) && shapes.length > 0, i.id);
+    assert.ok(shapes.every(([tag, attrs]) => ['path', 'circle', 'rect', 'ellipse', 'polygon'].includes(tag) && typeof attrs === 'object'), i.id);
+  }
+  assert.equal(Object.keys(ACCESSORI).length, ITEMS.length);
+});
+
+test('accessori indossati: solo id veri e del tipo giusto', async () => {
+  const { cleanAcc } = await import('./accessori.js');
+  assert.deepEqual(cleanAcc({ cappello: 'cilindro', occhiali: 'sciarpa', vestito: 'inventato', altro: 'x' }), { cappello: 'cilindro' });
+  assert.deepEqual(cleanAcc(null), {});
+});

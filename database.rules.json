@@ -143,6 +143,11 @@
             },
             "bot": {
               ".validate": "newData.val() === true && $uid.matches(/^bot[1-3]$/) && root.child('rooms').child($code).child('quick').val() === true"
+            },
+            "acc": {
+              "$tipo": {
+                ".validate": "($tipo === 'cappello' && newData.val().matches(/^(cappellino|berretto|cilindro|corona_oro)$/)) || ($tipo === 'occhiali' && newData.val().matches(/^(occhiali_tondi|occhiali_sole|occhiali_stella)$/)) || ($tipo === 'vestito' && newData.val().matches(/^(farfallino|sciarpa|mantello_oro)$/)) || ($tipo === 'cornice' && newData.val().matches(/^(cornice_stelle|cornice_fiamme)$/))"
+              }
             }
           }
         },

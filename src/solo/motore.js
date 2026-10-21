@@ -6,6 +6,7 @@ import { SPIN_MS, COUNTDOWN_MS, STOP_GRACE_MS } from '../engine/room.js';
 import { LEVELS, makeBots, planBot, botVote } from './robot.js';
 import { pointsPerWord, countsForRecord } from './record.js';
 import { CHARACTER_IDS } from '../club/contenuti.js';
+import { cleanAcc } from '../shop/accessori.js';
 
 export const SOLO_CODE = 'SOLO';
 export const SOLO_KEY = 'ncc-solo-partita';
@@ -207,7 +208,8 @@ function makeEngine({ state, plans, difficulty, botCount, profile, dict, storage
 export function createSoloEngine({ profile, settings, difficulty, botCount, dict, storage, random = Math.random, clock = Date.now }) {
   const players = {
     [ME]: { name: String(profile.name || '').trim().slice(0, 14) || 'Tu', color: profile.color | 0, face: profile.face | 0, joinedAt: 1, score: 0, stats: freshStats(),
-      ...(CHARACTER_IDS.includes(profile.char) ? { char: profile.char } : {}) },
+      ...(CHARACTER_IDS.includes(profile.char) ? { char: profile.char } : {}),
+      ...(Object.keys(cleanAcc(profile.acc)).length ? { acc: cleanAcc(profile.acc) } : {}) },
   };
   makeBots(botCount, profile.name, random).forEach((b, i) => {
     players[b.id] = { name: b.name, color: b.color, face: b.face, quirk: b.quirk, joinedAt: i + 2, score: 0, stats: freshStats() };

@@ -17,4 +17,9 @@ rules.rules.users = rules.rules.users || { $uid: {} };
 const user = rules.rules.users.$uid;
 user.owned = user.owned || {};
 user.owned.$item = { '.validate': rule };
+// Accessori indossati dentro le stanze: per ogni tipo solo gli id di quel tipo.
+const players = rules.rules.rooms.$code.players.$uid;
+players.acc = { $tipo: { '.validate': ['cappello', 'occhiali', 'vestito', 'cornice']
+  .map((t) => `($tipo === '${t}' && newData.val().matches(/^(${ITEMS.filter((i) => i.tipo === t).map((i) => i.id).join('|')})$/))`).join(' || ') } };
+
 writeFileSync(FILE, `${JSON.stringify(rules, null, 2)}\n`);

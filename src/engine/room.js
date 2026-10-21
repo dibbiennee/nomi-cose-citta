@@ -21,6 +21,7 @@ import {
 } from './rules.js';
 import { isReservedCode } from '../club/fondatore.js';
 import { CHARACTER_IDS } from '../club/contenuti.js';
+import { cleanAcc } from '../shop/accessori.js';
 import { dueAnswers, dueStop, botVotesFor, pickBots, seededRandom, sameAnswers } from './robotOnline.js';
 
 export const SPIN_MS = 2000; // la lettera che gira
@@ -86,6 +87,7 @@ export function createEngine(db, uid) {
     joinedAt: serverTimestamp(), score: 0,
     stats: { stops: 0, uniq: 0, dup: 0 },
     ...(CHARACTER_IDS.includes(profile.char) ? { char: profile.char } : {}), // personaggio del club, se scelto
+    ...(Object.keys(cleanAcc(profile.acc)).length ? { acc: cleanAcc(profile.acc) } : {}), // accessori indossati
     ...extra,
   });
 

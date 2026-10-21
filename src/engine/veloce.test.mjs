@@ -322,3 +322,14 @@ test('coda: rientrare con una voce vecchia ancora presente funziona', async () =
   assert.ok(await a.read(`queue/${a.uid}`));
   await q.leave();
 });
+
+test('accessori: chi entra con un accessorio lo mostra agli altri; un accessorio inventato no', async () => {
+  const [a, b] = await Promise.all(['Anna', 'Bea'].map(phone));
+  const code = await a.engine.createRoom({ ...a.profile, acc: { cappello: 'cilindro', occhiali: 'occhiali_sole' } });
+  await b.engine.joinRoom(code, { ...b.profile, acc: { cappello: 'trono' } });
+  const room = await a.read(`rooms/${code}`);
+  assert.deepEqual(room.players[a.uid].acc, { cappello: 'cilindro', occhiali: 'occhiali_sole' });
+  assert.equal(room.players[b.uid].acc, undefined);
+  await denied(set(ref(b.db, `rooms/${code}/players/${b.uid}/acc/cappello`), 'trono'));
+  await denied(set(ref(b.db, `rooms/${code}/players/${b.uid}/acc/scarpe`), 'cilindro'));
+});
