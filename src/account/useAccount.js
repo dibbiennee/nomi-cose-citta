@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ref, onValue, get } from 'firebase/database';
 import { onIdTokenChanged, getRedirectResult, GoogleAuthProvider, signInWithCredential, isSignInWithEmailLink } from 'firebase/auth';
 import { auth, db } from '../firebase';
-import { isRegistered, linkGoogle, sendEmailLink, completeEmailLink, signOutToAnonymous, deleteAccount, EMAIL_KEY } from './accesso';
+import { isRegistered, linkGoogle, sendEmailLink, completeEmailLink, signOutToAnonymous, deleteAccount, reauthGoogle, usesGoogle, EMAIL_KEY, MODE_KEY } from './accesso';
 import { createProfile, earnGame, claimDaily, buyItem, equip, setUsername, claimInvites, joinWaitlist, leaveWaitlist, deleteProfile, gameCoins } from './profilo';
 import { isStandalone } from '../ui/installa';
 import { dayKey } from '../stats';
@@ -12,6 +12,7 @@ import { dayKey } from '../stats';
 // ricarica: il motore delle stanze è legato all'identità e così riparte pulito.
 export const PENDING_KEY = 'ncc-monete-in-sospeso'; // monete dell'ultima partita giocata senza account
 export const INVITE_KEY = 'ncc-invito'; // chi ci ha invitato, letto da /?invito=
+const DELETE_KEY = 'ncc-cancella'; // la cancellazione aspetta il ritorno dal redirect di Google
 const LS = (() => { try { return window.localStorage; } catch (e) { return null; } })();
 const lsGet = (k) => { try { return LS?.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { if (v === null) LS?.removeItem(k); else LS?.setItem(k, v); } catch (e) { /* niente */ } };
@@ -34,6 +35,17 @@ export function useAccount({ ready, stat, toast }) {
 
   useEffect(() => onIdTokenChanged(auth, () => setVer((v) => v + 1)), []);
 
+  // Cancellazione: prima i dati, poi l'utente. Mentre succede il profilo sparito non va ricreato.
+  const removing = useRef(false);
+  const finishRemoval = useCallback(async (fresh) => {
+    removing.current = true;
+    lsSet(DELETE_KEY, null);
+    const r = await deleteAccount(auth, () => deleteProfile(db, auth.currentUser.uid), { fresh });
+    if (r === 'ok') { window.location.replace('/'); return 'ok'; }
+    removing.current = false;
+    return r;
+  }, []);
+
   // Ritorno dall'accesso: redirect di Google (app installata su iPhone) o link dell'email.
   const handled = useRef(false);
   useEffect(() => {
@@ -42,6 +54,7 @@ export function useAccount({ ready, stat, toast }) {
     (async () => {
       try {
         const r = await getRedirectResult(auth);
+        if (r && r.operationType === 'reauthenticate' && lsGet(DELETE_KEY)) { await finishRemoval(true); return; }
         if (r && r.user.uid !== uid) window.location.reload();
       } catch (e) {
         if (IN_USE.includes(e.code)) {
@@ -52,14 +65,28 @@ export function useAccount({ ready, stat, toast }) {
       if (isSignInWithEmailLink(auth, window.location.href)) {
         let email = lsGet(EMAIL_KEY);
         if (!email) email = window.prompt('Per finire l\'accesso scrivi l\'email a cui è arrivato il link');
+        const mode = lsGet(MODE_KEY) || 'collega';
         try {
-          await completeEmailLink(auth, window.location.href, email);
+          await completeEmailLink(auth, window.location.href, email, mode);
           lsSet(EMAIL_KEY, null);
+          lsSet(MODE_KEY, null);
+          if (mode === 'cancella') {
+            if (await finishRemoval(true) !== 'ok') { toast('Cancellazione non riuscita: riprova dalla schermata Account'); window.history.replaceState(null, '', '/'); }
+            return;
+          }
           window.location.replace('/');
-        } catch (e) { toast('Il link non è più valido: chiedine uno nuovo'); window.history.replaceState(null, '', '/'); }
+        } catch (e) {
+          window.history.replaceState(null, '', '/');
+          if (e.code === 'auth/email-already-in-use') {
+            // Il link usato non vale più: ne serve uno nuovo che entri nell'account esistente invece di collegare.
+            await sendEmailLink(auth, email, `${window.location.origin}/`, LS, 'entra')
+              .then(() => toast('Questa email ha già un account: ti abbiamo mandato un nuovo link per entrare'))
+              .catch(() => toast('Questa email ha già un account: chiedi un nuovo link dalla schermata Account'));
+          } else toast('Il link non è più valido: chiedine uno nuovo');
+        }
       }
     })();
-  }, [ready, uid, toast]);
+  }, [ready, uid, toast, finishRemoval]);
 
   // Profilo dal vivo; alla prima volta da registrato si crea (benvenuto, monete in sospeso, invito).
   useEffect(() => {
@@ -67,7 +94,7 @@ export function useAccount({ ready, stat, toast }) {
     let creating = false;
     return onValue(ref(db, `users/${uid}`), async (s) => {
       if (s.exists()) { setProfile(s.val()); return; }
-      if (creating) return;
+      if (creating || removing.current) return;
       creating = true;
       try {
         const r = await createProfile(db, uid, { pendingCoins: +(lsGet(PENDING_KEY) || 0), invitedBy: lsGet(INVITE_KEY) });
@@ -108,7 +135,20 @@ export function useAccount({ ready, stat, toast }) {
     google: async () => afterSwitch(await linkGoogle(auth, { standalone: isStandalone() })),
     emailLink: (email) => sendEmailLink(auth, email, `${window.location.origin}/`),
     signOut: async () => { await signOutToAnonymous(auth); window.location.replace('/'); },
-    remove: async () => { await deleteProfile(db, uid); await deleteAccount(auth); window.location.replace('/'); },
+    /**
+     * Cancella tutto: 'ok' (poi la pagina riparte), oppure 'link' se per confermare l'identità è partito un link
+     * all'email. Con Google la conferma è la finestra di Google, poi la cancellazione prosegue da sola.
+     */
+    remove: async () => {
+      if (await finishRemoval(false) === 'ok') return 'ok';
+      if (usesGoogle(auth.currentUser)) {
+        lsSet(DELETE_KEY, '1');
+        if (await reauthGoogle(auth, { standalone: isStandalone() })) return finishRemoval(true);
+        return 'redirect';
+      }
+      await sendEmailLink(auth, auth.currentUser.email, `${window.location.origin}/`, LS, 'cancella');
+      return 'link';
+    },
     setUsername: (name) => setUsername(db, uid, name),
     buy: (id) => buyItem(db, uid, id),
     equip: (tipo, id) => equip(db, uid, tipo, id),

@@ -267,22 +267,22 @@
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid",
-        ".validate": "newData.hasChildren(['coins', 'createdAt', 'primi100'])",
+        ".write": "auth != null && auth.uid === $uid && (!newData.exists() || !data.exists() || ((!data.child('lastEarn').exists() || newData.child('lastEarn').exists()) && (!data.child('lastDailyAt').exists() || newData.child('lastDailyAt').exists()) && (!data.child('invitesClaimed').exists() || newData.child('invitesClaimed').exists())))",
+        ".validate": "newData.hasChildren(['coins', 'createdAt', 'primi100']) && (data.exists() || (auth.token.firebase.sign_in_provider !== 'anonymous' && !root.child('iscritti').child($uid).exists() && newData.parent().parent().child('iscritti').child($uid).isNumber()))",
         "coins": {
-          ".validate": "newData.isNumber() && newData.val() >= 0 && ((!data.exists() && newData.val() <= (newData.parent().child('primi100').val() === true ? 1000 : 300) + 20 + (newData.parent().child('invitedBy').exists() ? 200 : 0)) || (data.exists() && newData.val() <= data.val()) || (data.exists() && newData.val() <= data.val() + 20 && newData.parent().child('lastEarn').val() === now && (!data.parent().child('lastEarn').exists() || data.parent().child('lastEarn').val() + 60000 <= now)) || (data.exists() && newData.val() <= data.val() + 70 && newData.parent().child('lastDailyAt').val() === now && (!data.parent().child('lastDailyAt').exists() || data.parent().child('lastDailyAt').val() + 14400000 <= now)) || (data.exists() && newData.val() <= data.val() + 200 && newData.parent().child('invitesClaimed').val() === data.parent().child('invitesClaimed').val() + 1 && newData.parent().child('invitesClaimed').val() <= 20 && root.child('invites').child($uid).child(newData.parent().child('lastInvite').val()).val() === true && newData.parent().child('claimed').child(newData.parent().child('lastInvite').val()).val() === true && !data.parent().child('claimed').child(newData.parent().child('lastInvite').val()).exists()))"
+          ".validate": "newData.isNumber() && newData.val() >= 0 && ((!data.exists() && newData.val() <= (newData.parent().child('primi100').val() === true ? 1000 : 300) + 20 + (newData.parent().child('invitedBy').exists() ? 200 : 0)) || (data.exists() && newData.val() <= data.val()) || (data.exists() && newData.val() <= data.val() + 20 && newData.parent().child('lastEarn').val() === now && (!data.parent().child('lastEarn').exists() || data.parent().child('lastEarn').val() + 60000 <= now)) || (data.exists() && newData.val() <= data.val() + 70 && newData.parent().child('lastDailyAt').val() === now && (!data.parent().child('lastDailyAt').exists() || data.parent().child('lastDailyAt').val() + 14400000 <= now)) || (data.exists() && newData.val() <= data.val() + 200 && newData.parent().child('invitesClaimed').val() === data.parent().child('invitesClaimed').val() + 1 && newData.parent().child('invitesClaimed').val() <= 20 && root.child('invites').child($uid).child(newData.parent().child('lastInvite').val()).val() === true && newData.parent().parent().parent().child('invites').child($uid).child(newData.parent().child('lastInvite').val()).val() === 'preso'))"
         },
         "createdAt": {
           ".validate": "data.exists() ? newData.val() === data.val() : newData.val() === now"
         },
         "primi100": {
-          ".validate": "newData.isBoolean() && (data.exists() ? newData.val() === data.val() : (newData.val() === false || root.child('meta/iscritti').val() <= 100))"
+          ".validate": "newData.isBoolean() && (data.exists() ? newData.val() === data.val() : (newData.val() === false || newData.parent().parent().parent().child('iscritti').child($uid).val() <= 100))"
         },
         "invitedBy": {
-          ".validate": "newData.isString() && newData.val() !== $uid && (data.exists() ? newData.val() === data.val() : !data.parent().exists())"
+          ".validate": "newData.isString() && newData.val() !== $uid && (data.exists() ? newData.val() === data.val() : !data.parent().exists() && root.child('iscritti').child(newData.val()).exists())"
         },
         "username": {
-          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_]{5,14}$/) && root.child('usernames').child(newData.val().toLowerCase()).val() === $uid"
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_]{5,14}$/) && newData.parent().parent().parent().child('usernames').child(newData.val().toLowerCase()).val() === $uid && (!data.exists() || data.val().toLowerCase() === newData.val().toLowerCase() || !newData.parent().parent().parent().child('usernames').child(data.val().toLowerCase()).exists())"
         },
         "owned": {
           "$item": {
@@ -312,11 +312,6 @@
         "lastInvite": {
           ".validate": "newData.isString()"
         },
-        "claimed": {
-          "$friend": {
-            ".validate": "newData.val() === true && (data.exists() || root.child('invites').child($uid).child($friend).val() === true)"
-          }
-        },
         "$other": {
           ".validate": false
         }
@@ -325,23 +320,23 @@
     "usernames": {
       "$name": {
         ".read": "auth != null",
-        ".write": "auth != null && ((!data.exists() && newData.val() === auth.uid) || (data.val() === auth.uid && !newData.exists()))",
+        ".write": "auth != null && ((!data.exists() && newData.val() === auth.uid && newData.parent().parent().child('users').child(auth.uid).child('username').isString() && newData.parent().parent().child('users').child(auth.uid).child('username').val().toLowerCase() === $name) || (data.val() === auth.uid && !newData.exists()))",
         ".validate": "newData.isString() && $name.matches(/^[a-z0-9_]{5,14}$/)"
       }
     },
     "meta": {
       "iscritti": {
         ".read": "auth != null",
-        ".write": "auth != null",
-        ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1)"
+        ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous'",
+        ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1) && !root.child('iscritti').child(auth.uid).exists() && newData.parent().parent().child('iscritti').child(auth.uid).val() === newData.val()"
       }
     },
     "invites": {
       "$inviter": {
         ".read": "auth != null && auth.uid === $inviter",
         "$new": {
-          ".write": "auth != null && auth.uid === $new && $new !== $inviter && !data.exists() && root.child('users').child($new).child('invitedBy').val() === $inviter",
-          ".validate": "newData.val() === true"
+          ".write": "auth != null && ((auth.uid === $new && $new !== $inviter && !data.exists() && root.child('users').child($new).child('invitedBy').val() === $inviter) || (auth.uid === $inviter && data.val() === true && newData.val() === 'preso'))",
+          ".validate": "newData.val() === true || newData.val() === 'preso'"
         }
       }
     },
@@ -367,6 +362,13 @@
         "$other": {
           ".validate": false
         }
+      }
+    },
+    "iscritti": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid && auth.token.firebase.sign_in_provider !== 'anonymous' && !data.exists()",
+        ".validate": "newData.isNumber() && newData.val() === newData.parent().parent().child('meta').child('iscritti').val() && newData.val() !== root.child('meta').child('iscritti').val()"
       }
     }
   }

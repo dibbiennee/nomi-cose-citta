@@ -18,7 +18,14 @@ export default function Account({ account, onBack, onShop, toast }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const iosApp = isStandalone() && platform().ios;
   const inAppBrowser = platform().browser === 'app';
-  const run = async (fn) => { if (busy) return; setBusy(true); try { await fn(); } finally { setBusy(false); } };
+  const [deleteMsg, setDeleteMsg] = useState('');
+  const run = async (fn) => {
+    if (busy) return;
+    setBusy(true);
+    try { await fn(); } catch (e) {
+      if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') toast('Non è andata: controlla la connessione e riprova');
+    } finally { setBusy(false); }
+  };
 
   const google = () => run(async () => {
     try { await account.google(); } catch (e) {
@@ -102,7 +109,12 @@ export default function Account({ account, onBack, onShop, toast }) {
               ) : (
                 <div role="alert" style={card}>
                   <p style={sx('margin: 0; font-size: 16px; font-weight: 700; line-height: 1.45')}>Cancello account, monete, accessori e username. Non si può&nbsp;annullare.</p>
-                  <button type="button" className="n-btn" onClick={() => run(account.remove)} style={big('#FF5E3A', '#FFFFFF')}>Sì, cancella tutto</button>
+                  {deleteMsg ? <p role="status" style={note}>{deleteMsg}</p> : (
+                    <button type="button" className="n-btn" disabled={busy} onClick={() => run(async () => {
+                      const r = await account.remove();
+                      if (r === 'link') setDeleteMsg(`Per sicurezza ti abbiamo mandato un link a ${account.email}. Aprilo da questo telefono e l'account si cancella.`);
+                    })} style={big('#FF5E3A', '#FFFFFF')}>Sì, cancella tutto</button>
+                  )}
                   <button type="button" className="n-btn" onClick={() => setConfirmDelete(false)} style={big('#FFFFFF', '#17122B')}>No, tienilo</button>
                 </div>
               )}

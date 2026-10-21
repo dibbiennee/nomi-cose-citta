@@ -49,6 +49,12 @@ const withTimeout = (promise, ms) => new Promise((resolve, reject) => {
 });
 
 /** La copia ricostruita come risposta nuova: se il server l'aveva servita con un redirect, il browser la rifiuterebbe. */
+/**
+ * Le pagine del gioco: solo queste vanno nella copia offline. Le altre (privacy, condizioni) sono file a parte, e
+ * /__/ sono le pagine dell'accesso con Google: se finissero nella copia prenderebbero il posto del gioco.
+ */
+const gamePage = (path) => path === '/' || path === '/index.html' || path === '/statistiche' || path.startsWith('/r/');
+
 const fresh = (res) => res.blob().then((body) => new Response(body, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
 
 async function openPage(event) {
@@ -84,7 +90,8 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // Firebase e gli altri domini: non si toccano
-  if (req.mode === 'navigate') { event.respondWith(openPage(event)); return; }
+  if (url.pathname.startsWith('/__/')) return;
+  if (req.mode === 'navigate') { if (gamePage(url.pathname)) event.respondWith(openPage(event)); return; }
   if (url.pathname.startsWith('/static/')) { event.respondWith(staticFile(req)); return; }
   if (SHELL.includes(url.pathname)) event.respondWith(caches.match(url.pathname).then((hit) => hit || fetch(req)));
 });

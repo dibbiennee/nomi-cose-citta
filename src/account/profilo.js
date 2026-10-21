@@ -14,21 +14,38 @@ const prevDay = (d) => { const t = new Date(`${d}T12:00:00Z`); t.setUTCDate(t.ge
 /** Monete di una partita finita: 5, +5 se vinci, +1 per parola unica fino a +10. */
 export const gameCoins = ({ won, unique }) => Math.min(20, EARN.base + (won ? EARN.vittoria : 0) + Math.min(EARN.maxUniche, (unique | 0) * EARN.perUnica));
 
-/** Crea il profilo alla registrazione: benvenuto (primi 100 o no), monete dell'ultima partita, invito. */
+/**
+ * Crea il profilo alla registrazione: benvenuto (primi 100 o no), monete dell'ultima partita, invito.
+ * Il profilo nasce nello stesso salvataggio che fa +1 al contatore degli iscritti e segna il posto di questo uid
+ * (iscritti/{uid}): le regole così sanno se è davvero tra i primi 100, e un profilo cancellato non si ricrea.
+ * Se due persone si iscrivono nello stesso istante una delle due viene rifiutata e riprova col numero nuovo.
+ */
 export async function createProfile(db, uid, { pendingCoins = 0, invitedBy = null } = {}) {
   const existing = (await get(userRef(db, uid))).val();
   if (existing) return { primi100: !!existing.primi100, coins: existing.coins };
-  const res = await runTransaction(ref(db, 'meta/iscritti'), (v) => (v || 0) + 1, { applyLocally: false });
-  const primi100 = res.snapshot.val() <= EARN.primi;
-  const invited = invitedBy && invitedBy !== uid ? invitedBy : null;
-  const coins = (primi100 ? EARN.benvenutoPrimi : EARN.benvenuto) + Math.min(20, Math.max(0, pendingCoins | 0)) + (invited ? EARN.invito : 0);
-  await set(userRef(db, uid), {
-    coins, primi100, createdAt: serverTimestamp(), invitesClaimed: 0,
-    ...(invited ? { invitedBy: invited } : {}),
-    ...(primi100 ? { owned: Object.fromEntries(ITEMS.filter((i) => i.esclusivo).map((i) => [i.id, true])) } : {}),
-  });
-  if (invited) await set(ref(db, `invites/${invited}/${uid}`), true).catch(() => {});
-  return { primi100, coins };
+  let invited = invitedBy && invitedBy !== uid ? invitedBy : null;
+  if (invited && !(await get(ref(db, `iscritti/${invited}`)).catch(() => null))?.exists()) invited = null;
+  for (let attempt = 0; ; attempt++) {
+    const n = ((await get(ref(db, 'meta/iscritti'))).val() || 0) + 1;
+    const primi100 = n <= EARN.primi;
+    const coins = (primi100 ? EARN.benvenutoPrimi : EARN.benvenuto) + Math.min(20, Math.max(0, pendingCoins | 0)) + (invited ? EARN.invito : 0);
+    try {
+      await update(ref(db), {
+        'meta/iscritti': n,
+        [`iscritti/${uid}`]: n,
+        [`users/${uid}`]: {
+          coins, primi100, createdAt: serverTimestamp(), invitesClaimed: 0,
+          ...(invited ? { invitedBy: invited } : {}),
+          ...(primi100 ? { owned: Object.fromEntries(ITEMS.filter((i) => i.esclusivo).map((i) => [i.id, true])) } : {}),
+        },
+      });
+    } catch (e) {
+      if (attempt >= 4) throw e;
+      continue;
+    }
+    if (invited) await set(ref(db, `invites/${invited}/${uid}`), true).catch(() => {});
+    return { primi100, coins };
+  }
 }
 
 /** Monete di fine partita. Rifiutato se arriva entro un minuto dall'ultima. Restituisce il nuovo saldo. */
@@ -73,30 +90,44 @@ export async function equip(db, uid, tipo, itemId) {
   await set(ref(db, `users/${uid}/equipped/${tipo}`), itemId || null);
 }
 
-/** Username unico (confronto in minuscolo): 'ok', 'preso' o 'non valido'. */
+/**
+ * Username unico (confronto in minuscolo): 'ok', 'preso' o 'non valido'. Nome nuovo, profilo e nome vecchio cambiano
+ * nello stesso salvataggio: le regole accettano un nome solo se il profilo lo usa, e liberano subito il vecchio.
+ */
 export async function setUsername(db, uid, name) {
   if (!USERNAME.test(name || '')) return 'non valido';
   const key = name.toLowerCase();
-  const res = await runTransaction(ref(db, `usernames/${key}`), (cur) => (cur === null || cur === uid ? uid : undefined), { applyLocally: false })
-    .catch(() => ({ committed: false }));
-  if (!res.committed) return 'preso';
+  const owner = (await get(ref(db, `usernames/${key}`))).val();
+  if (owner && owner !== uid) return 'preso';
   const old = (await get(ref(db, `users/${uid}/username`))).val();
-  await set(ref(db, `users/${uid}/username`), name);
-  if (old && old.toLowerCase() !== key) await remove(ref(db, `usernames/${old.toLowerCase()}`)).catch(() => {});
+  const oldKey = old ? old.toLowerCase() : null;
+  try {
+    await update(ref(db), {
+      [`users/${uid}/username`]: name,
+      ...(owner ? {} : { [`usernames/${key}`]: uid }),
+      ...(oldKey && oldKey !== key ? { [`usernames/${oldKey}`]: null } : {}),
+    });
+  } catch (e) { return 'preso'; } // qualcuno l'ha preso un attimo prima
   return 'ok';
 }
 
-/** Riscuote gli inviti andati a buon fine (200 monete ciascuno, al massimo 20). Restituisce le monete ricevute. */
+/**
+ * Riscuote gli inviti andati a buon fine (200 monete ciascuno, al massimo 20). Restituisce le monete ricevute.
+ * L'invito riscosso passa da true a 'preso' nello stesso salvataggio delle monete, e da lì non torna indietro.
+ */
 export async function claimInvites(db, uid) {
-  const invites = Object.keys((await get(ref(db, `invites/${uid}`))).val() || {});
+  const all = (await get(ref(db, `invites/${uid}`))).val() || {};
   let total = 0;
-  for (const friend of invites) {
-    const res = await runTransaction(userRef(db, uid), (cur) => {
-      if (cur === null) return null; // primo giro senza dati: Firebase riprova con il valore vero
-      if (cur.claimed?.[friend] || (cur.invitesClaimed || 0) >= EARN.maxInviti) return undefined;
-      return { ...cur, coins: cur.coins + EARN.invito, invitesClaimed: (cur.invitesClaimed || 0) + 1, lastInvite: friend, claimed: { ...cur.claimed, [friend]: true } };
-    }, { applyLocally: false }).catch(() => ({ committed: false }));
-    if (res.committed) total += EARN.invito;
+  for (const friend of Object.keys(all).filter((f) => all[f] === true)) {
+    const cur = (await get(userRef(db, uid))).val();
+    if (!cur || (cur.invitesClaimed || 0) >= EARN.maxInviti) break;
+    const ok = await update(ref(db), {
+      [`users/${uid}/coins`]: cur.coins + EARN.invito,
+      [`users/${uid}/invitesClaimed`]: (cur.invitesClaimed || 0) + 1,
+      [`users/${uid}/lastInvite`]: friend,
+      [`invites/${uid}/${friend}`]: 'preso',
+    }).then(() => true, () => false);
+    if (ok) total += EARN.invito;
   }
   return total;
 }

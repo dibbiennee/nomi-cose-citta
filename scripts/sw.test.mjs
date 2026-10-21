@@ -16,8 +16,9 @@ function loadSw({ manifestFiles, failing = new Set(), cached = [] }) {
     keys: async () => [...store.keys()].map((p) => ({ url: `https://gioco.test${p}` })),
     delete: async (r) => store.delete(pathOf(r)),
   };
+  const listeners = {};
   const sandbox = {
-    self: { addEventListener() {}, location: { origin: 'https://gioco.test' } },
+    self: { addEventListener(type, fn) { listeners[type] = fn; }, location: { origin: 'https://gioco.test' } },
     caches: { open: async () => cache, keys: async () => [], delete: async () => true, match: async () => undefined },
     fetch: async () => ({ json: async () => ({ files: Object.fromEntries(manifestFiles.map((f, i) => [`f${i}`, f])) }) }),
     URL, Request: class { constructor(url) { this.url = new URL(url, 'https://gioco.test').href; } }, Response: class {},
@@ -25,7 +26,7 @@ function loadSw({ manifestFiles, failing = new Set(), cached = [] }) {
   };
   vm.createContext(sandbox);
   vm.runInContext(readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8'), sandbox);
-  return { syncCache: sandbox.syncCache, store };
+  return { syncCache: sandbox.syncCache, store, listeners };
 }
 
 test('se un file nuovo non arriva, i vecchi restano', async () => {
@@ -40,4 +41,22 @@ test('quando arrivano tutti, i vecchi si tolgono', async () => {
   await sw.syncCache();
   assert.ok(!sw.store.has('/static/js/main.old.js') && !sw.store.has('/static/js/parole.old.js'));
   assert.ok(sw.store.has('/static/js/parole.new.js'));
+});
+
+/** Il service worker risponde lui a questa apertura di pagina? */
+function handles(sw, path) {
+  let answered = false;
+  sw.listeners.fetch({ request: { method: 'GET', mode: 'navigate', url: `https://gioco.test${path}` }, respondWith() { answered = true; }, waitUntil() {} });
+  return answered;
+}
+
+test('solo le pagine del gioco finiscono nella copia per giocare offline', () => {
+  const sw = loadSw({ manifestFiles: [] });
+  assert.ok(handles(sw, '/'));
+  assert.ok(handles(sw, '/r/ABCD'));
+  assert.ok(handles(sw, '/statistiche'));
+  assert.ok(!handles(sw, '/privacy'), 'la privacy non prende il posto del gioco');
+  assert.ok(!handles(sw, '/condizioni-acquisto'));
+  assert.ok(!handles(sw, '/__/auth/iframe'), 'le pagine dell\'accesso Google non si toccano');
+  assert.ok(!handles(sw, '/__/auth/handler'));
 });

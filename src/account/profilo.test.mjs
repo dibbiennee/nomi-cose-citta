@@ -2,15 +2,16 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { initializeApp, deleteApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator, signInAnonymously } from 'firebase/auth';
-import { getDatabase, connectDatabaseEmulator, ref, get, set, update } from 'firebase/database';
+import { getAuth, connectAuthEmulator, signInAnonymously, linkWithCredential, GoogleAuthProvider } from 'firebase/auth';
+import { getDatabase, connectDatabaseEmulator, ref, get, set, update, remove } from 'firebase/database';
 import { createProfile, earnGame, claimDaily, buyItem, equip, setUsername, claimInvites, joinWaitlist, leaveWaitlist, deleteProfile, gameCoins } from './profilo.js';
 import { EARN } from '../shop/catalogo.js';
 
 const PROJECT = process.env.GCLOUD_PROJECT || 'demo-ncc';
 const apps = [];
 let n = 0;
-async function phone() {
+/** Telefono con l'account (Google, come dopo l'accesso); { anonimo: true } per chi gioca senza account. */
+async function phone({ anonimo = false } = {}) {
   const app = initializeApp({ apiKey: 'demo', projectId: PROJECT, databaseURL: `http://127.0.0.1:${process.env.DBP || 9100}?ns=${PROJECT}-default-rtdb` }, `pr${n++}`);
   apps.push(app);
   const auth = getAuth(app);
@@ -18,6 +19,11 @@ async function phone() {
   const db = getDatabase(app);
   connectDatabaseEmulator(db, '127.0.0.1', +(process.env.DBP || 9100));
   const { user } = await signInAnonymously(auth);
+  if (!anonimo) {
+    const sub = `g-${n}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    await linkWithCredential(user, GoogleAuthProvider.credential(JSON.stringify({ sub, email: `${sub}@example.com`, email_verified: true })));
+    await user.getIdToken(true);
+  }
   return { uid: user.uid, db, read: (p) => get(ref(db, p)).then((s) => s.val()) };
 }
 const denied = (p) => assert.rejects(p, /permission|PERMISSION_DENIED/i);
@@ -130,4 +136,78 @@ test('lista d\'attesa: solo con consenso, leggibile solo dal proprietario; cance
   assert.equal(await a.read(`users/${a.uid}`), null);
   assert.equal(await a.read(`usernames/${name.toLowerCase()}`), null);
   assert.equal(await a.read(`waitlist/${a.uid}`), null);
+});
+
+// Difetti trovati nella revisione finale: ogni prova qui sotto, prima della correzione, passava dalle regole.
+
+test('cancellare i campi di controllo non riapre le monete', async () => {
+  await setIscritti(500);
+  const a = await phone();
+  await createProfile(a.db, a.uid, {});
+  await earnGame(a.db, a.uid, { won: false, unique: 0 });
+  await claimDaily(a.db, a.uid, '2026-10-21');
+  await denied(remove(ref(a.db, `users/${a.uid}/lastEarn`)), 'via lastEarn, poi +20 senza aspettare');
+  await denied(remove(ref(a.db, `users/${a.uid}/lastDailyAt`)), 'via lastDailyAt, poi +70');
+  await denied(remove(ref(a.db, `users/${a.uid}/invitesClaimed`)), 'via il conto degli inviti');
+});
+
+test('un invito si riscuote una volta sola, anche riscrivendo il profilo', async () => {
+  await setIscritti(500);
+  const [a, b] = await Promise.all([phone(), phone()]);
+  await createProfile(a.db, a.uid, {});
+  await createProfile(b.db, b.uid, { invitedBy: a.uid });
+  assert.equal(await claimInvites(a.db, a.uid), 200);
+  assert.equal(await a.read(`invites/${a.uid}/${b.uid}`), 'preso');
+  const p = await a.read(`users/${a.uid}`);
+  await denied(update(ref(a.db, `users/${a.uid}`), { coins: p.coins + 200, invitesClaimed: p.invitesClaimed + 1, lastInvite: b.uid }), 'stesso amico di nuovo');
+  await denied(set(ref(a.db, `invites/${a.uid}/${b.uid}`), true), 'l\'invito non torna da riscuotere');
+});
+
+test('profilo cancellato: non si ricrea con un altro benvenuto', async () => {
+  await setIscritti(500);
+  const a = await phone();
+  await createProfile(a.db, a.uid, {});
+  await deleteProfile(a.db, a.uid);
+  await assert.rejects(createProfile(a.db, a.uid, {}));
+  assert.equal(await a.read(`users/${a.uid}`), null);
+});
+
+test('contatore dei primi 100: niente account senza contarsi, e gli anonimi non lo toccano', async () => {
+  await setIscritti(50);
+  const anon = await phone({ anonimo: true });
+  await denied(set(ref(anon.db, 'meta/iscritti'), 51), 'anonimo che brucia i posti');
+  await assert.rejects(createProfile(anon.db, anon.uid, {}), 'il profilo serve a chi ha l\'account');
+  const a = await phone();
+  await denied(set(ref(a.db, 'meta/iscritti'), 51), '+1 senza creare il proprio profilo');
+  await denied(set(ref(a.db, `users/${a.uid}`), { coins: 1000, createdAt: { '.sv': 'timestamp' }, primi100: true }), 'primi 100 senza contarsi');
+  assert.equal(await a.read('meta/iscritti'), 50);
+  assert.deepEqual(await createProfile(a.db, a.uid, {}), { primi100: true, coins: 1000 });
+  assert.equal(await a.read('meta/iscritti'), 51);
+});
+
+test('invito da un codice che non è un account: niente 200 monete', async () => {
+  await setIscritti(500);
+  const a = await phone();
+  assert.equal((await createProfile(a.db, a.uid, { invitedBy: 'NessunoQuiDentro123' })).coins, 300);
+  const b = await phone();
+  await denied(update(ref(b.db), {
+    'meta/iscritti': 502, [`iscritti/${b.uid}`]: 502,
+    [`users/${b.uid}`]: { coins: 500, createdAt: { '.sv': 'timestamp' }, primi100: false, invitesClaimed: 0, invitedBy: 'NessunoQuiDentro123' },
+  }));
+});
+
+test('username: niente prenotazioni a raffica, e cambiandolo il vecchio si libera', async () => {
+  await setIscritti(500);
+  const anon = await phone({ anonimo: true });
+  const t = Date.now() % 100000;
+  await denied(set(ref(anon.db, `usernames/anon_${t}`), anon.uid), 'anonimo');
+  const a = await phone();
+  await createProfile(a.db, a.uid, {});
+  await denied(set(ref(a.db, `usernames/extra_${t}`), a.uid), 'nome non legato al profilo');
+  assert.equal(await setUsername(a.db, a.uid, `Primo_${t}`), 'ok');
+  assert.equal(await setUsername(a.db, a.uid, `Secondo_${t}`), 'ok');
+  assert.equal(await a.read(`usernames/primo_${t}`), null);
+  assert.equal(await a.read(`usernames/secondo_${t}`), a.uid);
+  assert.equal(await setUsername(a.db, a.uid, `SECONDO_${t}`), 'ok', 'cambiare solo le maiuscole');
+  assert.equal(await a.read(`users/${a.uid}/username`), `SECONDO_${t}`);
 });
