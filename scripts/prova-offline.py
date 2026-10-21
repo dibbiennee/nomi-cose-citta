@@ -38,6 +38,9 @@ async def main():
         await pg.evaluate("navigator.serviceWorker.register('/sw.js').then(() => navigator.serviceWorker.ready)")
         await pg.reload(); await pg.wait_for_timeout(2500)
         srv.terminate(); srv.wait(); time.sleep(0.5)
+        # Senza rete davvero: anche Firebase (qui l'emulatore, se acceso) non risponde.
+        await ctx.route('**://127.0.0.1:9000/**', lambda route: route.abort())
+        await ctx.route('**://127.0.0.1:9099/**', lambda route: route.abort())
 
         await pg.goto(URL + '/')
         try:
@@ -70,6 +73,37 @@ async def main():
         srv = serve()
         await pg.goto(URL + '/'); await pg.wait_for_timeout(1000)
         check('con la rete una riapertura mostra la versione nuova', 'VERSIONE2' in await pg.title())
+        # Giocatore di ritorno: l'accesso è già salvato, poi la rete smette di rispondere (Wi-Fi senza internet).
+        # Un link a una stanza e "Crea una stanza" devono dire che serve internet, non restare sul caricamento.
+        import socket
+        try:
+            socket.create_connection(('127.0.0.1', 9000), timeout=1).close(); emu = True
+        except OSError:
+            emu = False
+        if not emu:
+            check('giocatore di ritorno: serve l\'emulatore acceso (sh scripts/emulatore.sh)', False)
+        else:
+            ctx2 = await b.new_context(viewport={'width': 390, 'height': 844})
+            pg3 = await ctx2.new_page()
+            pg4 = await ctx2.new_page()
+            await pg3.goto(URL + '/'); await pg4.goto(URL + '/')
+            await pg3.wait_for_timeout(3000)  # accesso anonimo fatto, motore pronto
+            await ctx2.set_offline(True)  # chiude anche la connessione già aperta con Firebase
+            await pg3.evaluate("history.pushState(null, '', '/r/ABCD'); dispatchEvent(new PopStateEvent('popstate'))")
+            try:
+                await pg3.get_by_text(NEED).first.wait_for(timeout=12000); check('giocatore di ritorno senza rete: un link a una stanza dice che serve internet', True)
+            except Exception:
+                check('giocatore di ritorno senza rete: un link a una stanza dice che serve internet', False)
+            await pg4.get_by_role('textbox', name='Il tuo nome').fill('Edo')
+            await pg4.get_by_role('button', name='Crea una stanza').click()
+            try:
+                await pg4.get_by_role('button', name='Crea stanza').click(timeout=2000)
+            except Exception:
+                pass
+            try:
+                await pg4.get_by_text(NEED).first.wait_for(timeout=12000); check('giocatore di ritorno senza rete: "Crea una stanza" dice che serve internet', True)
+            except Exception:
+                check('giocatore di ritorno senza rete: "Crea una stanza" dice che serve internet', False)
         await b.close()
     srv.terminate()
     shutil.rmtree(BUILD, ignore_errors=True)

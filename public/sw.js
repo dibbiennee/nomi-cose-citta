@@ -15,11 +15,15 @@ async function buildFiles() {
   return Object.values(manifest.files || {}).filter((f) => f.startsWith('/static/') && !f.endsWith('.map') && !f.endsWith('.txt'));
 }
 
-/** Mette in copia i file della versione pubblicata e toglie quelli delle versioni vecchie. Un file che non arriva non blocca gli altri. */
+/** Mette in copia i file della versione pubblicata e, se sono arrivati tutti, toglie quelli delle versioni vecchie. */
 async function syncCache() {
   const cache = await caches.open(CACHE);
   const files = await buildFiles();
-  await Promise.all(SHELL.concat(files).map((f) => cache.match(f).then((hit) => hit || cache.add(new Request(f, { cache: 'no-cache' }))).catch(() => {})));
+  const done = await Promise.all(SHELL.concat(files).map((f) => cache.match(f)
+    .then((hit) => hit || cache.add(new Request(f, { cache: 'no-cache' })))
+    .then(() => true, () => false)));
+  // I file vecchi si tolgono solo quando quelli nuovi ci sono tutti: con la rete ballerina resta la versione di prima.
+  if (done.slice(SHELL.length).includes(false)) return;
   const keep = new Set(files);
   for (const req of await cache.keys()) {
     const path = new URL(req.url).pathname;

@@ -39,6 +39,10 @@ const loadDictionary = () => {
   if (!dictPromise) dictPromise = import('./solo/parole').then((m) => createDictionary(m.LISTE)).catch((e) => { dictPromise = null; throw e; });
   return dictPromise;
 };
+// Le chiamate alle stanze senza risposta (Wi-Fi senza internet) non devono lasciare il caricamento per sempre.
+const ROOM_TIMEOUT_MS = 8000;
+const withTimeout = (promise) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ROOM_TIMEOUT_MS))]);
+const offlineNow = () => typeof navigator !== 'undefined' && navigator.onLine === false;
 const hasSavedSolo = () => { try { return Boolean(LOCAL?.getItem(SOLO_KEY)); } catch (e) { return false; } };
 const codeFromPath = (path) => { const m = /^\/r\/([A-Za-z0-9]{4})\/?$/.exec(path); return m ? m[1].toUpperCase() : null; };
 const go = (path) => { if (window.location.pathname !== path) window.history.pushState(null, '', path); };
@@ -93,20 +97,21 @@ export default function App() {
       if (e.code === 'full') max = await eng.peekRoom(c).then((r) => r.settings?.maxPlayers).catch(() => undefined);
       showError(e.code, { code: c, max });
     } else {
-      toast('Non riesco a collegarmi, riprova');
+      toast(offlineNow() || e.message === 'timeout' ? NEED_NET : 'Non riesco a collegarmi, riprova');
     }
   }, [showError, toast]);
 
   /** Apre un link /r/CODICE: se sei già nella stanza rientri, altrimenti vedi l'invito. */
   const openCode = useCallback(async (eng, c) => {
     try {
-      const r = await eng.peekRoom(c);
-      if (r.players?.[eng.uid]) { await eng.joinRoom(c, loadProfile()); enterRoom(c); return; }
+      const r = await withTimeout(eng.peekRoom(c));
+      if (r.players?.[eng.uid]) { await withTimeout(eng.joinRoom(c, loadProfile())); enterRoom(c); return; }
       if (r.kicked?.[eng.uid]) { showError('kicked'); return; }
       setInviteRoom(r); setCode(c); setView('invite');
-    } catch (e) { roomError(e, c, eng); }
+    } catch (e) { if (e instanceof RoomError) roomError(e, c, eng); else showError('offline'); }
   }, [enterRoom, roomError, showError]);
 
+  const retryEngine = useRef(() => {});
   // Accesso anonimo in sottofondo, poi il link /r/CODICE se c'è. Senza rete riprova quando la rete torna:
   // la home intanto funziona (si gioca da soli), solo un link a una stanza mostra che serve internet.
   useEffect(() => {
@@ -123,6 +128,7 @@ export default function App() {
       }).catch(() => { if (alive && codeFromPath(window.location.pathname)) showError('offline'); });
     };
     start();
+    retryEngine.current = start;
     window.addEventListener('online', start);
     return () => { alive = false; window.removeEventListener('online', start); };
   }, [openCode, showError]);
@@ -298,7 +304,14 @@ export default function App() {
 
   const needName = () => { if (profile.name.trim()) return false; toast('Scrivi prima il tuo nome'); return true; };
   const openSolo = () => { goHome(); setView('solo'); };
-  const needNet = () => { if (netEngine) return false; toast(NEED_NET); return true; };
+  // Senza rete si dice subito; con la rete ma senza accesso ancora pronto (primi secondi, o accesso fallito) si ritenta.
+  const needNet = () => {
+    if (offlineNow()) { toast(NEED_NET); return true; }
+    if (netEngine) return false;
+    retryEngine.current();
+    toast('Mi sto collegando, riprova tra un attimo');
+    return true;
+  };
 
   /** Nuova partita contro i robot (anche dal podio, con "Cambia categorie e round"). */
   const startSolo = async ({ difficulty, botCount, settings }) => {
@@ -318,7 +331,7 @@ export default function App() {
   const joinWith = async (c) => {
     if (needNet() || needName()) { setSheet(null); return; }
     setBusy(true);
-    try { await engine.joinRoom(c, profile); enterRoom(c); } catch (e) { roomError(e, c, engine); } finally { setBusy(false); }
+    try { await withTimeout(engine.joinRoom(c, profile)); enterRoom(c); } catch (e) { roomError(e, c, engine); } finally { setBusy(false); }
   };
 
   const g = useMemo(() => {
@@ -352,7 +365,9 @@ export default function App() {
     screen = <Solo records={soloRecords()} initial={soloPrefs} onBack={() => setView('home')} onStart={startSolo} toast={toast} />;
   } else if (view === 'setup') {
     screen = <Setup toast={toast} onBack={() => setView('home')}
-      onSave={async (settings) => { try { enterRoom(await netEngine.createRoom(profile, settings)); } catch (e) { toast('Non riesco a creare la stanza, riprova'); } }} />;
+      onSave={async (settings) => {
+        try { enterRoom(await withTimeout(netEngine.createRoom(profile, settings))); } catch (e) { toast(offlineNow() || e.message === 'timeout' ? NEED_NET : 'Non riesco a creare la stanza, riprova'); }
+      }} />;
   } else if (view === 'invite') {
     screen = <Invite code={code} room={inviteRoom} profile={profile} setProfile={setProfile} busy={busy} onJoin={() => joinWith(code)} />;
   } else if (view === 'error') {
