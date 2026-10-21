@@ -5,7 +5,7 @@
 // le regole del database (aumenti limitati, spese al prezzo di catalogo). È estetica, non soldi: quando la vendita
 // vera partirà, monete e acquisti passeranno a funzioni server.
 import { ref, get, set, update, remove, runTransaction, serverTimestamp } from 'firebase/database';
-import { EARN, ITEMS, itemById, TIPI } from '../shop/catalogo.js';
+import { EARN, ITEMS, itemById, isBuyable, TIPI } from '../shop/catalogo.js';
 import { advanceStreak, milestoneFor } from '../ritorno/serie.js';
 import { challengesFor, completed, ALL_DONE_BONUS } from '../ritorno/sfide.js';
 import { rollChest } from '../ritorno/scrigno.js';
@@ -81,7 +81,7 @@ export async function claimDaily(db, uid, today) {
 /** Compra un accessorio con le monete: 'ok', 'poveri' (monete insufficienti) o 'già' (già posseduto). */
 export async function buyItem(db, uid, itemId) {
   const item = itemById(itemId);
-  if (!item || item.esclusivo) return 'poveri';
+  if (!item || !isBuyable(item)) return 'poveri';
   let why = 'poveri';
   const res = await runTransaction(userRef(db, uid), (cur) => {
     if (!cur) return cur;

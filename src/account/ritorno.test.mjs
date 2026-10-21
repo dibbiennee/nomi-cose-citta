@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, signInAnonymously, linkWithCredential, GoogleAuthProvider } from 'firebase/auth';
 import { getDatabase, connectDatabaseEmulator, ref, get, set, update, remove } from 'firebase/database';
-import { createProfile, touchDay, claimMilestones, finishGame, claimChallenge, claimDaily, deleteProfile } from './profilo.js';
+import { buyItem, createProfile, touchDay, claimMilestones, finishGame, claimChallenge, claimDaily, deleteProfile } from './profilo.js';
 import { challengesFor, completed } from '../ritorno/sfide.js';
 
 const PROJECT = process.env.GCLOUD_PROJECT || 'demo-ncc';
@@ -204,4 +204,32 @@ test('account cancellato e ricreato: nessuna serie, traguardo o segno di riscoss
   await deleteProfile(a.db, a.uid);
   assert.equal(await adminGet(`users/${a.uid}`), null);
   assert.equal(await adminGet(`claims/${a.uid}`), null);
+});
+
+test('accessori della serie: solo con la serie raggiunta; i rari solo nella scrittura di fine partita; non si comprano', async () => {
+  const a = await account();
+  const u = (v) => update(ref(a.db), v);
+  await denied(u({ [`users/${a.uid}/owned/cornice_scintille`]: true }), 'senza la serie a 7');
+  await denied(u({ [`users/${a.uid}/owned/cappello_mago`]: true }), 'raro fuori da una partita');
+  await admin(`users/${a.uid}/lastDay`, '2026-10-21');
+  await admin(`users/${a.uid}/streak`, 7);
+  await admin(`users/${a.uid}/migliorSerie`, 7);
+  await admin(`users/${a.uid}/serieId`, '2026-10-15');
+  const c = await a.read(`users/${a.uid}/coins`);
+  await u({ [`users/${a.uid}/owned/cornice_scintille`]: true });
+  assert.equal(await a.read(`users/${a.uid}/owned/cornice_scintille`), true);
+  await denied(u({ [`users/${a.uid}/owned/mantello_notte`]: true }), 'il 30 con la serie a 7');
+  await u({ [`users/${a.uid}/coins`]: c, [`users/${a.uid}/owned/cappello_mago`]: true, [`users/${a.uid}/lastEarn`]: TS });
+  assert.equal(await a.read(`users/${a.uid}/owned/cappello_mago`), true);
+  for (const id of ['cornice_scintille', 'mantello_notte', 'corona_fiamme', 'cappello_mago', 'occhiali_arcobaleno', 'collare_gemme']) {
+    assert.equal(await buyItem(a.db, a.uid, id), 'poveri', `${id} non si compra`);
+  }
+});
+
+test('scrigno con raro: quando esce, arriva nella stessa scrittura della partita', async () => {
+  const a = await account();
+  await touchDay(a.db, a.uid, '2026-10-21');
+  const r = await finishGame(a.db, a.uid, { result: { won: false, unique: 0, mode: 'solo', rank: 3, players: 4, humans: 1 }, today: '2026-10-21', rng: () => 0.99 });
+  assert.equal(r.chest.kind, 'raro');
+  assert.equal(await a.read(`users/${a.uid}/owned/${r.chest.item}`), true);
 });

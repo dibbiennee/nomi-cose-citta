@@ -2,7 +2,7 @@
 // Un accessorio si possiede solo se nello stesso salvataggio le monete scendono esattamente del suo prezzo,
 // oppure se è un esclusivo e l'account è tra i primi 100.
 import { readFileSync, writeFileSync } from 'node:fs';
-import { ITEMS, EARN } from '../src/shop/catalogo.js';
+import { ITEMS, EARN, isBuyable } from '../src/shop/catalogo.js';
 import { MILESTONES, EVERY_AFTER_100 } from '../src/ritorno/serie.js';
 import { POOL, ALL_DONE_BONUS } from '../src/ritorno/sfide.js';
 
@@ -10,10 +10,14 @@ const FILE = new URL('../database.rules.json', import.meta.url);
 const rules = JSON.parse(readFileSync(FILE, 'utf8'));
 const coinsNow = "newData.parent().parent().child('coins').val()";
 const coinsBefore = "data.parent().parent().child('coins').val()";
-const paid = ITEMS.filter((i) => !i.esclusivo).map((i) => `($item === '${i.id}' && ${coinsNow} === ${coinsBefore} - ${i.prezzo})`);
+const paid = ITEMS.filter(isBuyable).map((i) => `($item === '${i.id}' && ${coinsNow} === ${coinsBefore} - ${i.prezzo})`);
 const free = ITEMS.filter((i) => i.esclusivo).map((i) => `$item === '${i.id}'`);
 // Già posseduto: resta (il profilo si riscrive intero nelle transazioni). Nuovo: pagato, o esclusivo dei primi 100.
-const rule = `newData.val() === true && (data.exists() || ${paid.join(' || ')} || ((${free.join(' || ')}) && newData.parent().parent().child('primi100').val() === true))`;
+// Premi della serie: solo se il record di giorni di fila ha raggiunto quel giorno. Rari: solo nella scrittura di
+// fine partita (quella che aggiorna lastEarn).
+const bySerie = ITEMS.filter((i) => i.serie).map((i) => `($item === '${i.id}' && newData.parent().parent().child('migliorSerie').val() >= ${i.serie})`);
+const rari = ITEMS.filter((i) => i.raro).map((i) => `$item === '${i.id}'`);
+const rule = `newData.val() === true && (data.exists() || ${paid.join(' || ')} || ((${free.join(' || ')}) && newData.parent().parent().child('primi100').val() === true) || ${bySerie.join(' || ')} || ((${rari.join(' || ')}) && newData.parent().parent().child('lastEarn').val() === now))`;
 
 rules.rules.users = rules.rules.users || { $uid: {} };
 const user = rules.rules.users.$uid;

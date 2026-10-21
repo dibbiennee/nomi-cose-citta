@@ -17,7 +17,17 @@ export const ITEMS = [
   { id: 'mantello_oro', nome: 'Mantello d\'oro', tipo: 'vestito', prezzo: 1500, esclusivo: true },
   { id: 'cornice_stelle', nome: 'Cornice di stelle', tipo: 'cornice', prezzo: 700 },
   { id: 'cornice_fiamme', nome: 'Cornice di fiamme', tipo: 'cornice', prezzo: 1200 },
+  // Premi dei giorni di fila: non si comprano, si ottengono arrivando a quel giorno (src/ritorno/serie.js)
+  { id: 'cornice_scintille', nome: 'Cornice di scintille', tipo: 'cornice', serie: 7 },
+  { id: 'mantello_notte', nome: 'Mantello della notte', tipo: 'vestito', serie: 30 },
+  { id: 'corona_fiamme', nome: 'Corona di fiamme', tipo: 'cappello', serie: 100 },
+  // Rari: escono a sorpresa dallo scrigno di fine partita (src/ritorno/scrigno.js)
+  { id: 'cappello_mago', nome: 'Cappello da mago', tipo: 'cappello', raro: true },
+  { id: 'occhiali_arcobaleno', nome: 'Occhiali arcobaleno', tipo: 'occhiali', raro: true },
+  { id: 'collare_gemme', nome: 'Collare di gemme', tipo: 'vestito', raro: true },
 ];
+/** Si compra con le monete solo se ha un prezzo e non è esclusivo dei primi 100, né premio di serie, né raro. */
+export const isBuyable = (i) => !!i && !i.esclusivo && !i.serie && !i.raro;
 export const itemById = (id) => ITEMS.find((i) => i.id === id) || null;
 
 /** Prodotti a soldi veri: per ora solo vetrina, "Compra" porta alla lista d'attesa. */

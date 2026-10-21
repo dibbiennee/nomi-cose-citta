@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { sx, BACK_ICON, Face } from '../ui/kit';
-import { ITEMS, PAID, TIPI } from '../shop/catalogo';
+import { ITEMS, PAID, TIPI, isBuyable } from '../shop/catalogo';
 
 const TIPO_LABEL = { cappello: 'Cappelli', occhiali: 'Occhiali', vestito: 'Vestiti', cornice: 'Cornici' };
 const btn = (bg, fg) => sx(`min-height: 44px; padding: 0 14px; border-radius: 14px; border: 2.5px solid #17122B; background: ${bg}; color: ${fg}; font-size: 14px; font-weight: 800; box-shadow: 0 3px 0 #17122B; cursor: pointer; white-space: nowrap`);
@@ -56,11 +56,11 @@ export default function Negozio({ account, face, onBack, onAccount, onWaitlist, 
                   </button>
                   <span style={sx('flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px')}>
                     <span style={sx('font-size: 16px; font-weight: 800')}>{item.nome}</span>
-                    <span style={sx('font-size: 13px; font-weight: 700; color: #5E5880')}>{item.esclusivo ? 'Esclusivo dei primi 100 iscritti' : mine ? 'È tuo' : `${item.prezzo} monete`}</span>
+                    <span style={sx('font-size: 13px; font-weight: 700; color: #5E5880')}>{mine ? 'È tuo' : item.esclusivo ? 'Esclusivo dei primi 100 iscritti' : item.serie ? `Premio dei ${item.serie} giorni di fila` : item.raro ? 'Raro: si trova negli scrigni' : `${item.prezzo} monete`}</span>
                   </span>
                   {mine
                     ? <button type="button" className="n-btn" onClick={() => wear(item, !worn)} style={btn(worn ? '#6EE7A8' : '#FFFFFF', '#17122B')}>{worn ? 'Togli' : 'Indossa'}</button>
-                    : !item.esclusivo && <button type="button" className="n-btn" disabled={busy} onClick={() => buy(item)} style={btn('#FFD23F', '#17122B')}>Compra</button>}
+                    : isBuyable(item) && <button type="button" className="n-btn" disabled={busy} onClick={() => buy(item)} style={btn('#FFD23F', '#17122B')}>Compra</button>}
                 </div>
               );
             })}
