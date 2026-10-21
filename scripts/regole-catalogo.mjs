@@ -10,7 +10,8 @@ const coinsNow = "newData.parent().parent().child('coins').val()";
 const coinsBefore = "data.parent().parent().child('coins').val()";
 const paid = ITEMS.filter((i) => !i.esclusivo).map((i) => `($item === '${i.id}' && ${coinsNow} === ${coinsBefore} - ${i.prezzo})`);
 const free = ITEMS.filter((i) => i.esclusivo).map((i) => `$item === '${i.id}'`);
-const rule = `newData.val() === true && !data.exists() && (${paid.join(' || ')} || ((${free.join(' || ')}) && newData.parent().parent().child('primi100').val() === true))`;
+// Già posseduto: resta (il profilo si riscrive intero nelle transazioni). Nuovo: pagato, o esclusivo dei primi 100.
+const rule = `newData.val() === true && (data.exists() || ${paid.join(' || ')} || ((${free.join(' || ')}) && newData.parent().parent().child('primi100').val() === true))`;
 
 rules.rules.users = rules.rules.users || { $uid: {} };
 const user = rules.rules.users.$uid;
