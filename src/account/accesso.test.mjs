@@ -6,7 +6,7 @@ import { getAuth, connectAuthEmulator, signInAnonymously, GoogleAuthProvider } f
 import { linkGoogleCredential, sendEmailLink, completeEmailLink, signOutToAnonymous, isRegistered } from './accesso.js';
 
 const PROJECT = process.env.GCLOUD_PROJECT || 'demo-ncc';
-const AUP = process.env.AUP || 9099;
+const AUP = process.env.AUP || 9199;
 const apps = [];
 let n = 0;
 async function phone() {
@@ -56,4 +56,13 @@ test('uscendo si torna anonimi, con un uid nuovo', async () => {
   await signOutToAnonymous(auth);
   assert.ok(auth.currentUser.isAnonymous);
   assert.notEqual(auth.currentUser.uid, uid);
+});
+
+test('all\'apertura del gioco un account registrato resta quello: niente nuovo anonimo al suo posto', async () => {
+  const { ensureSignedIn } = await import('./accesso.js');
+  const auth = await phone();
+  const { uid } = await linkGoogleCredential(auth, google('g-5', 'cinque@example.com'));
+  const user = await ensureSignedIn(auth);
+  assert.equal(user.uid, uid);
+  assert.equal(isRegistered(auth.currentUser), true);
 });

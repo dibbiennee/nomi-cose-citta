@@ -15,12 +15,12 @@ const REFRESH = (
  * Faccina che si cambia toccandola, colori e nome. La usano la home e l'invito.
  * Con la Modalità Fondatore (founder) si può scegliere anche un personaggio del club; toccando la faccia si torna alle faccine.
  */
-export function ProfilePicker({ profile, setProfile, faceSize = 108, inputBg = '#FFFFFF', inputH = 58, gap = 10, withBadge = true, founder = false }) {
+export function ProfilePicker({ profile, setProfile, faceSize = 108, inputBg = '#FFFFFF', inputH = 58, gap = 10, withBadge = true, founder = false, nameLocked = false }) {
   const set = (patch) => setProfile({ ...profile, ...patch });
   return (
     <>
       <button className="n-press" aria-label="Cambia faccia" onClick={() => set(profile.char ? { char: undefined } : { face: (profile.face + 1) % FACES.length })}
-        style={sx(`width: ${faceSize}px; height: ${faceSize}px; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative`)}>
+        style={sx(`width: ${faceSize}px; height: ${faceSize}px; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative; margin-top: ${profile.acc?.cappello ? Math.round(faceSize * 0.24) : 0}px`)}>
         <Face p={profile} size={faceSize} stroke={faceSize > 100 ? 2 : 2.2} blink />
         {withBadge && (
           <span style={sx('position: absolute; right: 0; bottom: 2px; width: 36px; height: 36px; box-sizing: border-box; border-radius: 50%; background: #FFFFFF; border: 2.5px solid #17122B; display: flex; align-items: center; justify-content: center')}>{REFRESH}</span>
@@ -44,7 +44,7 @@ export function ProfilePicker({ profile, setProfile, faceSize = 108, inputBg = '
           );
         })}
       </div>
-      <input type="text" aria-label="Il tuo nome" value={profile.name} onChange={(e) => set({ name: e.target.value.slice(0, 14) })} maxLength={14} placeholder="Il tuo nome" autoComplete="nickname" enterKeyHint="done"
+      <input type="text" aria-label="Il tuo nome" readOnly={nameLocked} title={nameLocked ? 'Con l\'account giochi con il tuo username' : undefined} value={profile.name} onChange={(e) => set({ name: e.target.value.slice(0, 14) })} maxLength={14} placeholder="Il tuo nome" autoComplete="nickname" enterKeyHint="done"
         style={sx(`width: 100%; box-sizing: border-box; height: ${inputH}px; padding: 0 18px; border-radius: ${inputH > 56 ? 18 : 16}px; border: 2.5px solid #17122B; background: ${inputBg}; color: #17122B; font-size: 20px; font-weight: 800; text-align: center; outline: none`)} />
     </>
   );
@@ -62,13 +62,14 @@ function useCompact() {
   return compact;
 }
 
-export default function Home({ profile, setProfile, onOnline, onRules, founder, onFounder, onInstall, onSolo }) {
+export default function Home({ profile, setProfile, onOnline, onRules, founder, onFounder, onInstall, onSolo, onAccount, account, nameLocked }) {
   let k = 0;
   const c = useCompact();
   const tile = c ? { w: 48, h: 52, f: 29, r: 13 } : { w: 52, h: 58, f: 32, r: 14 };
   return (
     <div className="n-screen" style={sx(`position: absolute; inset: 0; background: #FFD23F; padding: ${c ? '10px 24px 8px' : '20px 24px 28px'}; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto`)}>
-      <div style={sx('display: flex; justify-content: flex-end; gap: 10px')}>
+      <div style={sx('display: flex; justify-content: flex-end; align-items: center; gap: 8px')}>
+        <button className="n-btn" onClick={onAccount} style={sx(`height: 44px; padding: 0 14px; margin-right: ${founder ? '0' : 'auto'}; border-radius: 999px; border: 2.5px solid #17122B; background: ${account?.registered ? '#FFD23F' : '#FFFFFF'}; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer; white-space: nowrap`)}>{account?.registered ? `${account.coins} monete` : 'Account'}</button>
         {founder && <button className="n-btn" onClick={onFounder} style={sx('height: 44px; padding: 0 16px; margin-right: auto; border-radius: 999px; border: 2.5px solid #17122B; background: #B79CFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Fondatore</button>}
         <button className="n-btn" onClick={onRules} style={sx('height: 44px; padding: 0 16px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Come si gioca</button>
       </div>
@@ -88,7 +89,7 @@ export default function Home({ profile, setProfile, onOnline, onRules, founder, 
         ))}
       </div>
       <div className="n-up" style={sx(`margin-top: ${c ? 12 : 30}px; display: flex; flex-direction: column; align-items: center; gap: ${c ? 10 : 14}px; animation-delay: .5s`)}>
-        <ProfilePicker profile={profile} setProfile={setProfile} founder={founder} faceSize={c ? 96 : 108} inputH={c ? 52 : 58} />
+        <ProfilePicker profile={profile} setProfile={setProfile} founder={founder} faceSize={c ? 96 : 108} inputH={c ? 52 : 58} nameLocked={nameLocked} />
       </div>
       <div className="n-up" style={sx(`display: flex; flex-direction: column; gap: ${c ? 10 : 14}px; margin-top: auto; padding-top: ${c ? 16 : 24}px; animation-delay: .6s`)}>
         <button className="n-btn" onClick={onOnline} style={sx(`height: ${c ? 56 : 62}px; border: 2.5px solid #17122B; border-radius: 20px; background: #17122B; color: #FFD23F; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #7A5F00; cursor: pointer`)}>Gioca online</button>

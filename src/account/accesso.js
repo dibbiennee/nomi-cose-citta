@@ -9,6 +9,17 @@ import {
 export const EMAIL_KEY = 'ncc-email-accesso';
 const IN_USE = ['auth/credential-already-in-use', 'auth/email-already-in-use', 'auth/provider-already-linked'];
 
+/**
+ * All'apertura: aspetta che l'accesso salvato sia ripristinato e crea un anonimo solo se non c'è nessuno.
+ * Chiamare signInAnonymously con un account registrato già dentro lo sostituirebbe con un anonimo nuovo.
+ */
+export async function ensureSignedIn(auth) {
+  await auth.authStateReady();
+  if (auth.currentUser) return auth.currentUser;
+  const { user } = await signInAnonymously(auth);
+  return user;
+}
+
 /** Registrato = ha un accesso diverso da quello anonimo. */
 export const isRegistered = (user) => Boolean(user && !user.isAnonymous && (user.providerData || []).length > 0);
 

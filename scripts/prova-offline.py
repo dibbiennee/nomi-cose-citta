@@ -39,8 +39,8 @@ async def main():
         await pg.reload(); await pg.wait_for_timeout(2500)
         srv.terminate(); srv.wait(); time.sleep(0.5)
         # Senza rete davvero: anche Firebase (qui l'emulatore, se acceso) non risponde.
-        await ctx.route('**://127.0.0.1:9000/**', lambda route: route.abort())
-        await ctx.route('**://127.0.0.1:9099/**', lambda route: route.abort())
+        await ctx.route('**://127.0.0.1:9100/**', lambda route: route.abort())
+        await ctx.route('**://127.0.0.1:9199/**', lambda route: route.abort())
 
         await pg.goto(URL + '/')
         try:
@@ -77,7 +77,7 @@ async def main():
         # Un link a una stanza e "Crea una stanza" devono dire che serve internet, non restare sul caricamento.
         import socket
         try:
-            socket.create_connection(('127.0.0.1', 9000), timeout=1).close(); emu = True
+            socket.create_connection(('127.0.0.1', 9100), timeout=1).close(); emu = True
         except OSError:
             emu = False
         if not emu:

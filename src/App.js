@@ -25,7 +25,10 @@ import { createSoloEngine, resumeSoloEngine, SOLO_CODE, SOLO_KEY } from './solo/
 import { createRecordStore } from './solo/record';
 import { DIFFICULTIES } from './solo/robot';
 import { createQueue, BOT_WAIT_MS, JOIN_WAIT_MS, QUICK_SIZE } from './engine/coda';
-import { NEED_NET, Cerco, ErrorScreen, RulesSheet, OnlineSheet, JoinSheet, FounderSheet, InstallSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
+import { useAccount } from './account/useAccount';
+import Account from './screens/Account';
+import Negozio from './screens/Negozio';
+import { NEED_NET, Cerco, PrimiSheet, WaitlistSheet, ErrorScreen, RulesSheet, OnlineSheet, JoinSheet, FounderSheet, InstallSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
 
 const LOCAL = (() => { try { return window.localStorage; } catch (e) { return null; } })();
 // Sblocco della Modalità Fondatore, salvato su questo telefono. Solo cosmetico: non va mai a Firebase.
@@ -143,6 +146,34 @@ export default function App() {
     try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch (e) { /* va bene anche senza */ }
   }, []);
 
+  // ---------- Account ----------
+  const account = useAccount({ ready: !!netEngine, stat, toast });
+  // Con l'account si gioca con il proprio username e con gli accessori indossati.
+  const gameProfile = account.registered && account.profile
+    ? { ...profile, name: account.profile.username || profile.name, acc: account.profile.equipped || {} }
+    : profile;
+  const gameProfileRef = useRef(gameProfile);
+  gameProfileRef.current = gameProfile;
+  const nameLocked = !!(account.registered && account.profile?.username);
+  // Dalla home si cambiano faccia, colore e personaggio; il nome solo se non c'è l'username.
+  const setHomeProfile = (p) => setProfile({ ...profile, face: p.face, color: p.color, char: p.char, name: nameLocked ? profile.name : p.name });
+  const [coinLine, setCoinLine] = useState(null); // sul podio: { amount, kept }
+  const [primi, setPrimi] = useState(false);
+  const [waitProduct, setWaitProduct] = useState(null);
+  /** Fine partita: monete (o in sospeso), e la prima volta l'invito a registrarsi. */
+  const afterGame = useCallback(async (result) => {
+    const r = await account.earn(result);
+    setCoinLine(r);
+    let seen = null;
+    try { seen = LOCAL?.getItem('ncc-popup-primi'); } catch (e) { seen = null; }
+    if (!account.registered && !seen) {
+      try { LOCAL?.setItem('ncc-popup-primi', '1'); } catch (e) { /* niente */ }
+      const n = await account.readIscritti();
+      setPrimi(n !== null && n < 100);
+      setTimeout(() => setSheet('primi'), 3500); // dopo l'animazione del podio
+    }
+  }, [account]);
+
   const ERROR_STATS = { notfound: 'errori_non_trovata', full: 'errori_piena', offline: 'errori_rete' };
   const showError = useCallback((kind, info = {}) => {
     if (ERROR_STATS[kind]) statRef.current(ERROR_STATS[kind]);
@@ -225,11 +256,12 @@ export default function App() {
     const { beaten } = r.counts ? recordStore.save(solo.difficulty, r) : { beaten: false };
     setSoloResult({ ...r, beaten, best: beaten ? r.ppw : before });
     stat('solo_finite');
+    afterGame({ won: r.won, unique: room.players?.me?.stats?.uniq || 0 });
     stat(`solo_${solo.difficulty}_finite`);
     if (r.won) stat(`solo_${solo.difficulty}_vinte`);
     if (beaten && r.counts) stat('record_battuti');
     if (soloStart.current) stat('minuti_solo', (Date.now() - soloStart.current) / 60000);
-  }, [solo, room, stat]);
+  }, [solo, room, stat, afterGame]);
 
   // Connessione: l'avviso compare solo dopo che è stata attiva almeno una volta.
   useEffect(() => {
@@ -331,13 +363,17 @@ export default function App() {
       if (playing) stat('giocatori_online');
     }
     if (st === 'final' && before === 'awards') {
-      if (playing) stat('giocatori_al_podio');
+      if (playing) {
+        stat('giocatori_al_podio');
+        const ranked = ranking(room.players);
+        afterGame({ won: ranked[0]?.id === engine.uid, unique: room.players?.[engine.uid]?.stats?.uniq || 0 });
+      }
       if (isHost) {
         stat('partite_online_finite');
         if (gameStart.current) stat('minuti_online', (Date.now() - gameStart.current) / 60000);
       }
     }
-  }, [room, solo, engine, stat, code]);
+  }, [room, solo, engine, stat, code, afterGame]);
 
   // ---------- Partita veloce ----------
   const queueRef = useRef(null);
@@ -347,7 +383,7 @@ export default function App() {
     if (!st.room) { setCerco((c) => ({ ...c, found: st.waiting })); return; }
     const q = queueRef.current;
     try {
-      await withTimeout(netEngine.joinRoom(st.room, profileRef.current));
+      await withTimeout(netEngine.joinRoom(st.room, gameProfileRef.current));
       stopQueue();
       enterRoom(st.room);
     } catch (e) {
@@ -361,7 +397,7 @@ export default function App() {
     queueRef.current = q;
     setCerco({ found: 1, since: Date.now() });
     setView('cerco');
-    try { await q.join(profileRef.current, onQueue); } catch (e) { stopQueue(); toast(NEED_NET); setView('home'); }
+    try { await q.join(gameProfileRef.current, onQueue); } catch (e) { stopQueue(); toast(NEED_NET); setView('home'); }
   };
   const cancelQuick = () => { stopQueue(); setView('home'); };
   useEffect(() => () => stopQueue(), [stopQueue]);
@@ -490,7 +526,7 @@ export default function App() {
     }
   }, [toast]);
 
-  const needName = () => { if (profile.name.trim()) return false; toast('Scrivi prima il tuo nome'); return true; };
+  const needName = () => { if (gameProfile.name.trim()) return false; toast('Scrivi prima il tuo nome'); return true; };
   const openSolo = () => { goHome(); setView('solo'); };
   // Senza rete si dice subito; con la rete ma senza accesso ancora pronto (primi secondi, o accesso fallito) si ritenta.
   const needNet = () => {
@@ -506,7 +542,7 @@ export default function App() {
     try {
       const dict = await loadDictionary();
       if (solo) await solo.leaveRoom();
-      const e = createSoloEngine({ profile, settings, difficulty, botCount, dict, storage: LOCAL });
+      const e = createSoloEngine({ profile: gameProfile, settings, difficulty, botCount, dict, storage: LOCAL });
       setSoloPrefs({ difficulty, botCount, settings });
       setSoloResult(null);
       setSolo(e); setCode(SOLO_CODE); setRoom(null); setEditing(false); setSheet(null); setView('room');
@@ -520,7 +556,7 @@ export default function App() {
   const joinWith = async (c, via) => {
     if (needNet() || needName()) { setSheet(null); return; }
     setBusy(true);
-    try { await withTimeout(engine.joinRoom(c, profile)); enterRoom(c); stat(via === 'link' ? 'ingressi_link' : 'ingressi_codice'); } catch (e) { roomError(e, c, engine); } finally { setBusy(false); }
+    try { await withTimeout(engine.joinRoom(c, gameProfile)); enterRoom(c); stat(via === 'link' ? 'ingressi_link' : 'ingressi_codice'); } catch (e) { roomError(e, c, engine); } finally { setBusy(false); }
   };
 
   const g = useMemo(() => {
@@ -532,6 +568,7 @@ export default function App() {
     return {
       room, round, code, uid, engine, now, answers, setAnswer, toast, setSheet, act, leave, isOnline,
       solo: solo ? { difficulty: solo.difficulty, ...soloResult } : null,
+      coinLine, openAccount: () => { leave(); setView('account'); },
       stat,
       players,
       active: players.filter((p) => !p.waiting), // in partita (anche offline, mostrati spenti)
@@ -543,15 +580,21 @@ export default function App() {
       hostName: room.players[room.hostId]?.name || 'l\'host',
       openSettings: () => setEditing(true),
     };
-  }, [room, round, code, engine, now, answers, setAnswer, toast, act, leave, solo, soloResult, stat]);
+  }, [room, round, code, engine, now, answers, setAnswer, toast, act, leave, solo, soloResult, stat, coinLine]);
 
   let screen;
   if (view === 'stats') screen = <Statistiche />;
   else if (view === 'loading' || (view === 'room' && !g)) screen = <Loading />;
   else if (view === 'home') {
-    screen = <Home profile={profile} setProfile={setProfile} onRules={() => setSheet('rules')}
+    screen = <Home profile={gameProfile} setProfile={setHomeProfile} nameLocked={nameLocked} onRules={() => setSheet('rules')}
+      onAccount={() => setView('account')} account={account}
       onOnline={() => { stat('scelta_online'); setSheet('online'); }}
       founder={founder} onFounder={() => setSheet('founder')} onInstall={() => { stat('guida_aperta'); setSheet('install'); }} onSolo={() => { stat('scelta_solo'); setView('solo'); }} />;
+  } else if (view === 'account') {
+    screen = <Account account={account} onBack={() => setView('home')} onShop={() => setView('negozio')} toast={toast} />;
+  } else if (view === 'negozio') {
+    screen = <Negozio account={account} face={gameProfile} onBack={() => setView(account.registered ? 'account' : 'home')} onAccount={() => setView('account')}
+      onWaitlist={(p) => { stat(`richiesta_${p.id}`); setWaitProduct(p); setSheet('waitlist'); }} toast={toast} />;
   } else if (view === 'cerco') {
     screen = <Cerco found={cerco.found} waitedMs={Date.now() - cerco.since} botWaitMs={BOT_WAIT_MS} onCancel={cancelQuick} />;
   } else if (view === 'solo') {
@@ -559,10 +602,10 @@ export default function App() {
   } else if (view === 'setup') {
     screen = <Setup toast={toast} onBack={() => setView('home')}
       onSave={async (settings) => {
-        try { enterRoom(await withTimeout(netEngine.createRoom(profile, settings))); stat('stanze_create'); } catch (e) { toast(offlineNow() || e.message === 'timeout' ? NEED_NET : 'Non riesco a creare la stanza, riprova'); }
+        try { enterRoom(await withTimeout(netEngine.createRoom(gameProfile, settings))); stat('stanze_create'); } catch (e) { toast(offlineNow() || e.message === 'timeout' ? NEED_NET : 'Non riesco a creare la stanza, riprova'); }
       }} />;
   } else if (view === 'invite') {
-    screen = <Invite code={code} room={inviteRoom} profile={profile} setProfile={setProfile} busy={busy} onJoin={() => joinWith(code, 'link')} />;
+    screen = <Invite code={code} room={inviteRoom} profile={gameProfile} setProfile={setHomeProfile} busy={busy} onJoin={() => joinWith(code, 'link')} />;
   } else if (view === 'error') {
     screen = <ErrorScreen kind={err?.kind} info={err?.info} onButton={goHome} onSolo={openSolo} />;
   } else if (g.me.waiting && ['spin', 'play', 'review', 'round'].includes(status)) {
@@ -589,6 +632,9 @@ export default function App() {
       {stopping && g && status === 'review' && <StopOverlay g={g} />}
       {g && view === 'room' && !solo && !g.me?.waiting && <IdleNotice g={g} />}
       {sheet === 'rules' && <RulesSheet onClose={() => setSheet(null)} />}
+      {sheet === 'primi' && <PrimiSheet primi={primi} onClose={() => setSheet(null)} onSignup={() => { setSheet(null); if (view === 'room') leave(); setView('account'); }} />}
+      {sheet === 'waitlist' && waitProduct && <WaitlistSheet product={waitProduct} defaultEmail={account.email} onClose={() => setSheet(null)}
+        onJoin={async (d) => { await account.joinWaitlist(d); stat('lista_attesa'); }} />}
       {sheet === 'online' && <OnlineSheet onClose={() => setSheet(null)} onJoin={() => setSheet('join')} onQuick={startQuick}
         onCreate={() => { setSheet(null); if (!needNet() && !needName()) setView('setup'); }} />}
       {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} onJoin={(c) => { setSheet(null); joinWith(c, 'codice'); }}

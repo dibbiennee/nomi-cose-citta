@@ -11,12 +11,12 @@ const PROJECT = process.env.GCLOUD_PROJECT || 'demo-ncc';
 const apps = [];
 let n = 0;
 async function phone() {
-  const app = initializeApp({ apiKey: 'demo', projectId: PROJECT, databaseURL: `http://127.0.0.1:${process.env.DBP || 9000}?ns=${PROJECT}-default-rtdb` }, `pr${n++}`);
+  const app = initializeApp({ apiKey: 'demo', projectId: PROJECT, databaseURL: `http://127.0.0.1:${process.env.DBP || 9100}?ns=${PROJECT}-default-rtdb` }, `pr${n++}`);
   apps.push(app);
   const auth = getAuth(app);
-  connectAuthEmulator(auth, `http://127.0.0.1:${process.env.AUP || 9099}`, { disableWarnings: true });
+  connectAuthEmulator(auth, `http://127.0.0.1:${process.env.AUP || 9199}`, { disableWarnings: true });
   const db = getDatabase(app);
-  connectDatabaseEmulator(db, '127.0.0.1', +(process.env.DBP || 9000));
+  connectDatabaseEmulator(db, '127.0.0.1', +(process.env.DBP || 9100));
   const { user } = await signInAnonymously(auth);
   return { uid: user.uid, db, read: (p) => get(ref(db, p)).then((s) => s.val()) };
 }
@@ -24,7 +24,7 @@ const denied = (p) => assert.rejects(p, /permission|PERMISSION_DENIED/i);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /** Imposta il contatore degli iscritti come amministratore (solo emulatore). */
 async function setIscritti(v) {
-  await fetch(`http://127.0.0.1:${process.env.DBP || 9000}/meta/iscritti.json?ns=${PROJECT}-default-rtdb`, { method: 'PUT', headers: { Authorization: 'Bearer owner' }, body: JSON.stringify(v) });
+  await fetch(`http://127.0.0.1:${process.env.DBP || 9100}/meta/iscritti.json?ns=${PROJECT}-default-rtdb`, { method: 'PUT', headers: { Authorization: 'Bearer owner' }, body: JSON.stringify(v) });
 }
 after(async () => { await Promise.all(apps.map((a) => deleteApp(a).catch(() => {}))); });
 

@@ -3,9 +3,21 @@
     "rules": "database.rules.json"
   },
   "emulators": {
-    "auth": { "port": 9099 },
-    "database": { "port": 9000 },
-    "ui": { "enabled": false },
-    "singleProjectMode": true
+    "auth": {
+      "port": 9199
+    },
+    "database": {
+      "port": 9100
+    },
+    "ui": {
+      "enabled": false
+    },
+    "singleProjectMode": true,
+    "hub": {
+      "port": 4410
+    },
+    "logging": {
+      "port": 4510
+    }
   }
 }

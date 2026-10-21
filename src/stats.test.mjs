@@ -10,12 +10,12 @@ const PROJECT = process.env.GCLOUD_PROJECT || 'demo-ncc';
 const apps = [];
 let n = 0;
 async function phone() {
-  const app = initializeApp({ apiKey: 'demo', projectId: PROJECT, databaseURL: `http://127.0.0.1:${process.env.DBP || 9000}?ns=${PROJECT}-default-rtdb` }, `s${n++}`);
+  const app = initializeApp({ apiKey: 'demo', projectId: PROJECT, databaseURL: `http://127.0.0.1:${process.env.DBP || 9100}?ns=${PROJECT}-default-rtdb` }, `s${n++}`);
   apps.push(app);
   const auth = getAuth(app);
-  connectAuthEmulator(auth, `http://127.0.0.1:${process.env.AUP || 9099}`, { disableWarnings: true });
+  connectAuthEmulator(auth, `http://127.0.0.1:${process.env.AUP || 9199}`, { disableWarnings: true });
   const db = getDatabase(app);
-  connectDatabaseEmulator(db, '127.0.0.1', +(process.env.DBP || 9000));
+  connectDatabaseEmulator(db, '127.0.0.1', +(process.env.DBP || 9100));
   const { user } = await signInAnonymously(auth);
   return { uid: user.uid, db, read: (path) => get(ref(db, path)).then((s) => s.val()) };
 }

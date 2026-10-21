@@ -13,12 +13,12 @@ let n = 0;
 
 /** Un telefono: app Firebase separata, accesso anonimo, motore. */
 async function phone(name) {
-  const app = initializeApp({ apiKey: 'demo', projectId: PROJECT, databaseURL: `http://127.0.0.1:${process.env.DBP || 9000}?ns=${PROJECT}-default-rtdb` }, `p${n++}`);
+  const app = initializeApp({ apiKey: 'demo', projectId: PROJECT, databaseURL: `http://127.0.0.1:${process.env.DBP || 9100}?ns=${PROJECT}-default-rtdb` }, `p${n++}`);
   apps.push(app);
   const auth = getAuth(app);
-  connectAuthEmulator(auth, `http://127.0.0.1:${process.env.AUP || 9099}`, { disableWarnings: true });
+  connectAuthEmulator(auth, `http://127.0.0.1:${process.env.AUP || 9199}`, { disableWarnings: true });
   const db = getDatabase(app);
-  connectDatabaseEmulator(db, '127.0.0.1', +(process.env.DBP || 9000));
+  connectDatabaseEmulator(db, '127.0.0.1', +(process.env.DBP || 9100));
   const { user } = await signInAnonymously(auth);
   const engine = createEngine(db, user.uid);
   const profile = { name, color: n % 6, face: n % 6 };
@@ -263,7 +263,7 @@ test('host collegato ma fermo: dopo un minuto il posto passa al giocatore succes
 // ---------- attacchi dall'audit di sicurezza: le regole devono respingerli ----------
 
 const big = (kb) => 'x'.repeat(kb * 1024);
-const DB_HTTP = `http://127.0.0.1:${process.env.DBP || 9000}`;
+const DB_HTTP = `http://127.0.0.1:${process.env.DBP || 9100}`;
 const NS = `?ns=${PROJECT}-default-rtdb`;
 /** Scrittura da amministratore sull'emulatore (salta le regole): serve solo a preparare i casi. */
 const admin = (path, body) => fetch(`${DB_HTTP}/${path}.json${NS}`, { method: 'PUT', headers: { Authorization: 'Bearer owner' }, body: JSON.stringify(body) });

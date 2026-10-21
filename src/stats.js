@@ -24,6 +24,9 @@ export const STAT_KEYS = [
   // il resto
   'fondatore_attivato', 'raffaella_scelta', 'guida_aperta', 'installazioni',
   'partite_veloci', // partite formate dalla coda della partita veloce
+  // account e richiesta dei prodotti a soldi veri (ancora in vetrina)
+  'account_creati', 'lista_attesa',
+  'richiesta_monete_500', 'richiesta_monete_1200', 'richiesta_monete_3500', 'richiesta_username_corto',
 ];
 /** Contatori che si sommano a minuti (fino a 120 alla volta) invece che di uno. */
 export const MINUTE_KEYS = ['minuti_online', 'minuti_solo'];

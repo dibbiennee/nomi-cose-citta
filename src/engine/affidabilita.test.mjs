@@ -12,7 +12,7 @@ import { getDatabase, connectDatabaseEmulator, ref, get, set, goOffline, goOnlin
 import { createEngine, SPIN_MS, COUNTDOWN_MS, HOST_GRACE_MS } from './room.js';
 
 const PROJECT = process.env.GCLOUD_PROJECT || 'demo-ncc';
-const DBP = +(process.env.DBP || 9000), AUP = +(process.env.AUP || 9099);
+const DBP = +(process.env.DBP || 9100), AUP = +(process.env.AUP || 9199);
 const apps = new Set();
 let n = 0;
 

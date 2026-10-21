@@ -87,6 +87,53 @@ export function Cerco({ found, waitedMs, botWaitMs, onCancel }) {
   );
 }
 
+/** Dopo la prima partita: invito a registrarsi. Il "primi 100" compare solo se è vero (contatore reale). */
+export function PrimiSheet({ primi, onClose, onSignup }) {
+  return (
+    <Sheet onClose={onClose} gap={14} label="Crea l'account">
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px; line-height: 1.1; text-wrap: balance")}>{primi ? 'Complimenti, sei tra i primi 100 utenti!' : 'Ti è piaciuto?'}</h2>
+      <p style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; text-wrap: pretty')}>{primi
+        ? 'Registrati gratuitamente e ricevi 1000 monete. Salva i tuoi progressi e ricevi gli accessori esclusivi.'
+        : 'Registrati gratuitamente e ricevi 300 monete. Salva i tuoi progressi e sblocca gli accessori.'}</p>
+      <button type="button" className="n-btn" onClick={onSignup} style={sx('height: 58px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Registrati gratis</button>
+      <button type="button" onClick={onClose} style={sx('min-height: 44px; border: 0; background: transparent; color: #5E5880; font-size: 15px; font-weight: 700; cursor: pointer')}>Più tardi</button>
+    </Sheet>
+  );
+}
+
+/** Prodotto a soldi veri non ancora in vendita: "In arrivo" e lista d'attesa con email e consenso esplicito. */
+export function WaitlistSheet({ product, defaultEmail, onClose, onJoin }) {
+  const [email, setEmail] = useState(defaultEmail || '');
+  const [consent, setConsent] = useState(false);
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const ok = consent && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!ok || busy) return;
+    setBusy(true);
+    try { await onJoin({ email: email.trim(), product: product.id, consent: true }); setDone(true); } catch (err) { setBusy(false); }
+  };
+  return (
+    <Sheet onClose={onClose} gap={14} label="In arrivo">
+      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px")}>In arrivo</h2>
+      {done ? <p role="status" style={sx('margin: 0; font-size: 16px; line-height: 1.5; text-wrap: pretty')}>Fatto: ti scriviamo una volta sola, quando apriranno gli&nbsp;acquisti.</p> : (
+        <form onSubmit={submit} style={sx('display: flex; flex-direction: column; gap: 12px')}>
+          <p style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; text-wrap: pretty')}>{product.nome} a {product.prezzo} non si può ancora comprare. Vuoi che ti avvisiamo quando&nbsp;apre?</p>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="la-tua@email.it" aria-label="La tua email" autoComplete="email"
+            style={sx('height: 52px; padding: 0 16px; border-radius: 16px; border: 2.5px solid #17122B; background: #F6F3FF; color: #17122B; font-size: 17px; font-weight: 700; outline: none')} />
+          <label style={sx('display: flex; gap: 10px; align-items: flex-start; font-size: 15px; line-height: 1.45; cursor: pointer')}>
+            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={sx('width: 24px; height: 24px; margin: 0; flex-shrink: 0; accent-color: #5B3FD6')} />
+            <span>Voglio ricevere un'email quando apriranno gli acquisti. Niente altro. <a href="/privacy" style={sx('color: #17122B; font-weight: 700')}>Privacy</a></span>
+          </label>
+          <button type="submit" className="n-btn" aria-disabled={!ok} style={sx(`height: 56px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer; opacity: ${ok ? 1 : 0.45}`)}>Avvisami</button>
+        </form>
+      )}
+      <button type="button" onClick={onClose} style={sx('min-height: 44px; border: 0; background: transparent; color: #5E5880; font-size: 15px; font-weight: 700; cursor: pointer')}>Chiudi</button>
+    </Sheet>
+  );
+}
+
 /** Codice stanza, oppure CANT per la Modalità Fondatore (che il motore non usa mai come stanza). */
 export function JoinSheet({ onClose, onJoin, onFounder }) {
   const [code, setCode] = useState('');

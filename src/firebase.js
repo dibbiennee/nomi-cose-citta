@@ -1,9 +1,10 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase, connectDatabaseEmulator } from 'firebase/database';
 import {
-  getAuth, initializeAuth, browserSessionPersistence, connectAuthEmulator, signInAnonymously, onAuthStateChanged,
+  getAuth, initializeAuth, browserSessionPersistence, connectAuthEmulator,
 } from 'firebase/auth';
 import { createEngine } from './engine/room.js';
+import { ensureSignedIn } from './account/accesso.js';
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -22,23 +23,17 @@ const EMULATOR = process.env.REACT_APP_EMULATOR === '1';
 export const db = getDatabase(app);
 export const auth = EMULATOR ? initializeAuth(app, { persistence: browserSessionPersistence }) : getAuth(app);
 if (EMULATOR) {
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-  connectDatabaseEmulator(db, '127.0.0.1', 9000);
+  connectAuthEmulator(auth, 'http://127.0.0.1:9199', { disableWarnings: true });
+  connectDatabaseEmulator(db, '127.0.0.1', 9100);
 }
 
 let enginePromise = null;
 
-/** Accesso anonimo (una volta sola) e motore della stanza legato a questo utente. */
+/** Accesso (anonimo se serve, una volta sola) e motore della stanza legato a questo utente. */
 export function getEngine() {
   if (!enginePromise) {
-    enginePromise = new Promise((resolve, reject) => {
-      const off = onAuthStateChanged(auth, (user) => {
-        if (!user) return;
-        off();
-        resolve(createEngine(db, user.uid));
-      }, reject);
-      signInAnonymously(auth).catch((err) => { enginePromise = null; reject(err); });
-    });
+    // Prima si aspetta l'accesso salvato (anonimo o account registrato): l'anonimo nuovo solo se non c'è nessuno.
+    enginePromise = ensureSignedIn(auth).then((user) => createEngine(db, user.uid)).catch((err) => { enginePromise = null; throw err; });
   }
   return enginePromise;
 }
