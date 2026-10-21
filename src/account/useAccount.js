@@ -3,7 +3,7 @@ import { ref, onValue, get } from 'firebase/database';
 import { onIdTokenChanged, getRedirectResult, GoogleAuthProvider, signInWithCredential, isSignInWithEmailLink } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { isRegistered, linkGoogle, sendEmailLink, completeEmailLink, signOutToAnonymous, deleteAccount, reauthGoogle, usesGoogle, EMAIL_KEY, MODE_KEY } from './accesso';
-import { createProfile, earnCoins, claimDaily, buyItem, equip, setUsername, claimInvites, joinWaitlist, leaveWaitlist, isOnWaitlist, deleteProfile, gameCoins } from './profilo';
+import { createProfile, earnCoins, touchDay, claimMilestones, finishGame, claimDaily, buyItem, equip, setUsername, claimInvites, joinWaitlist, leaveWaitlist, isOnWaitlist, deleteProfile, gameCoins } from './profilo';
 import { isStandalone } from '../ui/installa';
 import { dayKey } from '../stats';
 
@@ -28,6 +28,7 @@ try {
 export function useAccount({ ready, stat, toast }) {
   const [, setVer] = useState(0);
   const [profile, setProfile] = useState(null);
+  const [festa, setFesta] = useState(null); // traguardo appena raggiunto: { n, coins, items }
   const user = auth.currentUser;
   const registered = isRegistered(user);
   const uid = user?.uid;
@@ -129,6 +130,17 @@ export function useAccount({ ready, stat, toast }) {
         const got = Math.min(20, queued);
         if (await earnCoins(db, uid, got).then(() => true, () => false)) toast(`+${got} monete: l'ultima partita`);
       }
+      // Prima i giorni di fila (e i traguardi), poi il bonus in monete che ne dipende.
+      const t = await touchDay(db, uid, dayKey(Date.now())).catch(() => null);
+      if (t) {
+        if (t.event === 'riparte') statRef.current('serie_persa');
+        if (t.event === 'scudo') statRef.current('scudo_usato');
+        if (t.reached.length) {
+          const got = await claimMilestones(db, uid, t.reached).catch(() => ({ coins: 0, items: [] }));
+          t.reached.forEach((n) => statRef.current(`serie_${n}`));
+          if (got.coins) setFesta({ n: t.reached[t.reached.length - 1], coins: got.coins, items: got.items });
+        }
+      }
       const d = await claimDaily(db, uid, dayKey(Date.now())).catch(() => null);
       if (d) toast(d.streak > 1 ? `+${d.amount} monete: ${d.streak} giorni di fila` : `+${d.amount} monete: bonus del giorno`);
       const inv = await claimInvites(db, uid).catch(() => 0);
@@ -143,14 +155,16 @@ export function useAccount({ ready, stat, toast }) {
     // Prima in coda, poi si prova: se la rete manca o la pagina si chiude, alla prossima apertura le monete arrivano.
     lsSet(QUEUE_KEY, String(amount));
     const wait = new Promise((resolve) => setTimeout(() => resolve('lento'), 8000));
-    const done = await Promise.race([earnCoins(db, uid, amount).then(() => 'ok', () => 'no'), wait]);
-    if (done === 'ok') lsSet(QUEUE_KEY, null);
-    return done === 'ok' ? { amount, kept: true } : { amount, kept: false, late: true };
+    const done = await Promise.race([finishGame(db, uid, { result, today: dayKey(Date.now()) }).catch(() => 'no'), wait]);
+    if (done === 'lento' || done === 'no') return { amount, kept: false, late: true };
+    lsSet(QUEUE_KEY, null);
+    if (done.chest) { statRef.current('scrigni_aperti'); if (done.chest.kind === 'raro') statRef.current('scrigni_rari'); }
+    return { amount, kept: true, chest: done.chest, done: done.done };
   }, [registered, uid]);
 
   const afterSwitch = (r) => { if (r && r.merged) window.location.reload(); };
   return {
-    user, uid, registered, profile,
+    user, uid, registered, profile, festa, closeFesta: () => setFesta(null),
     email: user?.email || '',
     coins: profile?.coins ?? 0,
     earn,

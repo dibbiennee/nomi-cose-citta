@@ -28,6 +28,8 @@ import { createQueue, BOT_WAIT_MS, JOIN_WAIT_MS, QUICK_SIZE } from './engine/cod
 import { useAccount } from './account/useAccount';
 import Account from './screens/Account';
 import Negozio from './screens/Negozio';
+import { useRitorno } from './ritorno/useRitorno';
+import { OggiSheet, FestaSheet } from './screens/Oggi';
 import { NEED_NET, Cerco, PrimiSheet, WaitlistSheet, ErrorScreen, RulesSheet, OnlineSheet, JoinSheet, FounderSheet, InstallSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
 
 const LOCAL = (() => { try { return window.localStorage; } catch (e) { return null; } })();
@@ -151,6 +153,7 @@ export default function App() {
 
   // ---------- Account ----------
   const account = useAccount({ ready: !!netEngine, stat, toast });
+  const ritorno = useRitorno({ account, stat, toast });
   // Con l'account si gioca con il proprio username e con gli accessori indossati.
   const gameProfile = account.registered && account.profile
     ? { ...profile, name: account.profile.username || profile.name, acc: account.profile.equipped || {} }
@@ -264,7 +267,8 @@ export default function App() {
     const { beaten } = r.counts ? recordStore.save(solo.difficulty, r) : { beaten: false };
     setSoloResult({ ...r, beaten, best: beaten ? r.ppw : before });
     stat('solo_finite');
-    afterGame({ won: r.won, unique: room.players?.me?.stats?.uniq || 0 });
+    const rankedSolo = ranking(room.players);
+    afterGame({ won: r.won, unique: room.players?.me?.stats?.uniq || 0, mode: 'solo', rank: rankedSolo.findIndex((p) => p.id === 'me') + 1, players: rankedSolo.length, humans: 1 });
     stat(`solo_${solo.difficulty}_finite`);
     if (r.won) stat(`solo_${solo.difficulty}_vinte`);
     if (beaten && r.counts) stat('record_battuti');
@@ -374,7 +378,11 @@ export default function App() {
       if (playing) {
         stat('giocatori_al_podio');
         const ranked = ranking(room.players);
-        afterGame({ won: ranked[0]?.id === engine.uid, unique: room.players?.[engine.uid]?.stats?.uniq || 0 });
+        const humans = Object.values(room.players).filter((p) => !p.bot && !p.waiting).length;
+        afterGame({
+          won: ranked[0]?.id === engine.uid, unique: room.players?.[engine.uid]?.stats?.uniq || 0,
+          mode: room.quick ? 'veloce' : 'online', rank: ranked.findIndex((p) => p.id === engine.uid) + 1, players: ranked.length, humans,
+        });
       }
       if (isHost) {
         stat('partite_online_finite');
@@ -595,7 +603,7 @@ export default function App() {
   else if (view === 'loading' || (view === 'room' && !g)) screen = <Loading />;
   else if (view === 'home') {
     screen = <Home profile={gameProfile} setProfile={setHomeProfile} nameLocked={nameLocked} onRules={() => setSheet('rules')}
-      onAccount={() => setView('account')} onShop={() => { setShopFrom('home'); setView('negozio'); }} account={account}
+      onAccount={() => setView('account')} onShop={() => { setShopFrom('home'); setView('negozio'); }} account={account} ritorno={ritorno} onOggi={() => setSheet('oggi')}
       onOnline={() => { stat('scelta_online'); setSheet('online'); }}
       founder={founder} onFounder={() => setSheet('founder')} onInstall={() => { stat('guida_aperta'); setSheet('install'); }} onSolo={() => { stat('scelta_solo'); setView('solo'); }} />;
   } else if (view === 'account') {
@@ -641,6 +649,8 @@ export default function App() {
       {g && view === 'room' && !solo && !g.me?.waiting && <IdleNotice g={g} />}
       {sheet === 'rules' && <RulesSheet onClose={() => setSheet(null)} />}
       {sheet === 'primi' && <PrimiSheet primi={primi} onClose={() => setSheet(null)} onSignup={() => { setSheet(null); if (view === 'room') leave(); setView('account'); }} />}
+      {sheet === 'oggi' && <OggiSheet r={ritorno} onClose={() => setSheet(null)} />}
+      {account.festa && <FestaSheet festa={account.festa} face={gameProfile} onClose={account.closeFesta} />}
       {sheet === 'waitlist' && waitProduct && <WaitlistSheet product={waitProduct} defaultEmail={account.email} onClose={() => setSheet(null)}
         onJoin={async (d) => { await account.joinWaitlist(d); stat('lista_attesa'); }} onLeave={account.leaveWaitlist} />}
       {sheet === 'online' && <OnlineSheet onClose={() => setSheet(null)} onJoin={() => setSheet('join')} onQuick={startQuick}

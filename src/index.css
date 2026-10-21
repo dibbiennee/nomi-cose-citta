@@ -120,4 +120,9 @@ p, li { text-wrap: pretty; hyphens: manual; }
 @keyframes nPeek{0%{transform:translateX(120%) rotate(18deg)}18%{transform:translateX(0) rotate(-8deg)}26%{transform:translateX(6%) rotate(-3deg)}80%{transform:translateX(6%) rotate(-5deg)}100%{transform:translateX(130%) rotate(20deg)}}
 @keyframes nJump{0%,100%{transform:translateY(0) scale(1.05,.95)}15%{transform:translateY(0) scale(.95,1.06)}50%{transform:translateY(-30px)}85%{transform:translateY(0) scale(1.04,.96)}}
 @keyframes nDroop{to{transform:translateY(8px) rotate(-9deg) scale(.95);filter:saturate(.35) brightness(.92)}}
+/* Scrigno sul podio: il coperchio si alza e il premio compare, una volta sola */
+.n-lid{transform-origin:6px 16px;animation:nLid .7s cubic-bezier(.25,1,.5,1) 2.4s both}
+.n-reward{animation:nReward .5s ease-out 2.8s both}
+@keyframes nLid{from{transform:rotate(0)}to{transform:rotate(-62deg)}}
+@keyframes nReward{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){*{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}

@@ -2,6 +2,7 @@ import React from 'react';
 import { sx, INK, Face, BotTag } from '../ui/kit';
 import { computeAwards, ranking } from '../engine/rules';
 import { formatPpw } from '../solo/record';
+import { Scrigno } from './Oggi';
 
 const AWARD = {
   fulmine: { title: 'FULMINE', color: '#FFD23F', text: (n) => (n === 1 ? 'Ha gridato STOP una volta' : `Ha gridato STOP ${n} volte`) },
@@ -89,9 +90,10 @@ export function Final({ g }) {
             {g.solo.beaten ? 'Nuovo record' : 'Record'}: {formatPpw(g.solo.beaten ? g.solo.ppw : g.solo.best)} punti a&nbsp;parola
           </p>
         )}
-        {g.coinLine && (
+        {g.coinLine && g.coinLine.kept && <Scrigno line={g.coinLine} />}
+        {g.coinLine && !g.coinLine.kept && (
           <p className="n-up" role="status" style={sx('margin: 0 0 14px; font-size: 15px; font-weight: 800; text-align: center; line-height: 1.4; animation-delay: 1.8s; text-wrap: balance')}>
-            {g.coinLine.kept ? `+${g.coinLine.amount} monete` : g.coinLine.late ? `${g.coinLine.amount} monete in arrivo: le trovi alla prossima apertura` : (
+            {g.coinLine.late ? `${g.coinLine.amount} monete in arrivo: le trovi alla prossima apertura` : (
               <>Avresti guadagnato {g.coinLine.amount}&nbsp;monete: <button type="button" onClick={g.openAccount} style={sx('border: 0; background: transparent; padding: 0; font: inherit; color: #17122B; text-decoration: underline; cursor: pointer')}>crea l'account per tenerle</button></>
             )}
           </p>

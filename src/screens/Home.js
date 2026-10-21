@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { OggiRow } from './Oggi';
 import { sx, INK, COLORS, FACES, Face } from '../ui/kit';
 import { isStandalone } from '../ui/installa';
 import { CLUB } from '../club/contenuti';
@@ -62,7 +63,7 @@ function useCompact() {
   return compact;
 }
 
-export default function Home({ profile, setProfile, onOnline, onRules, founder, onFounder, onInstall, onSolo, onAccount, onShop, account, nameLocked }) {
+export default function Home({ profile, setProfile, onOnline, onRules, founder, onFounder, onInstall, onSolo, onAccount, onShop, account, nameLocked, ritorno, onOggi }) {
   let k = 0;
   const c = useCompact();
   const tile = c ? { w: 48, h: 52, f: 29, r: 13 } : { w: 52, h: 58, f: 32, r: 14 };
@@ -95,6 +96,7 @@ export default function Home({ profile, setProfile, onOnline, onRules, founder, 
         <ProfilePicker profile={profile} setProfile={setProfile} founder={founder} faceSize={c ? 96 : 108} inputH={c ? 52 : 58} nameLocked={nameLocked} />
       </div>
       <div className="n-up" style={sx(`display: flex; flex-direction: column; gap: ${c ? 10 : 14}px; margin-top: auto; padding-top: ${c ? 16 : 24}px; animation-delay: .6s`)}>
+        {ritorno && <OggiRow r={ritorno} onOpen={onOggi} onAccount={onAccount} compact={c} />}
         <button className="n-btn" onClick={onOnline} style={sx(`height: ${c ? 56 : 62}px; border: 2.5px solid #17122B; border-radius: 20px; background: #17122B; color: #FFD23F; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #7A5F00; cursor: pointer`)}>Gioca online</button>
         <button className="n-btn" onClick={onSolo} style={sx(`height: ${c ? 56 : 62}px; border: 2.5px solid #17122B; border-radius: 20px; background: #B79CFF; color: #17122B; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer`)}>Gioca da solo</button>
         {!isStandalone() && <button onClick={onInstall} style={sx('min-height: 44px; margin-bottom: -10px; border: 0; background: transparent; color: #17122B; font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer')}>Usalo come un'app</button>}

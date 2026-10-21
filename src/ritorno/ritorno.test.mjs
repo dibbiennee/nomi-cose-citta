@@ -1,7 +1,7 @@
 // Serie di giorni, sfide e scrigno: logica pura. Esegui con: npm run test:rules
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MILESTONES, milestoneFor, advanceStreak, dayBefore } from './serie.js';
+import { MILESTONES, milestoneFor, advanceStreak, dayBefore, nextMilestone } from './serie.js';
 import { POOL, challengesFor, completed, ALL_DONE_BONUS } from './sfide.js';
 import { rollChest, RARI } from './scrigno.js';
 
@@ -130,4 +130,12 @@ test('scrigno: la media resta bassa e i lanci non superano mai 40 (tranne i 50 d
   }
   assert.ok(tot / n < 30, `media ${tot / n}`);
   assert.ok(rari / n > 0.02 && rari / n < 0.09, `rari ${rari / n}`);
+});
+
+test('prossimo traguardo: il primo oltre il giorno di oggi, poi ogni 100', () => {
+  assert.deepEqual(nextMilestone(1), { n: 3, coins: 50 });
+  assert.deepEqual(nextMilestone(3), { n: 7, coins: 150, item: 'cornice_scintille' });
+  assert.deepEqual(nextMilestone(99), { n: 100, coins: 3000, item: 'corona_fiamme' });
+  assert.deepEqual(nextMilestone(100), { n: 200, coins: 3000 });
+  assert.deepEqual(nextMilestone(250), { n: 300, coins: 3000 });
 });

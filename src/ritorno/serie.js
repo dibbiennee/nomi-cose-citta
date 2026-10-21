@@ -20,6 +20,14 @@ export function milestoneFor(n) {
   return null;
 }
 
+/** Il prossimo traguardo dopo il giorno `streak`: { n, coins, item? }. */
+export function nextMilestone(streak) {
+  const m = MILESTONES.find((x) => x.n > streak);
+  if (m) return m.item ? { n: m.n, coins: m.coins, item: m.item } : { n: m.n, coins: m.coins };
+  const n = (Math.floor(streak / EVERY_AFTER_100.every) + 1) * EVERY_AFTER_100.every;
+  return { n, coins: EVERY_AFTER_100.coins };
+}
+
 /** Il giorno n giorni prima di `day` (mezzogiorno UTC per non inciampare nell'ora legale). */
 export function dayBefore(day, n = 1) {
   const t = new Date(`${day}T12:00:00Z`);
