@@ -42,6 +42,9 @@ for await (const line of readline.createInterface({ input: process.stdin })) {
     await e.engine.saveAnswers(code, { animali: falsa, nomi: '' });
     await a.engine.pressStop(code, { animali: protette[0], nomi: '' });
     out({ L, protette, falsa });
+  } else if (cmd === 'avanti') {
+    await a.engine.nextCategory(code);
+    out({ reviewIdx: (await get(ref(a.db, `rooms/${code}/round/reviewIdx`))).val() });
   } else if (cmd === 'voti') {
     out({ voti: (await get(ref(a.db, `rooms/${code}/votes`))).val() });
   } else if (cmd === 'fine') { out({ ok: true }); process.exit(0); }

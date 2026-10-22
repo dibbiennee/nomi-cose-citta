@@ -36,6 +36,9 @@ export default function Review({ g }) {
   const votes = room.solo ? (room.votes?.[cat.key] || {}) : (senzaVotiProtetti({ [cat.key]: room.votes?.[cat.key] || {} }, room.answers, round.letter)[cat.key] || {});
   const res = scoreCategory(ids, catAnswers, votes, round.letter);
   const bubbles = useReactions(room, g.now);
+  // La lista resta la stessa tra una categoria e l'altra: a ogni "avanti" si riparte dalla prima parola in alto.
+  const lista = useRef(null);
+  useEffect(() => { lista.current?.scrollTo({ top: 0 }); }, [idx]);
   const voters = Math.max(1, ids.length - 1);
   const need = Math.floor(voters / 2) + 1; // bocciata se vota contro più di metà degli altri (isRejected)
 
@@ -59,7 +62,7 @@ export default function Review({ g }) {
           <h1 style={sx("margin: 0; min-width: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; overflow-wrap: anywhere")}>{cat.label}</h1>
         </div>
       </header>
-      <div className="n-scroll" style={sx('flex-grow: 1; overflow-y: auto; padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 12px')}>
+      <div ref={lista} className="n-scroll" style={sx('flex-grow: 1; overflow-y: auto; padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 12px')}>
         {!room.solo && <p style={sx('margin: 0; font-size: 13px; font-weight: 700; color: #5E5880')}>{need === 1 ? 'Basta 1 «non vale» per bocciare una parola.' : `Servono ${need} «non vale» per bocciare una parola.`}</p>}
         {g.scoring.map((p, i) => {
           const r = res[p.id], isMe = p.id === uid;
