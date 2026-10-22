@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { OggiRow } from './Oggi';
-import { sx, INK, COLORS, FACES, Face } from '../ui/kit';
+import { sx, INK, COLORS, FACES, Face, useCompact } from '../ui/kit';
 import { isStandalone } from '../ui/installa';
 import { CLUB } from '../club/contenuti';
 
@@ -52,17 +52,6 @@ export function ProfilePicker({ profile, setProfile, faceSize = 108, inputBg = '
 }
 
 /** Schermi bassi (iPhone con le barre di Safari, telefoni piccoli): tutto deve stare nella prima schermata. */
-function useCompact() {
-  const low = () => typeof window !== 'undefined' && window.innerHeight < 780;
-  const [compact, setCompact] = useState(low);
-  useEffect(() => {
-    const onResize = () => setCompact(low());
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-  return compact;
-}
-
 export default function Home({ profile, setProfile, onOnline, onRules, founder, onFounder, onInstall, onSolo, onAccount, onShop, account, nameLocked, ritorno, onOggi }) {
   let k = 0;
   const c = useCompact();

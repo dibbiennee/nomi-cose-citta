@@ -24,6 +24,7 @@ async function phone(i, name) {
 const out = (o) => console.log(JSON.stringify(o));
 const paso = async (nome, p) => { try { return await p; } catch (e) { console.error(`passo "${nome}" fallito: ${e.message}`); throw e; } };
 let bea, dani, elia, code;
+let robot = [];
 for await (const line of readline.createInterface({ input: process.stdin })) {
   const [cmd, arg] = line.trim().split(' ');
   if (cmd === 'unisciti') {
@@ -31,6 +32,29 @@ for await (const line of readline.createInterface({ input: process.stdin })) {
     [bea, dani, elia] = await Promise.all([phone(11, 'Bea'), phone(12, 'Dani'), phone(13, 'Elia')]);
     for (const x of [bea, dani, elia]) await paso(`entra ${x.profile.name}`, x.engine.joinRoom(code, x.profile));
     out({ ok: true });
+  } else if (cmd === 'folla') {
+    // "folla CODICE N": N telefoni robot entrano nella stanza (per misurare le schermate con tante persone)
+    code = arg;
+    const NOMI = ['Bea', 'Dani', 'Elia', 'Fabio', 'Gaia', 'Ivan', 'Lia', 'Marco', 'Nora'];
+    const quanti = Number(line.trim().split(' ')[2] || 3);
+    robot = await Promise.all(Array.from({ length: quanti }, (_, k) => phone(21 + k, NOMI[k % NOMI.length])));
+    for (const x of robot) await paso(`entra ${x.profile.name}`, x.engine.joinRoom(code, x.profile));
+    out({ ok: true, robot: robot.length });
+  } else if (cmd === 'folla-gioca') {
+    // tutti i robot scrivono una parola vera per ogni categoria (qualcuno uguale a un altro) e uno preme STOP
+    const room = async () => (await get(ref(robot[0].db, `rooms/${code}`))).val();
+    for (let i = 0; i < 120 && (await room()).status !== 'play'; i++) { await robot[0].engine.goPlay(code).catch(() => {}); await sleep(250); }
+    const stato = await room();
+    const L = stato.round.letter;
+    const per = (cat) => (LISTE[cat] || []).filter((w) => normalize(w).startsWith(normalize(L)) && w.length <= 20);
+    const parola = (cat, k) => { const l = per(cat); return l.length ? l[(k % 2 ? k - 1 : k) % l.length] : `${L}aaa`; };
+    for (const [k, x] of robot.entries()) {
+      const risposte = Object.fromEntries(stato.settings.cats.map((c) => [c.key, parola(c.key, k)]));
+      await paso(`risposte ${x.profile.name}`, x.engine.saveAnswers(code, risposte));
+    }
+    const prima = Object.fromEntries(stato.settings.cats.map((c) => [c.key, parola(c.key, 0)]));
+    await paso('STOP', robot[0].engine.pressStop(code, prima));
+    out({ L });
   } else if (cmd === 'gioca') {
     const room = async () => (await get(ref(bea.db, `rooms/${code}`))).val();
     for (let i = 0; i < 120 && (await room()).status !== 'play'; i++) { await bea.engine.goPlay(code).catch(() => {}); await sleep(250); }

@@ -64,10 +64,10 @@ export function Final({ g }) {
       <div style={sx('position: absolute; left: 0; right: 0; top: 0; height: 420px; pointer-events: none; overflow: hidden')} aria-hidden="true">
         {CONFETTI.map((k, i) => <span key={i} className="n-fall" style={sx(`position: absolute; top: 0; left: ${k.left}; width: ${k.w}; height: 14px; box-sizing: border-box; border-radius: 3px; border: 1.5px solid #17122B; background: ${k.color}; animation-duration: ${k.dur}; animation-delay: ${k.delay}`)} />)}
       </div>
-      <div className="n-scroll" style={sx('position: relative; height: 100%; box-sizing: border-box; padding: 40px 20px 26px; display: flex; flex-direction: column; align-items: center; overflow-y: auto')}>
+      <div className="n-scroll" style={sx('position: relative; height: 100%; box-sizing: border-box; padding: 22px 16px 14px; display: flex; flex-direction: column; align-items: center; overflow-y: auto')}>
         <span className="n-up" style={sx('height: 32px; padding: 0 14px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; display: flex; align-items: center; white-space: nowrap')}>PARTITA FINITA</span>
-        <h1 className="n-pop" style={sx("margin: 14px 0 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 44px; text-align: center; line-height: 1")}>{ranked[0] ? (ranked[0].id === uid ? 'Hai vinto!' : <>Vince <span className="ph">{ranked[0].name}!</span></>) : ''}</h1>
-        <div style={sx('flex-grow: 1; min-height: 300px; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 10px')}>
+        <h1 className="n-pop" style={sx("margin: 8px 0 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 34px; text-align: center; line-height: 1")}>{ranked[0] ? (ranked[0].id === uid ? 'Hai vinto!' : <>Vince <span className="ph">{ranked[0].name}!</span></>) : ''}</h1>
+        <div style={sx('flex-grow: 1; min-height: 230px; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 10px')}>
           {[1, 0, 2].filter((i) => ranked[i]).map((i) => {
             const p = ranked[i], sp = PODIUM[i];
             return (
@@ -98,18 +98,18 @@ export function Final({ g }) {
             )}
           </p>
         )}
-        <div style={sx('width: 100%; box-sizing: border-box; border-top: 2.5px solid #17122B; padding-top: 14px; display: flex; flex-direction: column; gap: 12px')}>
+        <div style={sx('width: 100%; box-sizing: border-box; border-top: 2.5px solid #17122B; padding-top: 10px; display: flex; flex-direction: column; gap: 6px')}>
           {ranked.slice(3).map((p, i) => (
-            <div key={p.id} className="n-up" style={sx('display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 10px; border-radius: 16px; border: 2.5px solid #17122B; background: #FFFFFF; animation-delay: 1s')}>
+            <div key={p.id} className="n-up" style={sx('display: flex; align-items: center; gap: 10px; padding: 4px 14px 4px 10px; border-radius: 14px; border: 2.5px solid #17122B; background: #FFFFFF; animation-delay: 1s')}>
               <span style={sx("font-family: 'JetBrains Mono', monospace; font-weight: 700; width: 22px; text-align: center")}>{i + 4}°</span>
               <Face p={p} size={32} small mood={p.id === lastId ? 'disperato' : 'normale'} />
               <span style={sx('flex-grow: 1; min-width: 0; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap')}>{name(p)}</span>{p.bot && <BotTag />}
               <span style={sx("font-family: 'JetBrains Mono', monospace; font-weight: 700; white-space: nowrap")}>{p.score || 0}&nbsp;pt</span>
             </div>
           ))}
-          <button className="n-btn" onClick={rematch} style={sx(`height: 62px; flex-shrink: 0; border: 2.5px solid ${isHost ? INK : '#CFC8EA'}; border-radius: 20px; background: ${isHost ? INK : '#EDE8FB'}; color: ${isHost ? '#FFD23F' : '#6F698F'}; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 ${isHost ? '#7A5F00' : '#CFC8EA'}; cursor: pointer`)}>{isHost ? 'Rivincita' : `Rivincita: decide ${g.hostName}`}</button>
-          {isHost && <button className="n-btn" onClick={() => g.act(() => g.engine.backToLobby(g.code))} style={sx('height: 54px; flex-shrink: 0; border-radius: 20px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 16px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Cambia categorie e round</button>}
-          <button className="n-btn" onClick={g.leave} style={sx('height: 54px; flex-shrink: 0; border-radius: 20px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 16px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Torna alla home</button>
+          <button className="n-btn" onClick={rematch} style={sx(`height: 52px; flex-shrink: 0; border: 2.5px solid ${isHost ? INK : '#CFC8EA'}; border-radius: 20px; background: ${isHost ? INK : '#EDE8FB'}; color: ${isHost ? '#FFD23F' : '#6F698F'}; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 ${isHost ? '#7A5F00' : '#CFC8EA'}; cursor: pointer`)}>{isHost ? 'Rivincita' : `Rivincita: decide ${g.hostName}`}</button>
+          {isHost && <button className="n-btn" onClick={() => g.act(() => g.engine.backToLobby(g.code))} style={sx('height: 48px; flex-shrink: 0; border-radius: 18px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 15px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Cambia categorie e round</button>}
+          <button className="n-btn" onClick={g.leave} style={sx('height: 48px; flex-shrink: 0; border-radius: 18px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 15px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Torna alla home</button>
         </div>
       </div>
     </div>

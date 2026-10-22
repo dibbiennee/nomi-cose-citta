@@ -73,16 +73,16 @@ async def scenario(p, acceso):
     if chiamate:
         mandate = {x['testo'] for x in chiamate[0]['parole']}
         check('ha mandato le parole nuove e non quella del dizionario', info['nuova'] in mandate and info['falsa'] in mandate and info['vera'] not in mandate, sorted(mandate))
-    check('la città del dizionario ha l\'etichetta "Nel dizionario"', 'Nel dizionario' in corpo)
+    check('nessuna etichetta tecnica (dizionario, verificata) sulle righe', 'dizionario' not in corpo.lower() and 'verificata' not in corpo.lower())
     if acceso:
-        check('la parola valida per il giudice ha l\'etichetta "Verificata"', 'Verificata' in corpo)
-        check('la parola inesistente è "bocciata dal giudice" ("Non esiste" è anche una reazione: si controlla la scritta di riga)', 'bocciata dal giudice' in corpo and await pg.locator('span', has_text=re.compile('^Non esiste$')).count() >= 1)
-        tasto_falsa = pg.get_by_role('button', name=re.compile(f"Non vale: {info['falsa']} di Elia"))
-        check('la parola inesistente ha il tasto spento che spiega', await tasto_falsa.count() == 1 and (await tasto_falsa.get_attribute('aria-disabled')) == 'true')
-        await tasto_falsa.click(force=True); await pg.wait_for_timeout(400)
-        check('il tocco spiega che il voto non cambia niente', 'bocciata dal giudice: il voto non cambia niente' in (await pg.locator('body').inner_text()).replace(' ', ' '))
+        check('la parola valida per il giudice ha il suo tasto "Non vale" come le altre e prende i punti', await pg.get_by_role('button', name=re.compile(f"Non vale: {info['nuova']} di Dani")).count() == 1 and '+10' in corpo)
+        check('la parola inesistente è "non esiste" e non ha il tasto per votare', 'non esiste' in corpo and await pg.get_by_role('button', name=re.compile(f"Non vale: {info['falsa']} di Elia")).count() == 0)
+        # toccare "Non vale" su una parola che esiste spiega, senza voto
+        tasto_vera = pg.get_by_role('button', name=re.compile(f"Non vale: {info['vera']} di Bea"))
+        await tasto_vera.click(); await pg.wait_for_timeout(400)
+        check('il tasto su una parola che esiste spiega che vale per tutti', 'esiste: vale per tutti' in (await pg.locator('body').inner_text()).replace('\u00a0', ' '))
     else:
-        check('spento: nessuna etichetta "Verificata" né "bocciata dal giudice"', 'Verificata' not in corpo and 'bocciata dal giudice' not in corpo)
+        check('spento: nessuna parola "non esiste"', 'non esiste' not in corpo.replace('Non esiste', ''))
         check('spento: le parole nuove si votano come sempre', await pg.get_by_role('button', name=re.compile(f"Non vale: {info['nuova']} di Dani")).count() == 1
               and await pg.get_by_role('button', name=re.compile(f"Non vale: {info['falsa']} di Elia")).count() == 1)
     await pg.screenshot(path=f'{OUT}/giudice-ia-{nome.lower()}.png')

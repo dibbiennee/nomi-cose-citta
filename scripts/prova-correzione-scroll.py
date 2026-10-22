@@ -21,7 +21,7 @@ async def main():
     code = chiedi('crea')['code']
     async with async_playwright() as p:
         br = await p.chromium.launch()
-        ctx = await br.new_context(viewport={'width': 390, 'height': 520}, device_scale_factor=2)  # schermo basso: la lista deve scorrere
+        ctx = await br.new_context(viewport={'width': 390, 'height': 400}, device_scale_factor=2)  # schermo basso: la lista deve scorrere
         pg = await ctx.new_page()
         errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
         await pg.goto(URL + '/'); await pg.wait_for_timeout(3000)

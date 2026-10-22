@@ -38,17 +38,17 @@ async def main():
         await pg.wait_for_timeout(3500)  # finisce l'animazione dello STOP, che copre la schermata
         body = (await pg.locator('body').inner_text()).replace('\u00a0', ' ')
         check('le tre parole del dizionario sono presenti', all(w.lower() in body.lower() for w in info['protette']))
-        check('le righe protette portano l\'etichetta "Nel dizionario"', body.count('Nel dizionario') == 3, body.count('Nel dizionario'))
+        check('nessuna etichetta tecnica sulle righe (dizionario, verificata): la riga è uguale alle altre', 'dizionario' not in body.lower() and 'verificata' not in body.lower())
         tasto = lambda parola, chi: pg.get_by_role('button', name=f'Non vale: {parola} di {chi}')
         vota_falsa = pg.get_by_role('button', name=f"Non vale: {info['falsa']} di Elia")
-        check('ogni parola del dizionario ha un tasto "Non vale" che spiega ma non vota', await tasto(p1, 'Anna').count() == 1 and await tasto(p2, 'Bea').count() == 1 and await tasto(p3, 'Dani').count() == 1)
+        check('ogni parola che esiste ha un tasto "Non vale" che spiega ma non vota', await tasto(p1, 'Anna').count() == 1 and await tasto(p2, 'Bea').count() == 1 and await tasto(p3, 'Dani').count() == 1)
         check('la parola finta ha il tasto "Non vale" vero', await vota_falsa.count() == 1)
         await pg.screenshot(path=f'{OUT}/giudice-correzione.png')
         # tre tocchi sulla STESSA parola: spiega, ma non è un avviso
         for k in range(3):
             await tasto(p1, 'Anna').click(force=True); await pg.wait_for_timeout(350)
         t = (await pg.locator('body').inner_text()).replace('\u00a0', ' ')
-        check('toccare più volte la stessa parola spiega e non avvisa', 'è nel dizionario: vale per tutti' in t and 'Hai provato a bocciare' not in t)
+        check('toccare più volte la stessa parola spiega e non avvisa', 'esiste: vale per tutti' in t and 'Hai provato a bocciare' not in t)
         await tasto(p2, 'Bea').click(force=True); await pg.wait_for_timeout(350)
         t = (await pg.locator('body').inner_text()).replace('\u00a0', ' ')
         check('due parole diverse: ancora nessun avviso', 'Hai provato a bocciare' not in t)
