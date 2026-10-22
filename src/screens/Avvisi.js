@@ -54,6 +54,7 @@ export function RulesSheet({ onClose }) {
         ))}
       </div>
       <p style={sx('margin: 0; font-size: 12px; line-height: 1.45; color: #5E5880')}><strong style={sx('color: #17122B')}>Privacy.</strong> Per giocare salviamo nella stanza il nome, la faccina e il colore che scegli, le risposte e i punteggi, legati a un codice anonimo. Stanno su Firebase di Google (database in Belgio) e il sito è ospitato da Vercel. Niente account, pubblicità o cookie di profilazione. Contiamo in forma anonima visite e partite (Vercel Web Analytics, senza cookie, e contatori su Firebase) per capire come va il gioco. La stanza si cancella quando l'ultimo esce; per far cancellare i tuoi dati scrivi a <a href="mailto:info@satoshiweb.it" style={sx('color: #17122B; font-weight: 700')}>info@satoshiweb.it</a>. <a href="/privacy" style={sx('color: #17122B; font-weight: 700')}>Informativa completa</a>.</p>
+      <p style={sx('margin: 0; font-size: 12px; line-height: 1.45; color: #5E5880')}><strong style={sx('color: #17122B')}>Parole.</strong> Quelle del dizionario del gioco non si possono bocciare votando. L'elenco dei comuni italiani è dell'ISTAT.</p>
       <button className="n-btn" onClick={onClose} style={sx('height: 58px; flex-shrink: 0; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 17px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer')}>Ho capito</button>
     </Sheet>
   );

@@ -41,8 +41,9 @@ vera tolta resta votabile come oggi; una parola finta protetta no.
 ## Dimensioni (22 ottobre 2026)
 
 12.331 voci in tutto: Città 8.426 (7.891 comuni ISTAT più 535 città estere), Nomi 664, Animali 660, Cibi 809,
-Mestieri 527, Cose 355, Film 441, Calciatori 449. Le liste pesano circa 77 KB compressi (limite 400 KB) e si
-scaricano solo entrando in una stanza online.
+Mestieri 527, Cose 355, Film 441, Calciatori 449. Le liste stanno in un pezzo a parte di circa 59 KB compressi (limite
+400 KB): il gioco le usa solo entrando in una stanza online, ma il service worker le tiene in copia insieme agli altri
+file, quindi di solito sono già sul telefono. Il credito della fonte dei comuni (ISTAT) compare nel pannello "Come si gioca".
 
 ## Cosa NON fa
 

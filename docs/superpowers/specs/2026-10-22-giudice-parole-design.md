@@ -74,6 +74,21 @@ quelle che conosce.
   risultato, perché il dizionario dei robot non boccia parole che conosce. La partita da soli resta com'è: la
   schermata solo usa già `room.solo.known`; l'etichetta "nel dizionario" compare solo nelle stanze online.
 
+## Aggiunte e scostamenti durante la costruzione
+
+- **Il tasto "Non vale" resta sulle righe protette, ma non vota** (tasto spento): spiega che la parola è nel
+  dizionario e serve all'avviso. Scostamento dalla riga "senza tasto per bocciare" scelto per rispondere alla richiesta
+  di Edoardo di avvisare chi boccia sempre parole che esistono.
+- **Avviso privato:** alla terza parola **diversa** del dizionario che una persona prova a bocciare in 10 minuti,
+  e poi ogni tre, compare un avviso solo sul suo telefono. Toccare più volte la stessa parola non conta. Il conteggio
+  sta sul telefono: nessun dato nel database.
+- **Partita veloce con robot:** non è del tutto invariata. Un robot non può più votare contro una parola umana che il
+  dizionario grande conosce e quello dei robot no, e gli umani non possono bocciare le parole giuste dei robot. Si
+  boccia solo di meno, mai di più.
+- **L'host riprova a caricare il dizionario** nel momento in cui fa avanzare il punteggio (tasto della correzione), se
+  all'ingresso non era arrivato.
+- L'apostrofo tipografico (come lo scrive un telefono) e quello dritto sono lo stesso segno nel confronto.
+
 ## Sicurezza e correttezza
 
 - Il verdetto "protetta" lo calcola ogni telefono dallo stesso dizionario e dalla stessa parola: nessun dato nuovo

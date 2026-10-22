@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { sx, INK, Face, hostButtonStyle, BotTag } from '../ui/kit';
 import { scoreCategory } from '../engine/rules';
-import { senzaVotiProtetti, isProtetta, tentativiSuParoleVere } from '../giudice/protezione';
+import { senzaVotiProtetti, isProtetta, tentativiSuParoleVere, caricaDizionario } from '../giudice/protezione';
 
 const TAGS = { empty: 'vuota', wrongLetter: 'lettera sbagliata', rejected: 'bocciata dalla stanza', solo: 'unico a rispondere', duplicate: 'doppia', unique: 'unica' };
 const PTS_BG = { 20: '#FFD23F', 10: '#6EE7A8', 5: '#5CD0FF', 0: '#E6E0F7' };
@@ -41,7 +41,8 @@ export default function Review({ g }) {
 
   const next = () => {
     if (!isHost) { g.toast(`Va avanti ${g.hostName}`); return; }
-    g.act(() => g.engine.nextCategory(g.code));
+    // L'host riprova a caricare il dizionario proprio ora (se all'ingresso non era arrivato): i punti si calcolano qui.
+    g.act(async () => { await caricaDizionario(); return g.engine.nextCategory(g.code); });
   };
 
   return (
@@ -82,7 +83,7 @@ export default function Review({ g }) {
                 {!isMe && known && (
                   <button className="n-press" aria-disabled="true" aria-label={`Non vale: ${r.text} di ${p.name}. È nel dizionario, vale per tutti`}
                     onClick={() => {
-                      const t = tentativiSuParoleVere.registra(g.code);
+                      const t = tentativiSuParoleVere.registra(g.code, `${cat.key}:${p.id}`);
                       g.toast(t.avviso ? `Hai provato a bocciare ${t.n} parole che esistono. Il dizionario le protegge: non serve votare.` : `«${r.text}» è nel dizionario: vale per tutti, il voto non conta.`);
                     }}
                     style={sx('height: 44px; padding: 0 12px; border-radius: 12px; border: 2px solid #CFC8EA; background: #EDE8FB; color: #6F698F; font-size: 13px; font-weight: 800; cursor: pointer; align-self: flex-start; margin-top: 8px')}>Non vale</button>

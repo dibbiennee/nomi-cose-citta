@@ -64,21 +64,36 @@ test('senzaVotiProtetti: categorie o risposte mancanti non danno errore', () => 
   assert.deepEqual(senzaVotiProtetti(null, null, 'A'), {});
 });
 
-test('avviso privato: solo dopo 3 tentativi su parole del dizionario in 10 minuti, e poi ogni 3', () => {
+test('avviso privato: conta le parole diverse, non i tocchi: scatta alla terza parola e poi ogni 3', () => {
   const MIN = 60 * 1000;
   const c = creaContatoreTentativi(3, 10 * MIN);
-  assert.deepEqual(c.registra('ABCD', 0), { n: 1, avviso: false }, 'uno solo può essere curiosità');
-  assert.deepEqual(c.registra('ABCD', 1 * MIN), { n: 2, avviso: false });
-  assert.deepEqual(c.registra('ABCD', 2 * MIN), { n: 3, avviso: true });
-  assert.deepEqual(c.registra('ABCD', 3 * MIN), { n: 4, avviso: false });
-  assert.deepEqual(c.registra('ABCD', 4 * MIN), { n: 5, avviso: false });
-  assert.deepEqual(c.registra('ABCD', 5 * MIN), { n: 6, avviso: true });
+  assert.deepEqual(c.registra('ABCD', 'aquila', 0), { n: 1, avviso: false }, 'una sola può essere curiosità');
+  assert.deepEqual(c.registra('ABCD', 'aquila', 1 * MIN), { n: 1, avviso: false }, 'la stessa parola toccata ancora: nessun avviso');
+  assert.deepEqual(c.registra('ABCD', 'aquila', 1 * MIN), { n: 1, avviso: false });
+  assert.deepEqual(c.registra('ABCD', 'cane', 2 * MIN), { n: 2, avviso: false });
+  assert.deepEqual(c.registra('ABCD', 'lupo', 3 * MIN), { n: 3, avviso: true });
+  assert.deepEqual(c.registra('ABCD', 'lupo', 3 * MIN), { n: 3, avviso: false }, 'ritoccare la parola dell\'avviso non lo ripete');
+  assert.deepEqual(c.registra('ABCD', 'orso', 4 * MIN), { n: 4, avviso: false });
+  assert.deepEqual(c.registra('ABCD', 'gatto', 5 * MIN), { n: 5, avviso: false });
+  assert.deepEqual(c.registra('ABCD', 'topo', 6 * MIN), { n: 6, avviso: true });
 });
 
-test('avviso privato: i tentativi vecchi non contano e ogni stanza ha il suo conto', () => {
+test('avviso privato: le parole vecchie non contano e ogni stanza ha il suo conto', () => {
   const MIN = 60 * 1000;
   const c = creaContatoreTentativi(3, 10 * MIN);
-  c.registra('ABCD', 0); c.registra('ABCD', 1 * MIN);
-  assert.deepEqual(c.registra('ABCD', 30 * MIN), { n: 1, avviso: false }, 'dopo mezz\'ora i primi due sono dimenticati');
-  assert.deepEqual(c.registra('WXYZ', 30 * MIN), { n: 1, avviso: false }, 'altra stanza, altro conto');
+  c.registra('ABCD', 'aquila', 0); c.registra('ABCD', 'cane', 1 * MIN);
+  assert.deepEqual(c.registra('ABCD', 'lupo', 30 * MIN), { n: 1, avviso: false }, 'dopo mezz\'ora le prime due sono dimenticate');
+  assert.deepEqual(c.registra('WXYZ', 'aquila', 30 * MIN), { n: 1, avviso: false }, 'altra stanza, altro conto');
+});
+
+test('chiavi di categoria strane (constructor, toString, __proto__) non fanno andare in errore', () => {
+  const d = creaDizionario(LISTE);
+  for (const cat of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) assert.equal(d.ha(cat, 'Aquila', 'A'), false, cat);
+});
+
+test('l\'apostrofo tipografico (come lo scrive un telefono) vale come quello dritto', () => {
+  const d = creaDizionario({ citta: ["Aci Sant'Antonio"], cibi: ['Tonno sott’olio'] });
+  assert.equal(d.ha('citta', 'Aci Sant’Antonio', 'A'), true, 'dizionario dritto, testo tipografico');
+  assert.equal(d.ha('citta', "Aci Sant'Antonio", 'A'), true);
+  assert.equal(d.ha('cibi', "Tonno sott'olio", 'T'), true, 'dizionario tipografico, testo dritto');
 });
