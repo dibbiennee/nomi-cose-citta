@@ -131,3 +131,12 @@ test('un telefono di prova (?test=1) non conta nelle statistiche né nella prese
   await track(a.db, 'guida_aperta');
   assert.equal(await a.read(`stats/days/${day}/guida_aperta`), q0 + 1, 'tolto il flag, torna a contare');
 });
+
+test('la richiesta del Torneo delle 21 si conta come le altre', async () => {
+  assert.ok(STAT_KEYS.includes('richiesta_torneo_21'));
+  const a = await phone();
+  const day = dayKey(Date.now());
+  const r0 = (await a.read(`stats/days/${day}/richiesta_torneo_21`)) || 0;
+  await track(a.db, 'richiesta_torneo_21');
+  assert.equal(await a.read(`stats/days/${day}/richiesta_torneo_21`), r0 + 1);
+});

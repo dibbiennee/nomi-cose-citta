@@ -142,6 +142,14 @@ test('lista d\'attesa: solo con consenso, leggibile solo dal proprietario; cance
   assert.equal(await a.read(`waitlist/${a.uid}`), null);
 });
 
+test('lista d\'attesa del Torneo delle 21: stessa regola di consenso, senza account e senza prodotti inventati', async () => {
+  const a = await phone(); // anonimo: il torneo non richiede un account
+  await denied(joinWaitlist(a.db, a.uid, { email: 'a@example.com', product: 'torneo_21', consent: false }));
+  await denied(joinWaitlist(a.db, a.uid, { email: 'a@example.com', product: 'torneo_inventato', consent: true }));
+  await joinWaitlist(a.db, a.uid, { email: 'a@example.com', product: 'torneo_21', consent: true });
+  assert.deepEqual(Object.keys((await a.read(`waitlist/${a.uid}`)).products), ['torneo_21']);
+});
+
 // Difetti trovati nella revisione finale: ogni prova qui sotto, prima della correzione, passava dalle regole.
 
 test('cancellare i campi di controllo non riapre le monete', async () => {

@@ -52,22 +52,23 @@ export function ProfilePicker({ profile, setProfile, faceSize = 108, inputBg = '
 }
 
 /** Schermi bassi (iPhone con le barre di Safari, telefoni piccoli): tutto deve stare nella prima schermata. */
-export default function Home({ profile, setProfile, onOnline, onRules, founder, onFounder, onInstall, onSolo, onAccount, onShop, account, nameLocked, ritorno, onOggi }) {
+export default function Home({ profile, setProfile, onOnline, onTorneo, onRules, founder, onFounder, onInstall, onSolo, onAccount, onShop, account, nameLocked, ritorno, onOggi }) {
   let k = 0;
   const c = useCompact();
-  const tile = c ? { w: 48, h: 52, f: 29, r: 13 } : { w: 52, h: 58, f: 32, r: 14 };
+  const tile = c ? { w: 44, h: 48, f: 27, r: 12 } : { w: 52, h: 58, f: 32, r: 14 };
   return (
-    <div className="n-screen" style={sx(`position: absolute; inset: 0; background: #FFD23F; padding: ${c ? '10px 24px 8px' : '20px 24px 28px'}; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto`)}>
+    <div className="n-screen" style={sx(`position: absolute; inset: 0; background: #FFD23F; padding: ${c ? '10px 24px 8px' : '14px 24px 20px'}; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto`)}>
       <div style={sx('display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 6px')}>
         <div style={sx(`display: flex; gap: 6px; margin-right: ${founder ? '0' : 'auto'}`)}>
           <button className="n-btn" onClick={onAccount} aria-label={account?.registered ? `Account, ${account.coins} monete` : undefined} style={sx(`height: 44px; padding: 0 12px; border-radius: 999px; border: 2.5px solid #17122B; background: ${account?.registered ? '#FFD23F' : '#FFFFFF'}; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer; white-space: nowrap`)}>{account?.registered ? (window.innerWidth < 380 ? `${account.coins}` : `${account.coins} monete`) : 'Account'}</button>
           <button className="n-btn" onClick={onShop} style={sx('height: 44px; padding: 0 12px; border-radius: 999px; border: 2.5px solid #17122B; background: #B79CFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer; white-space: nowrap')}>Negozio</button>
+          <button className="n-btn" onClick={onTorneo} aria-label="Torneo delle 21, in arrivo" style={sx('height: 44px; padding: 0 12px; border-radius: 999px; border: 2.5px solid #17122B; background: #6EE7A8; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer; white-space: nowrap')}>Torneo</button>
         </div>
         {founder && <button className="n-btn" onClick={onFounder} style={sx('height: 44px; padding: 0 12px; margin-right: auto; border-radius: 999px; border: 2.5px solid #17122B; background: #B79CFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Fondatore</button>}
-        <button className="n-btn" onClick={onRules} style={sx('height: 44px; padding: 0 12px; border-radius: 999px; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Come si gioca</button>
+        <button className="n-btn" onClick={onRules} aria-label="Come si gioca" style={sx('width: 44px; height: 44px; padding: 0; font-family: inherit; border-radius: 50%; border: 2.5px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 14px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>?</button>
       </div>
       <h1 style={sx('position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0')}>Nomi Cose Città</h1>
-      <div aria-hidden="true" style={sx(`display: flex; flex-direction: column; gap: ${c ? 6 : 12}px; align-items: center; padding: ${c ? 8 : 22}px 0 0`)}>
+      <div aria-hidden="true" style={sx(`display: flex; flex-direction: column; gap: ${c ? 4 : 10}px; align-items: center; padding: ${c ? 6 : 16}px 0 0`)}>
         {WORDS.map((w, wi) => (
           <span key={wi} style={sx('display: flex; gap: 8px; padding: 4px; margin: -4px')}>
             {w.map((ch, i) => {
@@ -81,10 +82,10 @@ export default function Home({ profile, setProfile, onOnline, onRules, founder, 
           </span>
         ))}
       </div>
-      <div className="n-up" style={sx(`margin-top: ${c ? 12 : 30}px; display: flex; flex-direction: column; align-items: center; gap: ${c ? 10 : 14}px; animation-delay: .5s`)}>
-        <ProfilePicker profile={profile} setProfile={setProfile} founder={founder} faceSize={c ? 96 : 108} inputH={c ? 52 : 58} nameLocked={nameLocked} />
+      <div className="n-up" style={sx(`margin-top: ${c ? 8 : 22}px; display: flex; flex-direction: column; align-items: center; gap: ${c ? 8 : 14}px; animation-delay: .5s`)}>
+        <ProfilePicker profile={profile} setProfile={setProfile} founder={founder} faceSize={c ? 78 : 104} inputH={c ? 48 : 58} nameLocked={nameLocked} />
       </div>
-      <div className="n-up" style={sx(`display: flex; flex-direction: column; gap: ${c ? 10 : 14}px; margin-top: auto; padding-top: ${c ? 16 : 24}px; animation-delay: .6s`)}>
+      <div className="n-up" style={sx(`display: flex; flex-direction: column; gap: ${c ? 8 : 14}px; margin-top: auto; padding-top: ${c ? 10 : 18}px; animation-delay: .6s`)}>
         {ritorno && <OggiRow r={ritorno} onOpen={onOggi} onAccount={onAccount} compact={c} />}
         <button className="n-btn" onClick={onOnline} style={sx(`height: ${c ? 56 : 62}px; border: 2.5px solid #17122B; border-radius: 20px; background: #17122B; color: #FFD23F; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #7A5F00; cursor: pointer`)}>Gioca online</button>
         <button className="n-btn" onClick={onSolo} style={sx(`height: ${c ? 56 : 62}px; border: 2.5px solid #17122B; border-radius: 20px; background: #B79CFF; color: #17122B; font-size: 19px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer`)}>Gioca da solo</button>

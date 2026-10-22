@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { sx, Face, Sheet, BotTag } from '../ui/kit';
 import { isFounderCode } from '../club/fondatore';
-import { platform, canPrompt, onPromptChange, promptInstall } from '../ui/installa';
+import { platform, canPrompt, onPromptChange, promptInstall, isStandalone } from '../ui/installa';
 import { HOST_STEPS, IDLE_MS, withPresence } from '../engine/room';
 import { nextHost } from '../engine/rules';
 
@@ -103,7 +103,7 @@ export function PrimiSheet({ primi, onClose, onSignup }) {
 }
 
 /** Prodotto a soldi veri non ancora in vendita: "In arrivo" e lista d'attesa con email e consenso esplicito. */
-export function WaitlistSheet({ product, defaultEmail, onClose, onJoin, onLeave }) {
+export function WaitlistSheet({ product, defaultEmail, onClose, onJoin, onLeave, onInstall }) {
   const [email, setEmail] = useState(defaultEmail || '');
   const [consent, setConsent] = useState(false);
   const [done, setDone] = useState(false);
@@ -117,23 +117,47 @@ export function WaitlistSheet({ product, defaultEmail, onClose, onJoin, onLeave 
     setFailed(false);
     try { await onJoin({ email: email.trim(), product: product.id, consent: true }); setDone(true); } catch (err) { setBusy(false); setFailed(true); }
   };
+  const torneo = product.id === 'torneo_21';
+  // Per il torneo: spiegato a chi non sa cos'è una web app. Su iPhone gli avvisi arrivano solo a chi lo ha sulla Home.
+  const sullaHome = isStandalone();
+  const homeBox = torneo && (
+    <div style={sx('display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 20px; border: 2.5px solid #17122B; background: #F6F3FF')}>
+      <strong style={sx('font-size: 17px; font-weight: 800')}>{sullaHome ? 'Ce l\'hai già sulla Home' : 'Mettilo sulla Home del telefono'}</strong>
+      <p style={sx('margin: 0; font-size: 15px; line-height: 1.45; text-wrap: pretty')}>
+        {sullaHome
+          ? 'Perfetto: è come un\'app, e così potremo avvisarti quando il torneo sta per partire.'
+          : 'Così hai l\'icona del gioco tra le altre app e lo apri con un tocco. Non scarichi niente. In più potremo avvisarti quando il torneo sta per\u00a0partire. Su iPhone gli avvisi arrivano solo a chi lo ha sulla\u00a0Home.'}
+      </p>
+      {!sullaHome && onInstall && (
+        <button type="button" className="n-btn" onClick={onInstall} style={sx('height: 48px; border: 2.5px solid #17122B; border-radius: 16px; background: #FFFFFF; color: #17122B; font-size: 16px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Mettilo sulla Home</button>
+      )}
+    </div>
+  );
   return (
-    <Sheet onClose={onClose} gap={14} label="In arrivo">
-      <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px")}>In arrivo</h2>
+    <Sheet onClose={onClose} gap={14} label={torneo ? 'Torneo delle 21' : 'In arrivo'}>
+      {torneo ? (
+        <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 40px; line-height: 1")}>Torneo delle&nbsp;21</h2>
+      ) : (
+        <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px")}>In arrivo</h2>
+      )}
       {done ? (
         <>
-          <p role="status" style={sx('margin: 0; font-size: 16px; line-height: 1.5; text-wrap: pretty')}>Fatto: ti scriviamo una volta sola, quando apriranno gli&nbsp;acquisti.</p>
+          <p role="status" style={sx('margin: 0; font-size: 16px; line-height: 1.5; text-wrap: pretty')}>{torneo ? 'Fatto: ti scriviamo una volta sola, quando parte il\u00a0torneo.' : 'Fatto: ti scriviamo una volta sola, quando apriranno gli\u00a0acquisti.'}</p>
+          {homeBox}
           <button type="button" onClick={async () => { await onLeave().catch(() => {}); onClose(); }} style={sx('min-height: 44px; border: 0; background: transparent; color: #5E5880; font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer')}>Cambiato idea? Togli la mia email dalla&nbsp;lista</button>
         </>
       ) : (
         <form onSubmit={submit} style={sx('display: flex; flex-direction: column; gap: 12px')}>
-          <p style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; text-wrap: pretty')}>{product.nome} a {product.prezzo} non si può ancora comprare. Vuoi che ti avvisiamo quando&nbsp;apre?</p>
+          <p style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; text-wrap: pretty')}>{torneo
+            ? 'Ogni sera alle 21 la stessa lettera per tutti i giocatori, con una classifica unica. Stiamo preparando il primo torneo, gratis. Vuoi che ti avvisiamo quando\u00a0parte?'
+            : <>{product.nome} a {product.prezzo} non si può ancora comprare. Vuoi che ti avvisiamo quando&nbsp;apre?</>}</p>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="la-tua@email.it" aria-label="La tua email" autoComplete="email"
             style={sx('height: 52px; padding: 0 16px; border-radius: 16px; border: 2.5px solid #17122B; background: #F6F3FF; color: #17122B; font-size: 17px; font-weight: 700; outline: none')} />
           <label style={sx('display: flex; gap: 10px; align-items: flex-start; font-size: 15px; line-height: 1.45; cursor: pointer')}>
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={sx('width: 24px; height: 24px; margin: 0; flex-shrink: 0; accent-color: #5B3FD6')} />
-            <span>Voglio ricevere un'email quando apriranno gli acquisti. Niente altro. <a href="/privacy" style={sx('color: #17122B; font-weight: 700')}>Privacy</a></span>
+            <span>{torneo ? 'Voglio ricevere un\'email quando parte il torneo.' : 'Voglio ricevere un\'email quando apriranno gli acquisti.'} Niente altro. <a href="/privacy" style={sx('color: #17122B; font-weight: 700')}>Privacy</a></span>
           </label>
+          {homeBox}
           {failed && <p role="alert" style={sx('margin: 0; font-size: 14px; font-weight: 700; color: #C4300F')}>Non siamo riusciti a salvare l'email. Controlla la connessione e tocca di nuovo Avvisami.</p>}
           <button type="submit" className="n-btn" aria-disabled={!ok} style={sx(`height: 56px; border: 2.5px solid #17122B; border-radius: 18px; background: #FFD23F; color: #17122B; font-size: 18px; font-weight: 800; box-shadow: 0 5px 0 #17122B; cursor: pointer; opacity: ${ok ? 1 : 0.45}`)}>Avvisami</button>
         </form>

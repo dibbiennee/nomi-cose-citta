@@ -619,6 +619,7 @@ export default function App() {
   else if (view === 'loading' || (view === 'room' && !g)) screen = <Loading />;
   else if (view === 'home') {
     screen = <Home profile={gameProfile} setProfile={setHomeProfile} nameLocked={nameLocked} onRules={() => setSheet('rules')}
+      onTorneo={() => { stat('richiesta_torneo_21'); setWaitProduct({ id: 'torneo_21', nome: 'Il Torneo delle 21' }); setSheet('waitlist'); }}
       onAccount={() => setView('account')} onShop={() => { setShopFrom('home'); setView('negozio'); }} account={account} ritorno={ritorno} onOggi={() => setSheet('oggi')}
       onOnline={() => { stat('scelta_online'); setSheet('online'); }}
       founder={founder} onFounder={() => setSheet('founder')} onInstall={() => { stat('guida_aperta'); setSheet('install'); }} onSolo={() => { stat('scelta_solo'); setView('solo'); }} />;
@@ -667,7 +668,7 @@ export default function App() {
       {sheet === 'primi' && <PrimiSheet primi={primi} onClose={() => setSheet(null)} onSignup={() => { setSheet(null); if (view === 'room') leave(); setView('account'); }} />}
       {sheet === 'oggi' && <OggiSheet r={ritorno} onClose={() => setSheet(null)} />}
       {account.festa && <FestaSheet festa={account.festa} face={gameProfile} onClose={account.closeFesta} />}
-      {sheet === 'waitlist' && waitProduct && <WaitlistSheet product={waitProduct} defaultEmail={account.email} onClose={() => setSheet(null)}
+      {sheet === 'waitlist' && waitProduct && <WaitlistSheet product={waitProduct} defaultEmail={account.email} onClose={() => setSheet(null)} onInstall={() => { stat('guida_aperta'); setSheet('install'); }}
         onJoin={async (d) => { await account.joinWaitlist(d); stat('lista_attesa'); }} onLeave={account.leaveWaitlist} />}
       {sheet === 'online' && <OnlineSheet onClose={() => setSheet(null)} onJoin={() => setSheet('join')} onQuick={startQuick}
         onCreate={() => { setSheet(null); if (!needNet() && !needName()) setView('setup'); }} />}

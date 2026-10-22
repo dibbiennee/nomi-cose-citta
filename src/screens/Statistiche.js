@@ -196,7 +196,7 @@ export default function Statistiche() {
           <section style={card}>
             <h2 style={h2}>Account e richiesta</h2>
             <p style={note}>Account creati: {sum('account_creati')}. Iscritti alla lista d'attesa: {sum('lista_attesa')}. I prodotti a soldi veri sono solo in vetrina: qui si vede chi ha toccato "Compra".</p>
-            <Bars rows={[['500 monete', sum('richiesta_monete_500')], ['1200 monete', sum('richiesta_monete_1200')], ['3500 monete', sum('richiesta_monete_3500')], ['Username corto', sum('richiesta_username_corto')]]} />
+            <Bars rows={[['500 monete', sum('richiesta_monete_500')], ['1200 monete', sum('richiesta_monete_1200')], ['3500 monete', sum('richiesta_monete_3500')], ['Username corto', sum('richiesta_username_corto')], ['Torneo delle 21: avvisami', sum('richiesta_torneo_21')]]} />
           </section>
 
           <section style={card}>
