@@ -418,6 +418,18 @@
           ".validate": "newData.val() === true && $key.matches(/^(m_[0-9]{5}_[0-9]{1,4}|s_[0-9]{5}_s[1-8])$/)"
         }
       }
+    },
+    "giudizi": {
+      ".read": "auth != null",
+      ".write": false
+    },
+    "giudizi_meta": {
+      "giorni": {
+        ".read": true,
+        ".write": false
+      },
+      ".read": false,
+      ".write": false
     }
   }
 }
