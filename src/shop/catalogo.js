@@ -42,6 +42,7 @@ export const EARN = {
   base: 5, vittoria: 5, perUnica: 1, maxUniche: 10, // a partita finita: al massimo 20
   giornaliero: 20, serie: 10, giornalieroMax: 70, // bonus del giorno, che cresce coi giorni consecutivi
   invito: 200, maxInviti: 20,
+  home: 100, // regalo una tantum a chi apre il gioco dall'icona sulla Home con il suo account
   benvenutoPrimi: 1000, benvenuto: 300, primi: 100,
   scrigniGiorno: 10, // scrigni a fine partita al giorno
 };

@@ -30,7 +30,7 @@ export const STAT_KEYS = [
   'partite_veloci', // partite formate dalla coda della partita veloce
   // account e richiesta dei prodotti a soldi veri (ancora in vetrina)
   'account_creati', 'lista_attesa',
-  'richiesta_monete_500', 'richiesta_monete_1200', 'richiesta_monete_3500', 'richiesta_username_corto', 'richiesta_torneo_21',
+  'richiesta_monete_500', 'richiesta_monete_1200', 'richiesta_monete_3500', 'richiesta_username_corto', 'richiesta_torneo_21', 'home_bonus',
   // ritorno giornaliero: traguardi raggiunti, serie perse, scudi, sfide riscosse (per livello) e scrigni
   'serie_3', 'serie_7', 'serie_14', 'serie_30', 'serie_50', 'serie_100', 'serie_persa', 'scudo_usato',
   'sfida_facile', 'sfida_media', 'sfida_difficile', 'sfide_tutte', 'scrigni_aperti', 'scrigni_rari',

@@ -126,7 +126,7 @@ export function WaitlistSheet({ product, defaultEmail, onClose, onJoin, onLeave,
       <p style={sx('margin: 0; font-size: 15px; line-height: 1.45; text-wrap: pretty')}>
         {sullaHome
           ? 'Perfetto: è come un\'app, e così potremo avvisarti quando il torneo sta per partire.'
-          : 'Così hai l\'icona del gioco tra le altre app e lo apri con un tocco. Non scarichi niente. In più potremo avvisarti quando il torneo sta per\u00a0partire. Su iPhone gli avvisi arrivano solo a chi lo ha sulla\u00a0Home.'}
+          : 'Così hai l\'icona del gioco tra le altre app e lo apri con un tocco. Non scarichi niente. In più potremo avvisarti quando il torneo sta per\u00a0partire. Su iPhone gli avvisi arrivano solo a chi lo ha sulla\u00a0Home. Regalo: 100\u00a0monete se lo apri da lì con il tuo account.'}
       </p>
       {!sullaHome && onInstall && (
         <button type="button" className="n-btn" onClick={onInstall} style={sx('height: 48px; border: 2.5px solid #17122B; border-radius: 16px; background: #FFFFFF; color: #17122B; font-size: 16px; font-weight: 800; box-shadow: 0 4px 0 #17122B; cursor: pointer')}>Mettilo sulla Home</button>
@@ -218,6 +218,7 @@ export function InstallSheet({ onClose, toast }) {
     <Sheet onClose={onClose} gap={14} label="Usalo come un'app">
       <h2 style={sx("margin: 0; font-family: 'Bricolage Grotesque Variable', sans-serif; font-weight: 800; font-size: 28px; line-height: 1.1; text-wrap: balance")}>Mettilo sulla schermata Home</h2>
       <p style={sx('margin: 0; font-size: 16px; line-height: 1.5; color: #5E5880; text-wrap: pretty')}>Niente store e niente download. Lo apri dall'icona e&nbsp;si vede a tutto schermo, come&nbsp;un'app.</p>
+      <p style={sx('margin: 0; font-size: 15px; line-height: 1.45; font-weight: 700; text-wrap: pretty')}>Regalo: apri il gioco dall'icona, entra con il tuo account e ricevi 100&nbsp;monete.</p>
       {detected === 'app' && (
         <p style={sx('margin: 0; font-size: 15px; line-height: 1.45; font-weight: 700; text-wrap: pretty')}>Sei dentro un'altra app. Dal suo menu scegli <b>Apri nel browser</b>, poi segui&nbsp;i&nbsp;passi.</p>
       )}

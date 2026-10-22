@@ -62,6 +62,8 @@ const branches = [
   `(data.exists() && newData.val() <= data.val() + ${EARN.giornalieroMax} && ${P}.child('lastDailyAt').val() === now && (!${D}.child('lastDailyAt').exists() || ${D}.child('lastDailyAt').val() + 72000000 <= now))`,
   // invito riscosso
   `(data.exists() && newData.val() <= data.val() + ${EARN.invito} && ${P}.child('invitesClaimed').val() === ${D}.child('invitesClaimed').val() + 1 && ${P}.child('invitesClaimed').val() <= ${EARN.maxInviti} && root.child('invites').child($uid).child(${P}.child('lastInvite').val()).val() === true && ${ROOT_NEW}.child('invites').child($uid).child(${P}.child('lastInvite').val()).val() === 'preso')`,
+  // regalo per aver messo il gioco sulla Home: una volta per account (segno h_home)
+  `(data.exists() && newData.val() <= data.val() + ${EARN.home} && ${claim("'h_home'")})`,
   // traguardi della serie: una volta per serie
   ...milestones.map(([n, coins]) => `(data.exists() && newData.val() <= data.val() + ${coins} && ${P}.child('streak').val() >= ${n} && ${claim(`'m_' + ${P}.child('serieId').val() + '_${n}'`)})`),
   // sfide: una alla volta, ognuna col suo premio (più il bonus per averle fatte tutte)
@@ -93,7 +95,7 @@ rules.rules.claims = { $uid: {
   '.write': "auth != null && auth.uid === $uid && !newData.exists() && !newData.parent().parent().child('users').child($uid).exists()",
   $key: {
     '.write': 'auth != null && auth.uid === $uid && !data.exists() && newData.exists()',
-    '.validate': `newData.val() === true && $key.matches(/^(m_${D5}_[0-9]{1,4}|s_${D5}_s[1-8])$/)`,
+    '.validate': `newData.val() === true && $key.matches(/^(m_${D5}_[0-9]{1,4}|s_${D5}_s[1-8]|h_home)$/)`,
   },
 } };
 

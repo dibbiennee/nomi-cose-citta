@@ -3,7 +3,7 @@ import { ref, onValue, get } from 'firebase/database';
 import { onIdTokenChanged, getRedirectResult, GoogleAuthProvider, signInWithCredential, isSignInWithEmailLink } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { isRegistered, linkGoogle, sendEmailLink, completeEmailLink, signOutToAnonymous, deleteAccount, reauthGoogle, usesGoogle, EMAIL_KEY, MODE_KEY } from './accesso';
-import { createProfile, earnCoins, touchDay, claimMilestones, missingMilestones, finishGame, claimDaily, buyItem, equip, setUsername, claimInvites, joinWaitlist, leaveWaitlist, isOnWaitlist, deleteProfile, gameCoins } from './profilo';
+import { createProfile, earnCoins, touchDay, claimMilestones, missingMilestones, finishGame, claimDaily, buyItem, equip, setUsername, claimInvites, claimHomeBonus, joinWaitlist, leaveWaitlist, isOnWaitlist, deleteProfile, gameCoins } from './profilo';
 import { isStandalone } from '../ui/installa';
 import { dayKey } from '../stats';
 import { toDayN } from '../ritorno/serie';
@@ -171,6 +171,11 @@ export function useAccount({ ready, stat, toast }) {
       if (d) toast(d.streak > 1 ? `+${d.amount} monete: ${d.streak} giorni di fila` : `+${d.amount} monete: bonus del giorno`);
       const inv = await claimInvites(db, uid).catch(() => 0);
       if (inv) toast(`+${inv} monete: un amico è arrivato col tuo invito`);
+      // Aperto dall'icona sulla Home con l'account: regalo una tantum (il segno h_home lo impedisce la seconda volta).
+      if (isStandalone()) {
+        const home = await claimHomeBonus(db, uid).catch(() => 0);
+        if (home) { toast(`+${home} monete: hai messo il gioco sulla Home`); statRef.current('home_bonus'); }
+      }
       running.current = false;
     })().catch(() => { running.current = false; });
   }, [profile, uid, toast, tick]);

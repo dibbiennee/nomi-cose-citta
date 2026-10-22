@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, signInAnonymously, linkWithCredential, GoogleAuthProvider } from 'firebase/auth';
 import { getDatabase, connectDatabaseEmulator, ref, get, set, update, remove } from 'firebase/database';
-import { buyItem, createProfile, touchDay, claimMilestones, missingMilestones, finishGame, claimChallenge, claimDaily, deleteProfile } from './profilo.js';
+import { buyItem, createProfile, touchDay, claimMilestones, claimHomeBonus, HOME_BONUS, missingMilestones, finishGame, claimChallenge, claimDaily, deleteProfile } from './profilo.js';
 import { challengesFor, completed } from '../ritorno/sfide.js';
 import { toDayN } from '../ritorno/serie.js';
 
@@ -241,4 +241,22 @@ test('scrigno con raro: quando esce, arriva nella stessa scrittura della partita
   const r = await finishGame(a.db, a.uid, { result: { won: false, unique: 0, mode: 'solo', rank: 3, players: 4, humans: 1 }, today: TODAY, rng: () => 0.99 });
   assert.equal(r.chest.kind, 'raro');
   assert.equal(await a.read(`users/${a.uid}/owned/${r.chest.item}`), true);
+});
+
+test('bonus "gioco sulla Home": 100 monete una volta per account, e solo con il segno h_home', async () => {
+  const a = await account();
+  const coins0 = await a.read(`users/${a.uid}/coins`);
+  assert.equal(HOME_BONUS, 100);
+  assert.equal(await claimHomeBonus(a.db, a.uid), 100);
+  assert.equal(await a.read(`users/${a.uid}/coins`), coins0 + 100);
+  assert.equal(await a.read(`claims/${a.uid}/h_home`), true);
+  assert.equal(await claimHomeBonus(a.db, a.uid), 0, 'una volta sola');
+  assert.equal(await a.read(`users/${a.uid}/coins`), coins0 + 100, 'saldo invariato');
+  const b = await account();
+  const b0 = await b.read(`users/${b.uid}/coins`);
+  await denied(update(ref(b.db), { [`users/${b.uid}/coins`]: b0 + 100 }), 'monete senza il segno');
+  await denied(update(ref(b.db), { [`users/${b.uid}/coins`]: b0 + 1000, [`claims/${b.uid}/h_home`]: true }), 'più di 100');
+  await denied(update(ref(b.db), { [`claims/${b.uid}/h_inventato`]: true }), 'segni inventati');
+  await denied(remove(ref(a.db, `claims/${a.uid}/h_home`)), 'ripresa cancellando il segno');
+  assert.equal(await claimHomeBonus(b.db, b.uid), 100, 'il bonus regolare funziona');
 });

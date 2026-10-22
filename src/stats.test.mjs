@@ -140,3 +140,5 @@ test('la richiesta del Torneo delle 21 si conta come le altre', async () => {
   await track(a.db, 'richiesta_torneo_21');
   assert.equal(await a.read(`stats/days/${day}/richiesta_torneo_21`), r0 + 1);
 });
+
+test('il bonus della Home si conta', () => { assert.ok(STAT_KEYS.includes('home_bonus')); });

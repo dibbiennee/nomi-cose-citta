@@ -181,6 +181,15 @@ export async function touchDay(db, uid, today) {
   return { event: r.event, streak: st.streak, reached: r.reached };
 }
 
+/** Regalo per chi apre il gioco dall'icona sulla Home con il suo account: una volta sola, 100 monete. */
+export const HOME_BONUS = EARN.home;
+export async function claimHomeBonus(db, uid) {
+  const cur = (await get(userRef(db, uid))).val();
+  if (!cur || (await get(ref(db, `claims/${uid}/h_home`))).exists()) return 0;
+  try { await update(ref(db), { [`users/${uid}/coins`]: cur.coins + HOME_BONUS, [`claims/${uid}/h_home`]: true }); } catch (e) { return 0; }
+  return HOME_BONUS;
+}
+
 /**
  * Riscuote i traguardi raggiunti: monete (e accessorio dove previsto), una volta per serie. Ogni traguardo è una
  * scrittura sola, con il segno claims/{uid}/m_{serieId}_{n} che impedisce di riscuoterlo di nuovo.
