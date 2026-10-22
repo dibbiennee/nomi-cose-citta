@@ -23,6 +23,7 @@ async def scenario(p, acceso):
     nome = 'ACCESO' if acceso else 'SPENTO'
     print(f'\n--- servizio {nome} ---')
     db_put('giudizi', None)  # archivio vuoto: nessun verdetto rimasto da prove precedenti
+    db_put('giudizi_meta/attivo', bool(acceso))  # l'interruttore lo leggono anche i telefoni
     helper = subprocess.Popen(['node', 'scripts/_prova-giudice-ospite.mjs'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
     def chiedi(cmd):
         helper.stdin.write(cmd + '\n'); helper.stdin.flush()
@@ -69,7 +70,10 @@ async def scenario(p, acceso):
     await pg.wait_for_timeout(1500)
     corpo = (await pg.locator('body').inner_text()).replace(' ', ' ')
     check('la correzione di Città è aperta', await pg.get_by_role('heading', name='Città').count() > 0)
-    check('l\'host ha chiamato /api/giudica con il token', bool(chiamate) and chiamate[0]['auth'].startswith('Bearer ') and len(chiamate[0]['auth']) > 30, len(chiamate))
+    if acceso:
+        check('l\'host ha chiamato /api/giudica con il token', bool(chiamate) and chiamate[0]['auth'].startswith('Bearer ') and len(chiamate[0]['auth']) > 30, len(chiamate))
+    else:
+        check('spento: il telefono non chiama nemmeno il server', not chiamate, len(chiamate))
     if chiamate:
         mandate = {x['testo'] for x in chiamate[0]['parole']}
         check('ha mandato le parole nuove e non quella del dizionario', info['nuova'] in mandate and info['falsa'] in mandate and info['vera'] not in mandate, sorted(mandate))

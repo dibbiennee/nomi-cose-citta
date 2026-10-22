@@ -7,6 +7,7 @@
 import { cert, initializeApp } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
 import { chiaveParola } from '../src/giudice/chiave.mjs';
+import { CATEGORIE_PROTETTE } from '../src/giudice/protezione.js';
 
 const [, , cmd, a, b, c] = process.argv;
 const USO = 'Uso: get|togli <categoria> <parola>, set <categoria> <parola> <valida|non_valida|incerta>, conta [giorno]';
@@ -25,6 +26,7 @@ async function main() {
     return;
   }
   if (!['get', 'set', 'togli'].includes(cmd) || !a || !b) { console.error(USO); process.exit(1); }
+  if (!CATEGORIE_PROTETTE.includes(a)) { console.error(`Categoria sconosciuta. Sono: ${CATEGORIE_PROTETTE.join(', ')}`); process.exit(1); }
   const r = db.ref(`giudizi/${a}/${chiaveParola(b)}`);
   if (cmd === 'get') { console.log((await r.get()).val() || 'Nessun verdetto in archivio.'); return; }
   if (cmd === 'togli') { await r.remove(); console.log('Tolto.'); return; }

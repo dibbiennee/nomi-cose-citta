@@ -50,7 +50,8 @@ export default function Review({ g }) {
   const next = () => {
     if (!isHost) { g.toast(`Va avanti ${g.hostName}`); return; }
     // L'host riprova a caricare il dizionario proprio ora (se all'ingresso non era arrivato): i punti si calcolano qui.
-    g.act(async () => { await caricaDizionario(); await g.attendiGiudice?.(); return g.engine.nextCategory(g.code); });
+    // All'ultima categoria i punti dipendono dai verdetti: si aspetta di più.
+    g.act(async () => { await caricaDizionario(); await g.attendiGiudice?.(idx < cats.length - 1 ? undefined : 25000); return g.engine.nextCategory(g.code); });
   };
 
   return (

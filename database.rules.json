@@ -420,10 +420,18 @@
       }
     },
     "giudizi": {
-      ".read": "auth != null",
+      "$cat": {
+        "$chiave": {
+          ".read": "auth != null"
+        }
+      },
       ".write": false
     },
     "giudizi_meta": {
+      "attivo": {
+        ".read": true,
+        ".write": false
+      },
       "giorni": {
         ".read": true,
         ".write": false

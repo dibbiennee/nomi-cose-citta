@@ -19,7 +19,7 @@ export const CONFIG = {
   maxLettere: 40, // lunghezza di una parola
   maxRichiesteRound: 3, // richieste per stanza e per round
   ripetiIncertaOre: 24,
-  timeoutMs: 12000,
+  timeoutMs: 10000, // una chiamata, senza ripetizioni: Haiku e Sonnet di fila restano sotto i 30 secondi della funzione
   prezzi: { haiku: [0.1, 0.5], sonnet: [2, 10] }, // dollari per milione di token (entrata, uscita)
   costoPerParola: { haiku: 0.004, sonnet: 0.03 }, // centesimi, per riservare prima di chiamare
 };
@@ -58,7 +58,7 @@ export function creaServizio({ admin, anthropic, dizionario, config = CONFIG, at
       output_config: { effort: 'low' },
       system: SISTEMA,
       messages: [{ role: 'user', content: formattaParole(items) }],
-    }, { timeout: config.timeoutMs, maxRetries: 1 });
+    }, { timeout: config.timeoutMs, maxRetries: 0 });
     const tin = risposta?.usage?.input_tokens || 0;
     const tout = risposta?.usage?.output_tokens || 0;
     conto.token_in += tin; conto.token_out += tout; conto.centesimi += costoCentesimi(modello, tin, tout);
@@ -77,7 +77,8 @@ export function creaServizio({ admin, anthropic, dizionario, config = CONFIG, at
     const stanza = (await db.ref(`rooms/${richiesta.codice}`).get()).val();
     if (!stanza || stanza.status !== 'review' || stanza.hostId !== uid) return rifiuto('stanza');
     const lettera = stanza.round?.letter;
-    const round = Number.isInteger(stanza.round?.n) ? stanza.round.n : 0;
+    // Il limite vale per ogni partita: startsAt cambia a ogni round e a ogni rivincita della stessa stanza.
+    const idRound = stanza.round?.startsAt || stanza.round?.n || 0;
 
     // Solo parole che sono davvero risposte di giocatori (non robot) di questa stanza, con la lettera giusta e
     // sconosciute al dizionario, senza doppioni.
@@ -99,35 +100,44 @@ export function creaServizio({ admin, anthropic, dizionario, config = CONFIG, at
     // Archivio: salta le voci valide o non valide della versione corrente e le "incerta" recenti.
     const adesso = ora();
     const voci = await Promise.all(candidate.map((c) => db.ref(`giudizi/${c.cat}/${c.chiave}`).get().then((s) => s.val())));
-    const fresca = (e) => e && (e.m === 'mano' || e.p === PROMPT_VERSIONE) && (e.v === 'valida' || e.v === 'non_valida' || (e.v === 'incerta' && adesso - (e.at || 0) < config.ripetiIncertaOre * 3600 * 1000));
+    const fresca = (e) => e && (e.m === 'mano' || (e.p === PROMPT_VERSIONE && (e.v === 'valida' || e.v === 'non_valida' || (e.v === 'incerta' && adesso - (e.at || 0) < config.ripetiIncertaOre * 3600 * 1000))));
     const daGiudicare = candidate.filter((c, i) => !fresca(voci[i]));
     const inArchivio = candidate.length - daGiudicare.length;
     if (!daGiudicare.length) return { stato: 'ok', verdetti: {} };
 
     // Al massimo tre richieste per stanza e per round.
-    if (round > 0) {
-      const lim = await db.ref(`giudizi_meta/limiti/${richiesta.codice}/${round}`).transaction((n) => ((n || 0) >= config.maxRichiesteRound ? undefined : (n || 0) + 1));
-      if (!lim.committed) return { stato: 'limite' };
-    }
+    const lim = await db.ref(`giudizi_meta/limiti/${richiesta.codice}/${idRound}`).transaction((n) => ((n || 0) >= config.maxRichiesteRound ? undefined : (n || 0) + 1));
+    if (!lim.committed) return { stato: 'limite' };
 
     // Tetto del giorno: si riservano le parole prima di chiamare il modello.
     const giorno = giornoRoma(adesso);
     const refGiorno = db.ref(`giudizi_meta/giorni/${giorno}`);
     let concesse = 0;
+    let prenotato = 0; // centesimi riservati per questa richiesta, restituiti a fine lavoro
+    const arrotonda = (x) => Math.round(x * 10000) / 10000;
     await refGiorno.transaction((cur) => {
       const c = cur || {};
       const resto = Math.max(0, config.tettoParole - (c.parole || 0));
-      concesse = (c.centesimi || 0) >= config.tettoCentesimi ? 0 : Math.min(daGiudicare.length, resto);
-      return { ...c, parole: (c.parole || 0) + concesse };
+      concesse = (c.centesimi || 0) + (c.prenotati || 0) >= config.tettoCentesimi ? 0 : Math.min(daGiudicare.length, resto);
+      prenotato = concesse * config.costoPerParola.haiku;
+      return { ...c, parole: (c.parole || 0) + concesse, prenotati: arrotonda((c.prenotati || 0) + prenotato) };
     });
     if (concesse === 0) return { stato: 'limite' };
     const lavoro = daGiudicare.slice(0, concesse);
 
     const conto = { token_in: 0, token_out: 0, centesimi: 0, valide: 0, non_valide: 0, incerte: 0 };
     const verdetti = {};
+    // Sonnet si prenota prima di chiamare: due gruppi in parallelo non vedono lo stesso residuo.
     const budgetSonnet = async (k) => {
-      const c = (await refGiorno.child('centesimi').get()).val() || 0;
-      return c + conto.centesimi + k * config.costoPerParola.sonnet <= config.tettoCentesimi;
+      const costo = k * config.costoPerParola.sonnet;
+      let ok = false;
+      await refGiorno.transaction((cur) => {
+        const c = cur || {};
+        ok = (c.centesimi || 0) + (c.prenotati || 0) + costo <= config.tettoCentesimi;
+        return ok ? { ...c, prenotati: arrotonda((c.prenotati || 0) + costo) } : undefined;
+      });
+      if (ok) prenotato += costo;
+      return ok;
     };
 
     // Gruppi da 24 per categoria, in parallelo; ogni gruppo scrive i suoi verdetti appena è pronto.
@@ -142,16 +152,17 @@ export function creaServizio({ admin, anthropic, dizionario, config = CONFIG, at
       const sonnet = items.map(() => null);
       const dubbie = items.map((_, i) => i).filter((i) => serveSonnet(haiku[i]));
       if (dubbie.length && await budgetSonnet(dubbie.length)) {
-        try {
-          const v = await chiama('sonnet', dubbie.map((i) => items[i]), conto);
-          dubbie.forEach((i, k) => { sonnet[i] = v[k]; });
-        } catch (e) { /* Sonnet non risponde: restano "incerta" */ }
+        // Una parola per chiamata: il testo di un giocatore non arriva mai accanto a quello di un altro.
+        await Promise.all(dubbie.map(async (i) => {
+          try { sonnet[i] = (await chiama('sonnet', [items[i]], conto))[0]; } catch (e) { /* Sonnet non risponde: resta "incerta" */ }
+        }));
       }
       await Promise.all(items.map(async (it, i) => {
         const { v, m } = combinaVerdetti(haiku[i], sonnet[i]);
         const voce = { v, at: adesso, p: PROMPT_VERSIONE };
         if (m) voce.m = m;
-        await db.ref(`giudizi/${it.cat}/${it.chiave}`).set(voce);
+        // Un verdetto messo a mano (scripts/giudizio.mjs) non si sovrascrive, nemmeno se la richiesta era già partita.
+        await db.ref(`giudizi/${it.cat}/${it.chiave}`).transaction((cur) => (cur && cur.m === 'mano' ? undefined : voce));
         verdetti[`${it.cat}/${it.chiave}`] = { v, m };
         conto[v === 'valida' ? 'valide' : v === 'non_valida' ? 'non_valide' : 'incerte'] += 1;
       }));
@@ -161,7 +172,7 @@ export function creaServizio({ admin, anthropic, dizionario, config = CONFIG, at
       const c = cur || {};
       const somma = (k, x) => ({ [k]: Math.round(((c[k] || 0) + x) * 10000) / 10000 });
       return { ...c, ...somma('richieste', 1), ...somma('in_archivio', inArchivio), ...somma('valide', conto.valide), ...somma('non_valide', conto.non_valide),
-        ...somma('incerte', conto.incerte), ...somma('token_in', conto.token_in), ...somma('token_out', conto.token_out), ...somma('centesimi', conto.centesimi) };
+        ...somma('incerte', conto.incerte), ...somma('token_in', conto.token_in), ...somma('token_out', conto.token_out), ...somma('centesimi', conto.centesimi), prenotati: Math.max(0, arrotonda((c.prenotati || 0) - prenotato)) };
     });
     return { stato: 'ok', verdetti };
   }

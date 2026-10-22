@@ -17,7 +17,7 @@ import {
   ref, get, set, update, remove, onValue, query, orderByChild, limitToFirst, onDisconnect, runTransaction, serverTimestamp,
 } from 'firebase/database';
 import {
-  DEFAULT_SETTINGS, DEFAULT_CATEGORIES, makeCode, pickLetter, scoreRound, nextHost, sanitizeSettings,
+  DEFAULT_SETTINGS, DEFAULT_CATEGORIES, makeCode, pickLetter, scoreRound, nextHost, sanitizeSettings, startsWithLetter,
 } from './rules.js';
 import { isReservedCode } from '../club/fondatore.js';
 import { CHARACTER_IDS } from '../club/contenuti.js';
@@ -84,12 +84,14 @@ export function createEngine(db, uid) {
 
   /** I verdetti dell'archivio per le risposte di questo round: { [categoria]: { [chiave]: voce } }. */
   async function leggiArchivio(room) {
+    // Giudice spento: l'archivio non conta, si vota come prima (anche se ci sono verdetti vecchi).
+    try { if ((await get(ref(db, 'giudizi_meta/attivo'))).val() !== true) return {}; } catch (e) { return {}; }
     const dizionario = dizionarioCorrente();
     const daLeggere = new Map();
     for (const [pid, per] of Object.entries(room.answers || {})) {
       if (room.players?.[pid]?.bot) continue;
       for (const [cat, testo] of Object.entries(per || {})) {
-        if (typeof testo === 'string' && testo.trim() && !dizionario?.ha(cat, testo, room.round?.letter)) daLeggere.set(percorsoGiudizio(cat, testo), [cat, chiaveParola(testo)]);
+        if (typeof testo === 'string' && chiaveParola(testo) && startsWithLetter(testo, room.round?.letter) && !dizionario?.ha(cat, testo, room.round?.letter)) daLeggere.set(percorsoGiudizio(cat, testo), [cat, chiaveParola(testo)]);
       }
     }
     const archivio = {};

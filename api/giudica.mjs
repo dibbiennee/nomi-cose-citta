@@ -36,9 +36,11 @@ export default async function handler(req, res) {
   const token = String(req.headers.authorization || '').replace(/^Bearer /, '');
   try {
     const r = await ottieniServizio().giudica({ ...corpo, token });
+    if (r.stato !== 'ok') console.log(`giudica: ${r.stato}${r.motivo ? ' ' + r.motivo : ''}`); // solo lo stato, mai testi né chiavi
     const http = r.stato === 'ok' ? 200 : r.stato === 'rifiutato' ? 400 : 202;
     return res.status(http).json({ stato: r.stato, verdetti: r.verdetti });
   } catch (e) {
+    console.log(`giudica: errore ${e?.name || ''}`);
     return res.status(500).json({ stato: 'errore' }); // nessun dettaglio all'esterno
   }
 }

@@ -29,7 +29,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 after(async () => { await Promise.all(apps.map((a) => deleteApp(a).catch(() => {}))); });
 
 /** Un round di Animali tra tre telefoni: Anna scrive una parola del dizionario, Bea una che non c'è, Ciro un'altra. */
-async function partita(withDictionary, archivio = {}, mestieri = []) {
+async function partita(withDictionary, archivio = {}, mestieri = [], acceso = true) {
   const [a, b, c] = await Promise.all(['Anna', 'Bea', 'Ciro'].map(phone));
   const code = await a.engine.createRoom(a.profile, { cats: [{ key: 'animali', label: 'Animali' }, { key: 'nomi', label: 'Nomi' }], rounds: 1, maxPlayers: 8, timer: 60, hard: true });
   await b.engine.joinRoom(code, b.profile);
@@ -37,6 +37,7 @@ async function partita(withDictionary, archivio = {}, mestieri = []) {
   await passo('startGame', a.engine.startGame(code));
   const L = (await a.room(code)).round.letter;
   impostaDizionario(withDictionary ? creaDizionario({ animali: [`${L}ontra`], mestieri: mestieri.map((m) => L + m) }) : null);
+  await scriviArchivio('giudizi_meta/attivo', acceso);
   for (const [parola, voce] of Object.entries(archivio)) await scriviArchivio(`giudizi/animali/${chiaveParola(L + parola)}`, voce);
   await sleep(SPIN_MS + COUNTDOWN_MS + 100);
   await passo('goPlay', b.engine.goPlay(code));
@@ -90,4 +91,9 @@ test('verdetto "valida" ma la parola è nel dizionario di un\'altra categoria: n
 test('senza dizionario caricato i verdetti dell\'archivio non contano: si vota come oggi', { timeout: 40000 }, async () => {
   const { points, a, b, c } = await partita(false, { zzzx: VALIDA, upo: NON_VALIDA });
   assert.deepEqual([points[a.uid], points[b.uid], points[c.uid]], [0, 0, 20]);
+});
+
+test('giudice spento: i verdetti già in archivio non contano, si vota come oggi', { timeout: 40000 }, async () => {
+  const { points, a, b, c } = await partita(true, { zzzx: VALIDA, upo: NON_VALIDA }, [], false);
+  assert.deepEqual([points[a.uid], points[b.uid], points[c.uid]], [10, 0, 10], 'solo il dizionario protegge: Bea bocciata dai voti, Ciro non bocciato dal giudice');
 });

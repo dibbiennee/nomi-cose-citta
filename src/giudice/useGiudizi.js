@@ -5,7 +5,8 @@ import { startsWithLetter } from '../engine/rules';
 import { CATEGORIE_PROTETTE, dizionarioCorrente } from './protezione';
 import { chiaveParola, percorsoGiudizio } from './chiave.mjs';
 
-const ATTESA_MAX_MS = 6000; // l'host aspetta i verdetti al massimo questo tempo prima di andare avanti
+const ATTESA_MAX_MS = 8000; // l'host aspetta i verdetti al massimo questo tempo prima di andare avanti (all'ultima categoria di più)
+const GRAZIA_MS = 3300; // le regole accettano risposte fino a 3 secondi dopo lo STOP: si chiede dopo, così ci sono tutte
 const RICHIESTA_MAX_MS = 25000;
 const MAX_PAROLE = 40;
 
@@ -30,18 +31,26 @@ export function paroleSconosciute(room) {
  *  - tutti leggono i verdetti dell'archivio per le parole sconosciute (si aggiornano da soli quando arrivano);
  *  - l'host, una volta per round, chiede al server di giudicare le parole nuove (errori e "spento" sono silenziosi:
  *    si vota come sempre).
- * Restituisce { archivio, attendi }: attendi() aspetta la risposta del server al massimo 6 secondi.
+ * Restituisce { archivio, attendi }: attendi(max) aspetta la risposta del server al massimo 8 secondi (o max).
  */
 export function useGiudizi({ room, code, uid }) {
   const [archivio, setArchivio] = useState({});
   const inCorso = useRef(null);
   const chiamato = useRef('');
+  const [acceso, setAcceso] = useState(false); // interruttore del giudice: spento, l'archivio non conta e non si chiama il server
   const attivo = room && !room.solo && room.status === 'review';
   const parole = useMemo(() => (attivo ? paroleSconosciute(room) : []), [attivo, room?.answers, room?.round?.letter]); // eslint-disable-line react-hooks/exhaustive-deps
   const percorsi = parole.map((p) => percorsoGiudizio(p.cat, p.testo)).join('|');
+  const paroleRef = useRef(parole);
+  paroleRef.current = parole;
 
   useEffect(() => {
-    if (!percorsi) { setArchivio({}); return undefined; }
+    if (!attivo) return undefined;
+    return onValue(ref(db, 'giudizi_meta/attivo'), (s) => setAcceso(s.val() === true), () => setAcceso(false));
+  }, [attivo]);
+
+  useEffect(() => {
+    if (!percorsi || !acceso) { setArchivio({}); return undefined; }
     const offs = parole.map(({ cat, testo }) => onValue(ref(db, percorsoGiudizio(cat, testo)), (s) => {
       setArchivio((cur) => {
         const chiave = chiaveParola(testo);
@@ -53,16 +62,20 @@ export function useGiudizi({ room, code, uid }) {
       });
     }, () => {}));
     return () => offs.forEach((off) => off());
-  }, [percorsi]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [percorsi, acceso]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // L'host chiede i verdetti una volta per round (e chi diventa host più tardi li richiede: il server salta le parole già giudicate).
   const isHost = !!room && room.hostId === uid;
   useEffect(() => {
-    if (!attivo || !isHost || !parole.length) return;
-    const chiave = `${code}:${room.round?.n}:${uid}`;
+    if (!attivo || !acceso || !isHost) return;
+    const chiave = `${code}:${room.round?.startsAt}:${uid}`; // una per correzione (startsAt cambia a ogni round e a ogni rivincita)
     if (chiamato.current === chiave) return;
     chiamato.current = chiave;
+    const aspetta = Math.min(GRAZIA_MS, Math.max(0, (room.round?.stoppedAt || Date.now()) + GRAZIA_MS - Date.now()));
     inCorso.current = (async () => {
+      await new Promise((r) => setTimeout(r, aspetta));
+      const daGiudicare = paroleRef.current;
+      if (!daGiudicare.length) return;
       const controllo = new AbortController();
       const timer = setTimeout(() => controllo.abort(), RICHIESTA_MAX_MS);
       try {
@@ -71,12 +84,12 @@ export function useGiudizi({ room, code, uid }) {
         await fetch('/api/giudica', {
           method: 'POST', signal: controllo.signal,
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ codice: code, round: room.round?.n, parole }),
+          body: JSON.stringify({ codice: code, round: room.round?.n, parole: daGiudicare }),
         });
       } catch (e) { /* silenzioso: si vota come sempre */ } finally { clearTimeout(timer); }
     })();
-  }, [attivo, isHost, percorsi, code, uid]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [attivo, acceso, isHost, code, uid, room?.round?.startsAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const attendi = () => Promise.race([inCorso.current || Promise.resolve(), new Promise((r) => setTimeout(r, ATTESA_MAX_MS))]);
-  return { archivio, attendi };
+  const attendi = (max = ATTESA_MAX_MS) => Promise.race([inCorso.current || Promise.resolve(), new Promise((r) => setTimeout(r, max))]);
+  return { archivio: acceso ? archivio : {}, attendi };
 }

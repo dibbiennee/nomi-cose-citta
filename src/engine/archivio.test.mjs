@@ -34,6 +34,14 @@ test('l\'archivio dei verdetti si legge da autenticati e non si scrive dai telef
   assert.equal((await get(ref(a.db, 'giudizi/animali/aquila'))).val().v, 'valida', 'il verdetto è rimasto');
 });
 
+test('l\'archivio si legge per parola, ma non si può elencare né scaricare per intero', async () => {
+  await admin('giudizi/animali/aquila', { v: 'valida', m: 'haiku', at: 1, p: 1 });
+  const a = await phone();
+  assert.equal((await get(ref(a.db, 'giudizi/animali/aquila'))).val().v, 'valida');
+  await denied(get(ref(a.db, 'giudizi')), 'scaricare tutto l\'archivio');
+  await denied(get(ref(a.db, 'giudizi/animali')), 'elencare una categoria');
+});
+
 test('senza accesso l\'archivio non si legge', async () => {
   const b = await phone({ anonimo: false });
   await denied(get(ref(b.db, 'giudizi/animali/aquila')));
@@ -47,7 +55,7 @@ test('i contatori del giorno si leggono da tutti e non si scrivono; interruttore
   assert.equal((await get(ref(a.db, 'giudizi_meta/giorni/2026-10-22'))).val().parole, 12);
   await denied(set(ref(a.db, 'giudizi_meta/giorni/2026-10-22/parole'), 0), 'azzerare i contatori');
   await denied(set(ref(a.db, 'giudizi_meta/giorni/2026-10-23'), { parole: 1 }), 'scrivere un altro giorno');
-  await denied(get(ref(a.db, 'giudizi_meta/attivo')), 'leggere l\'interruttore');
+  assert.equal((await get(ref(a.db, 'giudizi_meta/attivo'))).val(), true, 'l\'interruttore si legge: i telefoni sanno se il giudice è acceso');
   await denied(set(ref(a.db, 'giudizi_meta/attivo'), false), 'spegnere il servizio');
   await denied(get(ref(a.db, 'giudizi_meta/limiti/ABCD/1')), 'leggere i limiti');
   await denied(set(ref(a.db, 'giudizi_meta/limiti/ABCD/1'), 0), 'azzerare i limiti');
