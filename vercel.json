@@ -73,5 +73,10 @@
       "destination": "https://nomicosecitta.pro/:path*",
       "permanent": true
     }
-  ]
+  ],
+  "functions": {
+    "api/giudica.mjs": {
+      "maxDuration": 30
+    }
+  }
 }
