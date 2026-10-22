@@ -66,6 +66,8 @@ test('stato di una risposta: dizionario, verificata, non esiste o voto', () => {
   assert.equal(st({ voce: { v: 'valida' }, lettera: 'B' }), 'voto', 'lettera sbagliata: ci pensa il punteggio');
   assert.equal(st({ voce: { v: 'valida' }, testo: '' }), 'voto');
   assert.equal(st({ voce: { v: 'non_valida' }, lettera: 'B' }), 'voto', 'lettera sbagliata anche con non_valida');
+  assert.equal(st({ voce: { v: 'valida' }, dizionario: null }), 'voto', 'senza dizionario caricato si vota come oggi');
+  assert.equal(st({ voce: { v: 'non_valida' }, dizionario: null }), 'voto');
 });
 
 test('voti dopo il giudizio: protette senza voti, inesistenti bocciate da tutti, il resto invariato', () => {

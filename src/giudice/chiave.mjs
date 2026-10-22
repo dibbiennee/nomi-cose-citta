@@ -5,10 +5,9 @@ import { normalize } from '../engine/rules.js';
 /** Normalizzata come nel gioco (maiuscole, accenti, spazi), apostrofi tipografici dritti, spazi in "_", senza i caratteri
  * che il database non ammette nelle chiavi (. $ # [ ] /) né quelli di controllo, al massimo 60 caratteri. */
 export function chiaveParola(testo) {
-  return normalize(String(testo ?? '').replace(/[’‘`´]/g, "'"))
-    .replace(/[.$#[\]/\u0000-\u001f\u007f]/g, '')
-    .replace(/ /g, '_')
-    .slice(0, 60);
+  const normalizzato = normalize(String(testo ?? '').replace(/[’‘`´]/g, "'")).replace(/[.$#[\]/]/g, '');
+  const senzaControllo = [...normalizzato].filter((c) => c.charCodeAt(0) > 31 && c.charCodeAt(0) !== 127).join('');
+  return senzaControllo.replace(/ /g, '_').slice(0, 60);
 }
 
 export const percorsoGiudizio = (cat, testo) => `giudizi/${cat}/${chiaveParola(testo)}`;

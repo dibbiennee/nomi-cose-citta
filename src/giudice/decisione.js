@@ -9,9 +9,9 @@ import { chiaveParola } from './chiave.mjs';
  * punteggio. Un verdetto 'valida' non vale se la parola è nel dizionario di un'altra categoria.
  */
 export function statoRisposta({ cat, testo, lettera, voce, dizionario }) {
-  if (!testo || !String(testo).trim() || !startsWithLetter(testo, lettera)) return 'voto';
-  if (dizionario?.ha(cat, testo, lettera)) return 'dizionario';
-  if (voce?.v === 'valida' && !dizionario?.haAltraCategoria(cat, testo)) return 'verificata';
+  if (!dizionario || !testo || !String(testo).trim() || !startsWithLetter(testo, lettera)) return 'voto'; // senza dizionario si vota come oggi
+  if (dizionario.ha(cat, testo, lettera)) return 'dizionario';
+  if (voce?.v === 'valida' && !dizionario.haAltraCategoria(cat, testo)) return 'verificata';
   if (voce?.v === 'non_valida') return 'non_esiste';
   return 'voto';
 }

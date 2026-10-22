@@ -30,6 +30,7 @@ import Account from './screens/Account';
 import Negozio from './screens/Negozio';
 import { useRitorno } from './ritorno/useRitorno';
 import { caricaDizionario } from './giudice/protezione';
+import { useGiudizi } from './giudice/useGiudizi';
 import { OggiSheet, FestaSheet } from './screens/Oggi';
 import { NEED_NET, Cerco, PrimiSheet, WaitlistSheet, ErrorScreen, RulesSheet, OnlineSheet, JoinSheet, FounderSheet, InstallSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
 
@@ -579,6 +580,7 @@ export default function App() {
     try { await withTimeout(engine.joinRoom(c, gameProfile)); enterRoom(c); stat(via === 'link' ? 'ingressi_link' : 'ingressi_codice'); } catch (e) { roomError(e, c, engine); } finally { setBusy(false); }
   };
 
+  const giudizi = useGiudizi({ room, code, uid: engine?.uid });
   const g = useMemo(() => {
     if (!room || !engine) return null;
     const uid = engine.uid;
@@ -590,6 +592,7 @@ export default function App() {
       solo: solo ? { difficulty: solo.difficulty, ...soloResult } : null,
       coinLine, openAccount: () => { leave(); setView('account'); },
       stat,
+      archivio: giudizi.archivio, attendiGiudice: giudizi.attendi,
       players,
       active: players.filter((p) => !p.waiting), // in partita (anche offline, mostrati spenti)
       scoring: players.filter((p) => !p.waiting && p.online), // quelli che contano nella correzione
@@ -600,7 +603,7 @@ export default function App() {
       hostName: room.players[room.hostId]?.name || 'l\'host',
       openSettings: () => setEditing(true),
     };
-  }, [room, round, code, engine, now, answers, setAnswer, toast, act, leave, solo, soloResult, stat, coinLine]);
+  }, [room, round, code, engine, now, answers, setAnswer, toast, act, leave, solo, soloResult, stat, coinLine, giudizi]);
 
   let screen;
   if (view === 'stats') screen = <Statistiche />;

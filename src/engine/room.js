@@ -23,7 +23,9 @@ import { isReservedCode } from '../club/fondatore.js';
 import { CHARACTER_IDS } from '../club/contenuti.js';
 import { cleanAcc } from '../shop/accessori.js';
 import { dueAnswers, dueStop, botVotesFor, pickBots, seededRandom, sameAnswers } from './robotOnline.js';
-import { senzaVotiProtetti } from '../giudice/protezione.js';
+import { dizionarioCorrente } from '../giudice/protezione.js';
+import { applicaGiudizio } from '../giudice/decisione.js';
+import { chiaveParola, percorsoGiudizio } from '../giudice/chiave.mjs';
 
 export const SPIN_MS = 2000; // la lettera che gira
 export const COUNTDOWN_MS = 3200; // 3, 2, 1, Via!
@@ -67,7 +69,7 @@ export function createEngine(db, uid) {
    * l'host non c'è), quindi a fine correzione non ci si fida di quelli salvati: si tolgono e si ricalcolano,
    * uguali su ogni telefono. Senza dizionario i robot non votano.
    */
-  function honestVotes(room, code) {
+  function honestVotes(room, code, archivio) {
     const votes = JSON.parse(JSON.stringify(room.votes || {}));
     if (room.quick) {
       for (const cat of Object.keys(votes)) {
@@ -75,8 +77,29 @@ export function createEngine(db, uid) {
       }
       if (botDict) for (const v of botVotesFor(room, code, botDict)) ((votes[v.cat] ||= {})[v.target] ||= {})[v.voter] = true;
     }
-    // Le parole che il dizionario riconosce non si possono bocciare votando (stessa funzione della schermata del voto).
-    return senzaVotiProtetti(votes, room.answers, room.round?.letter);
+    // Dizionario e giudice: le parole che esistono non si bocciano votando, quelle che non esistono sono bocciate.
+    // Stessa funzione della schermata del voto (Review.js); senza dizionario caricato non cambia niente.
+    return applicaGiudizio(votes, room.answers, room.round?.letter, archivio, activeIds(room), dizionarioCorrente());
+  }
+
+  /** I verdetti dell'archivio per le risposte di questo round: { [categoria]: { [chiave]: voce } }. */
+  async function leggiArchivio(room) {
+    const dizionario = dizionarioCorrente();
+    const daLeggere = new Map();
+    for (const [pid, per] of Object.entries(room.answers || {})) {
+      if (room.players?.[pid]?.bot) continue;
+      for (const [cat, testo] of Object.entries(per || {})) {
+        if (typeof testo === 'string' && testo.trim() && !dizionario?.ha(cat, testo, room.round?.letter)) daLeggere.set(percorsoGiudizio(cat, testo), [cat, chiaveParola(testo)]);
+      }
+    }
+    const archivio = {};
+    await Promise.all([...daLeggere.entries()].map(async ([percorso, [cat, chiave]]) => {
+      try {
+        const voce = (await get(ref(db, percorso))).val();
+        if (voce) (archivio[cat] ||= {})[chiave] = voce;
+      } catch (e) { /* nessun verdetto: si vota */ }
+    }));
+    return archivio;
   }
   const roomRef = (code, path = '') => ref(db, `rooms/${code}${path ? '/' + path : ''}`);
   let serverOffset = 0;
@@ -436,7 +459,8 @@ export function createEngine(db, uid) {
       if (idx < cats.length - 1) { await update(roomRef(code), { 'round/reviewIdx': idx + 1, 'round/stepAt': serverTimestamp() }); return; }
       // Contano solo i giocatori online e non in attesa: chi è caduto prende 0, come una risposta vuota.
       const ids = activeIds(room);
-      const { points, stats } = scoreRound(ids, cats.map((c) => c.key), room.answers || {}, honestVotes(room, code), room.round.letter);
+      const archivio = await leggiArchivio(room);
+      const { points, stats } = scoreRound(ids, cats.map((c) => c.key), room.answers || {}, honestVotes(room, code, archivio), room.round.letter);
       const patch = { status: 'round', 'round/points': points, 'round/stepAt': serverTimestamp() };
       for (const id of ids) {
         const p = room.players[id];

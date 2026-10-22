@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { sx, INK, Face, hostButtonStyle, BotTag } from '../ui/kit';
 import { scoreCategory } from '../engine/rules';
-import { senzaVotiProtetti, isProtetta, tentativiSuParoleVere, caricaDizionario } from '../giudice/protezione';
+import { dizionarioCorrente, tentativiSuParoleVere, caricaDizionario } from '../giudice/protezione';
+import { applicaGiudizio, statoRisposta } from '../giudice/decisione';
+import { chiaveParola } from '../giudice/chiave.mjs';
 
 const TAGS = { empty: 'vuota', wrongLetter: 'lettera sbagliata', rejected: 'bocciata dalla stanza', solo: 'unico a rispondere', duplicate: 'doppia', unique: 'unica' };
 const PTS_BG = { 20: '#FFD23F', 10: '#6EE7A8', 5: '#5CD0FF', 0: '#E6E0F7' };
@@ -32,8 +34,10 @@ export default function Review({ g }) {
   const ids = g.scoring.map((p) => p.id);
   const catAnswers = {};
   for (const id of ids) catAnswers[id] = (room.answers?.[id] || {})[cat.key] || '';
-  // Le parole che il dizionario riconosce non si bocciano votando: stessa funzione che usa il punteggio (room.js).
-  const votes = room.solo ? (room.votes?.[cat.key] || {}) : (senzaVotiProtetti({ [cat.key]: room.votes?.[cat.key] || {} }, room.answers, round.letter)[cat.key] || {});
+  // Dizionario e giudice: le parole che esistono non si bocciano votando, quelle che non esistono sono bocciate. Stessa
+  // funzione che usa il punteggio (room.js); senza dizionario o verdetti si vota come sempre.
+  const votiGrezzi = room.votes?.[cat.key] || {};
+  const votes = room.solo ? votiGrezzi : (applicaGiudizio({ [cat.key]: votiGrezzi }, room.answers, round.letter, g.archivio, ids, dizionarioCorrente())[cat.key] || {});
   const res = scoreCategory(ids, catAnswers, votes, round.letter);
   const bubbles = useReactions(room, g.now);
   // La lista resta la stessa tra una categoria e l'altra: a ogni "avanti" si riparte dalla prima parola in alto.
@@ -45,7 +49,7 @@ export default function Review({ g }) {
   const next = () => {
     if (!isHost) { g.toast(`Va avanti ${g.hostName}`); return; }
     // L'host riprova a caricare il dizionario proprio ora (se all'ingresso non era arrivato): i punti si calcolano qui.
-    g.act(async () => { await caricaDizionario(); return g.engine.nextCategory(g.code); });
+    g.act(async () => { await caricaDizionario(); await g.attendiGiudice?.(); return g.engine.nextCategory(g.code); });
   };
 
   return (
@@ -68,11 +72,14 @@ export default function Review({ g }) {
           const r = res[p.id], isMe = p.id === uid;
           const rejected = r.status === 'rejected';
           const valid = ['solo', 'duplicate', 'unique'].includes(r.status);
-          // Le parole che il dizionario conosce sono valide e non si votano (da soli: quelle dei robot; online: protette).
-          const known = valid && (room.solo ? !!room.solo.known?.[cat.key]?.[p.id] : isProtetta(cat.key, r.text, round.letter));
-          const canVote = !isMe && !known && r.status !== 'empty' && r.status !== 'wrongLetter';
+          // Le parole del dizionario o verificate dal giudice sono valide e non si votano; quelle che il giudice ha dichiarato
+          // inesistenti sono bocciate (da soli: le parole dei robot).
+          const stato = room.solo ? 'voto' : statoRisposta({ cat: cat.key, testo: r.text, lettera: round.letter, voce: g.archivio?.[cat.key]?.[chiaveParola(r.text)], dizionario: dizionarioCorrente() });
+          const known = valid && (room.solo ? !!room.solo.known?.[cat.key]?.[p.id] : stato === 'dizionario' || stato === 'verificata');
+          const nonEsiste = !room.solo && stato === 'non_esiste';
+          const canVote = !isMe && !known && !nonEsiste && r.status !== 'empty' && r.status !== 'wrongLetter';
           const myVote = !!votes[p.id]?.[uid];
-          const tag = (r.status === 'rejected' && room.solo ? 'bocciata dai robot' : TAGS[r.status]) + (valid && r.votesAgainst && !room.solo ? ` · ${r.votesAgainst} su ${need} per bocciarla` : '');
+          const tag = (r.status === 'rejected' && room.solo ? 'bocciata dai robot' : nonEsiste ? 'bocciata dal giudice' : TAGS[r.status]) + (valid && r.votesAgainst && !room.solo ? ` · ${r.votesAgainst} su ${need} per bocciarla` : '');
           return (
             <div key={`${cat.key}-${p.id}`} className={rejected ? 'n-no' : idx % 2 ? 'n-up2' : 'n-up'}
               style={sx(`display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 20px; border: 2.5px solid #17122B; background: ${rejected ? '#FFE3DB' : '#FFFFFF'}; animation-delay: ${rejected ? 0 : i * 70}ms; transition: background .25s`)}>
@@ -81,13 +88,17 @@ export default function Review({ g }) {
                 <span style={sx('font-size: 12px; font-weight: 700; color: #5E5880')}>{isMe ? 'Tu' : p.name}{p.bot && <BotTag />} · {tag}</span>
                 <span style={sx(`font-family: 'Bricolage Grotesque Variable', sans-serif; font-size: 21px; line-height: 1.1; font-weight: 800; text-decoration: ${rejected || r.status === 'wrongLetter' ? 'line-through' : 'none'}; opacity: ${valid ? '1' : '0.45'}; overflow-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden`)}>{r.text || '—'}</span>
                 {known && (
-                  <span style={sx('height: 30px; padding: 0 10px; border-radius: 999px; border: 2px solid #17122B; background: #6EE7A8; font-size: 12px; font-weight: 800; align-self: flex-start; margin-top: 8px; display: flex; align-items: center; white-space: nowrap')}>Nel dizionario</span>
+                  <span style={sx('height: 30px; padding: 0 10px; border-radius: 999px; border: 2px solid #17122B; background: #6EE7A8; font-size: 12px; font-weight: 800; align-self: flex-start; margin-top: 8px; display: flex; align-items: center; white-space: nowrap')}>{stato === 'verificata' ? 'Verificata' : 'Nel dizionario'}</span>
                 )}
-                {!isMe && known && (
-                  <button className="n-press" aria-disabled="true" aria-label={`Non vale: ${r.text} di ${p.name}. È nel dizionario, vale per tutti`}
+                {nonEsiste && (
+                  <span style={sx('height: 30px; padding: 0 10px; border-radius: 999px; border: 2px solid #17122B; background: #FFE3DB; font-size: 12px; font-weight: 800; align-self: flex-start; margin-top: 8px; display: flex; align-items: center; white-space: nowrap')}>Non esiste</span>
+                )}
+                {!isMe && (known || nonEsiste) && (
+                  <button className="n-press" aria-disabled="true" aria-label={`Non vale: ${r.text} di ${p.name}. ${nonEsiste ? 'Il giudice l\'ha bocciata' : stato === 'verificata' ? 'È stata verificata, vale per tutti' : 'È nel dizionario, vale per tutti'}`}
                     onClick={() => {
+                      if (nonEsiste) { g.toast(`«${r.text}» è stata bocciata dal giudice: il voto non cambia niente.`); return; }
                       const t = tentativiSuParoleVere.registra(g.code, `${cat.key}:${p.id}`);
-                      g.toast(t.avviso ? `Hai provato a bocciare ${t.n} parole che esistono. Il dizionario le protegge: non serve votare.` : `«${r.text}» è nel dizionario: vale per tutti, il voto non conta.`);
+                      g.toast(t.avviso ? `Hai provato a bocciare ${t.n} parole che esistono. Il dizionario le protegge: non serve votare.` : `«${r.text}» ${stato === 'verificata' ? 'è stata verificata' : 'è nel dizionario'}: vale per tutti, il voto non conta.`);
                     }}
                     style={sx('height: 44px; padding: 0 12px; border-radius: 12px; border: 2px solid #CFC8EA; background: #EDE8FB; color: #6F698F; font-size: 13px; font-weight: 800; cursor: pointer; align-self: flex-start; margin-top: 8px')}>Non vale</button>
                 )}
