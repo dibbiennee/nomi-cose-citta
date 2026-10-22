@@ -99,7 +99,7 @@ export function creaServizio({ admin, anthropic, dizionario, config = CONFIG, at
     // Archivio: salta le voci valide o non valide della versione corrente e le "incerta" recenti.
     const adesso = ora();
     const voci = await Promise.all(candidate.map((c) => db.ref(`giudizi/${c.cat}/${c.chiave}`).get().then((s) => s.val())));
-    const fresca = (e) => e && e.p === PROMPT_VERSIONE && (e.v === 'valida' || e.v === 'non_valida' || (e.v === 'incerta' && adesso - (e.at || 0) < config.ripetiIncertaOre * 3600 * 1000));
+    const fresca = (e) => e && (e.m === 'mano' || e.p === PROMPT_VERSIONE) && (e.v === 'valida' || e.v === 'non_valida' || (e.v === 'incerta' && adesso - (e.at || 0) < config.ripetiIncertaOre * 3600 * 1000));
     const daGiudicare = candidate.filter((c, i) => !fresca(voci[i]));
     const inArchivio = candidate.length - daGiudicare.length;
     if (!daGiudicare.length) return { stato: 'ok', verdetti: {} };

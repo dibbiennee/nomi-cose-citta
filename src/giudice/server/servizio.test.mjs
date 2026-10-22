@@ -146,6 +146,16 @@ test('incerta vecchia di più di 24 ore o di una versione precedente si rigiudic
   assert.deepEqual(ai.chiamate.flatMap((c) => c.parole).sort(), ['Alano', 'Alce']);
 });
 
+test('un verdetto messo a mano non si rifà mai, nemmeno con un prompt nuovo', async () => {
+  const host = await telefono();
+  const code = await stanza({ hostId: host.uid, answers: { [host.uid]: { animali: 'Alce' }, p2: { animali: 'Alpaca' }, p3: { animali: 'Alano' } } });
+  await admin.db.ref('giudizi/animali/alpaca').set({ v: 'non_valida', m: 'mano', at: Date.now(), p: 0 });
+  const ai = finto({ Alce: ['valida'], Alpaca: ['valida'], Alano: ['valida'] });
+  await crea(ai).giudica({ token: host.token, codice: code, round: 1, parole: [{ cat: 'animali', testo: 'Alce' }, { cat: 'animali', testo: 'Alpaca' }, { cat: 'animali', testo: 'Alano' }] });
+  assert.deepEqual(ai.chiamate.flatMap((c) => c.parole).sort(), ['Alano', 'Alce']);
+  assert.equal((await admin.db.ref('giudizi/animali/alpaca/v').get()).val(), 'non_valida');
+});
+
 test('combinazioni dei modelli: il rifiuto richiede l\'accordo, altrimenti incerta', async () => {
   const host = await telefono();
   const code = await stanza({ hostId: host.uid, answers: { [host.uid]: { animali: 'Alx1' }, p2: { animali: 'Alx2' }, p3: { animali: 'Alx3' } } });

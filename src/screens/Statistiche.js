@@ -50,6 +50,7 @@ function Bars({ rows, max }) {
 export default function Statistiche() {
   const [live, setLive] = useState(null);
   const [days, setDays] = useState(null);
+  const [giudice, setGiudice] = useState(null);
   const [now, setNow] = useState(Date.now());
   const [span, setSpan] = useState('oggi'); // oggi | 7
   useEffect(() => {
@@ -61,8 +62,9 @@ export default function Statistiche() {
     const offLive = onValue(ref(db, 'live'), (s) => setLive(s.val() || {}), () => setLive({}));
     // 15 giorni: 7 da mostrare più quelli che servono per calcolare chi torna dopo una settimana.
     const offDays = onValue(query(ref(db, 'stats/days'), orderByKey(), limitToLast(15)), (s) => setDays(s.val() || {}), () => setDays({}));
+    const offGiudice = onValue(query(ref(db, 'giudizi_meta/giorni'), orderByKey(), limitToLast(31)), (s) => setGiudice(s.val() || {}), () => setGiudice({}));
     const iv = setInterval(() => setNow(Date.now()), 30000);
-    return () => { offLive(); offDays(); clearInterval(iv); meta.remove(); };
+    return () => { offLive(); offDays(); offGiudice(); clearInterval(iv); meta.remove(); };
   }, []);
 
   const fresh = Object.values(live || {}).filter((p) => typeof p.at === 'number' && now - p.at < LIVE_MAX_AGE_MS);
@@ -93,6 +95,10 @@ export default function Statistiche() {
   const hours = Array.from({ length: 24 }, (_, h) => [h, sum(`ora_${String(h).padStart(2, '0')}`)]);
   const hourMax = Math.max(1, ...hours.map((x) => x[1]));
   const loading = days === null;
+  const G = giudice || {};
+  const sumG = (k, list = keys) => list.reduce((t, d) => t + ((G[d] || {})[k] || 0), 0);
+  const mese = Object.keys(G).filter((d) => d.slice(0, 7) === today.slice(0, 7));
+  const dollari = (c) => `${(c / 100).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
 
   const tabBtn = (id, label) => (
     <button key={id} type="button" role="radio" aria-checked={span === id} className="n-btn" onClick={() => setSpan(id)}
@@ -198,6 +204,16 @@ export default function Statistiche() {
             <Bars rows={[['Serie ripartite da 1', sum('serie_persa')], ['Scudi usati', sum('scudo_usato')]]} />
             <h3 style={sx('margin: 4px 0 0; font-size: 15px; font-weight: 800')}>Sfide prese e scrigni</h3>
             <Bars rows={[['Sfide facili', sum('sfida_facile')], ['Sfide medie', sum('sfida_media')], ['Sfide difficili', sum('sfida_difficile')], ['Tutte e tre in un giorno', sum('sfide_tutte')], ['Scrigni aperti', sum('scrigni_aperti')], ['Accessori rari trovati', sum('scrigni_rari')]]} />
+          </section>
+
+          <section style={card}>
+            <h2 style={h2}>Giudice delle parole</h2>
+            <div style={sx('display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px')}>
+              <Tile label="Richieste" value={sumG('richieste')} sub="una per round online" />
+              <Tile label="Costo stimato" value={dollari(sumG('centesimi'))} sub={`mese: ${dollari(sumG('centesimi', mese))}`} />
+            </div>
+            <Bars rows={[['Valide', sumG('valide')], ['Non valide', sumG('non_valide')], ['Incerte', sumG('incerte')], ['Già in archivio', sumG('in_archivio')]]} />
+            <p style={note}>Parole giudicate dall'IA: {sumG('valide') + sumG('non_valide') + sumG('incerte')}. Le incerte si votano come sempre.</p>
           </section>
 
           <section style={card}>
