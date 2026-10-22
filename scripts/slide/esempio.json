@@ -1,0 +1,5 @@
+[
+  { "nome": "giorno-01", "tipo": "pov", "slide": ["pov: domani|hai un esame|ma da 3 ore|giochi solo|a questo", "lettera M.|nessuno ha|più pietà", "e chi preme STOP|per primo|ha già perso"], "cta": true },
+  { "nome": "giorno-02", "tipo": "lettera", "lettera": "M", "frase": "Hai 60 secondi.|Città, animale,|cosa, nome." },
+  { "nome": "giorno-04", "tipo": "valida", "parola": "Cobo", "categoria": "Animali", "lettera": "C", "domanda": "L'IA dice|che è valida.|Voi?" }
+]
