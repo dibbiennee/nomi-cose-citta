@@ -2,17 +2,15 @@
 // il collegamento con Vercel, con Firebase Admin (FIREBASE_SERVICE_ACCOUNT) e con Anthropic (ANTHROPIC_API_KEY).
 // Le due chiavi e GIUDICE_ATTIVO stanno solo nelle variabili d'ambiente di Vercel. Senza GIUDICE_ATTIVO=1 risponde
 // "spento" senza toccare niente: il gioco vota come prima.
-import Anthropic from '@anthropic-ai/sdk';
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getDatabase } from 'firebase-admin/database';
-import { creaServizio } from '../src/giudice/server/servizio.mjs';
-import { creaDizionario } from '../src/giudice/protezione.js';
-import { LISTE } from '../src/giudice/liste/index.js';
+// Le librerie pesanti si caricano solo a giudice acceso: da spento la funzione risponde subito, senza avvio a freddo.
 
 let servizio = null; // si crea alla prima richiesta e si riusa finché l'istanza resta viva
-function ottieniServizio() {
+async function ottieniServizio() {
   if (!servizio) {
+    const [{ default: Anthropic }, { cert, getApps, initializeApp }, { getAuth }, { getDatabase }, { creaServizio }, { creaDizionario }, { LISTE }] = await Promise.all([
+      import('@anthropic-ai/sdk'), import('firebase-admin/app'), import('firebase-admin/auth'), import('firebase-admin/database'),
+      import('../src/giudice/server/servizio.mjs'), import('../src/giudice/protezione.js'), import('../src/giudice/liste/index.js'),
+    ]);
     const app = getApps()[0] || initializeApp({
       credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
       databaseURL: process.env.REACT_APP_FIREBASE_DATABASE_URL,
@@ -35,7 +33,7 @@ export default async function handler(req, res) {
   if (!corpo || typeof corpo !== 'object') return res.status(400).json({ stato: 'rifiutato' });
   const token = String(req.headers.authorization || '').replace(/^Bearer /, '');
   try {
-    const r = await ottieniServizio().giudica({ ...corpo, token });
+    const r = await (await ottieniServizio()).giudica({ ...corpo, token });
     if (r.stato !== 'ok') console.log(`giudica: ${r.stato}${r.motivo ? ' ' + r.motivo : ''}`); // solo lo stato, mai testi né chiavi
     const http = r.stato === 'ok' ? 200 : r.stato === 'rifiutato' ? 400 : 202;
     return res.status(http).json({ stato: r.stato, verdetti: r.verdetti });
