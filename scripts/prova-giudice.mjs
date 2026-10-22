@@ -106,6 +106,7 @@ async function giudica(model) {
       system: SISTEMA,
       messages: [{ role: 'user', content: righe }],
     });
+    process.stderr.write('.'); // un puntino per ogni chiamata, per vedere che sta lavorando
     tokIn += res.usage.input_tokens;
     tokOut += res.usage.output_tokens;
     const testo = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
@@ -126,6 +127,7 @@ for (const m of MODELLI) {
   try { risultati.push(await giudica(m)); } catch (e) { console.error(`${m}: errore ${e.status || ''} ${e.message}`); }
 }
 
+process.stderr.write('\n');
 for (const r of risultati) {
   const validi = r.esiti.filter((e) => e.atteso === 'ok');
   const invalidi = r.esiti.filter((e) => e.atteso === 'no');
