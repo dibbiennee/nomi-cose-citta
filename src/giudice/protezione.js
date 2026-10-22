@@ -17,6 +17,12 @@ export function creaDizionario(liste) {
       const insieme = note.get(cat);
       return Boolean(insieme) && startsWithLetter(text, letter) && insieme.has(norma(text));
     },
+    /** Vero se la parola è nel dizionario di un'altra categoria del gioco e non in questa. */
+    haAltraCategoria(cat, text) {
+      const n = norma(text);
+      if (note.get(cat)?.has(n)) return false;
+      return [...note.entries()].some(([altra, insieme]) => altra !== cat && insieme.has(n));
+    },
   };
 }
 
@@ -24,6 +30,7 @@ let dizionario = null;
 /** Il dizionario caricato per questo telefono, o null per non proteggere niente (come prima di questa funzione). */
 export function impostaDizionario(d) { dizionario = d || null; }
 export const dizionarioPronto = () => dizionario !== null;
+export const dizionarioCorrente = () => dizionario;
 export const isProtetta = (cat, text, letter) => (dizionario ? dizionario.ha(cat, text, letter) : false);
 
 /**

@@ -10,6 +10,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { LISTE } from '../src/giudice/liste/index.js';
 import { normalize } from '../src/engine/rules.js';
+import { SISTEMA, formattaParole, leggiVerdetti } from '../src/giudice/prompt.mjs';
 
 const GRANDE = process.argv.includes('grande');
 const DA_ARGV = process.argv.slice(2).filter((a) => a !== 'grande');
@@ -72,17 +73,6 @@ function casiGrandi() {
 }
 const CASI = GRANDE ? casiGrandi() : CASI_PICCOLI;
 
-const CATEGORIE = {
-  nomi: 'nome proprio di persona', cose: 'cosa, oggetto concreto', citta: 'città, anche estera', animali: 'animale',
-  mestieri: 'mestiere o professione', cibi: 'cibo o piatto', film: 'titolo di un film', calciatori: 'calciatore (nome o cognome)',
-};
-
-const SISTEMA = `Fai il giudice nel gioco "Nomi, Cose, Città". Per ogni risposta decidi se è valida.
-Una risposta è valida solo se: (1) inizia con la lettera data, ignorando maiuscole e accenti; (2) appartiene davvero alla categoria; (3) è una parola, un nome o un titolo reale, non inventato.
-Sii equo, non severo: accetta parole rare, nomi stranieri, nomi di battesimo e cognomi veri, varianti italiane comuni. Non accettare parole inventate, né risposte della categoria sbagliata.
-Rispondi con "valida", "non_valida", oppure "incerta" quando non sei sicuro che esista.
-Rispondi SOLO con un array JSON, senza altro testo: [{"id":0,"verdetto":"valida"}, ...]`;
-
 const chiave = process.env.ANTHROPIC_API_KEY || '';
 if (!chiave) { console.error('Manca la chiave: nel terminale scrivi  export ANTHROPIC_API_KEY=\'sk-ant-...\'  e rilancia.'); process.exit(1); }
 if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(chiave)) {
@@ -98,7 +88,7 @@ async function giudica(model) {
   const esiti = [];
   const t0 = Date.now();
   for (const gruppo of gruppi) {
-    const righe = gruppo.map(([cat, lettera, parola], i) => `${i}. categoria: ${CATEGORIE[cat]} | lettera: ${lettera} | risposta: ${parola}`).join('\n');
+    const righe = formattaParole(gruppo.map(([cat, lettera, testo]) => ({ cat, lettera, testo })));
     const res = await client.messages.create({
       model,
       max_tokens: 4000,
@@ -110,10 +100,9 @@ async function giudica(model) {
     tokIn += res.usage.input_tokens;
     tokOut += res.usage.output_tokens;
     const testo = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
-    let verdetti = [];
-    try { verdetti = JSON.parse(testo.slice(testo.indexOf('['), testo.lastIndexOf(']') + 1)); } catch (e) { console.error(`${model}: risposta non leggibile:`, testo.slice(0, 200)); }
+    const verdetti = leggiVerdetti(testo, gruppo.length);
     gruppo.forEach(([cat, lettera, parola, atteso, tipo], i) => {
-      esiti.push({ cat, lettera, parola, atteso, tipo, v: verdetti.find((x) => x.id === i)?.verdetto || 'nessuno' });
+      esiti.push({ cat, lettera, parola, atteso, tipo, v: verdetti[i] });
     });
   }
   const [pi, po] = PREZZI[model] || [0, 0];
