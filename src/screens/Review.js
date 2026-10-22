@@ -47,11 +47,19 @@ export default function Review({ g }) {
   const voters = Math.max(1, ids.length - 1);
   const need = Math.floor(voters / 2) + 1; // bocciata se vota contro più di metà degli altri (isRejected)
 
+  const ultima = idx >= cats.length - 1;
+  const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
   const next = () => {
     if (!isHost) { g.toast(`Va avanti ${g.hostName}`); return; }
-    // L'host riprova a caricare il dizionario proprio ora (se all'ingresso non era arrivato): i punti si calcolano qui.
-    // All'ultima categoria i punti dipendono dai verdetti: si aspetta di più.
-    g.act(async () => { await caricaDizionario(); await g.attendiGiudice?.(idx < cats.length - 1 ? undefined : 25000); return g.engine.nextCategory(g.code); });
+    if (busyRef.current) return; // tocchi ripetuti: uno solo conta (altrimenti si salterebbero categorie)
+    busyRef.current = true; setBusy(true);
+    // Nelle categorie intermedie si va avanti subito: i verdetti dell'IA compaiono da soli quando arrivano.
+    // Solo all'ultima, dove si calcolano i punti, si aspetta (al massimo 10 secondi) e il tasto lo dice.
+    g.act(async () => {
+      if (ultima) { await caricaDizionario(); await g.attendiGiudice?.(10000); }
+      return g.engine.nextCategory(g.code);
+    }).finally(() => { busyRef.current = false; setBusy(false); });
   };
 
   return (
@@ -126,7 +134,7 @@ export default function Review({ g }) {
           {REACTIONS.map((t) => <button key={t} className="n-press" onClick={() => g.act(() => g.engine.react(g.code, t))} style={sx('height: 44px; padding: 0 16px; flex-shrink: 0; border-radius: 999px; border: 2px solid #17122B; background: #FFFFFF; color: #17122B; font-size: 14px; font-weight: 800; cursor: pointer')}>{t}</button>)}
         </div>
         <button className="n-btn" onClick={next} style={{ ...hostButtonStyle(isHost), height: c ? 50 : 54, fontSize: 18 }}>
-          {!isHost ? `Va avanti ${g.hostName}…` : idx < cats.length - 1 ? 'Prossima categoria' : 'Vedi i punteggi'}
+          {!isHost ? `Va avanti ${g.hostName}…` : busy && ultima ? 'Un attimo…' : ultima ? 'Vedi i punteggi' : 'Prossima categoria'}
         </button>
       </div>
     </div>

@@ -32,7 +32,12 @@ export function useRitorno({ account, stat, toast }) {
     busyRef.current = true;
     setBusy(true);
     const s = challengesFor(today).find((c) => c.id === id);
-    const r = await claimChallenge(db, uid, today, id).catch(() => 'errore');
+    // Una sfida alla volta ogni 20 secondi (regola del database): se una è appena stata riscossa si aspetta il resto,
+    // senza far vedere un errore, e se il server dice di no si riprova una volta.
+    const resto = (profile?.lastSfida || 0) + 21000 - Date.now();
+    if (resto > 0 && resto < 22000) await new Promise((x) => setTimeout(x, resto));
+    let r = await claimChallenge(db, uid, today, id).catch(() => 'errore');
+    if (r === 'errore') { await new Promise((x) => setTimeout(x, 4000)); r = await claimChallenge(db, uid, today, id).catch(() => 'errore'); }
     busyRef.current = false;
     setBusy(false);
     if (r === 'ok') {
@@ -42,7 +47,7 @@ export function useRitorno({ account, stat, toast }) {
       if (tutte) stat('sfide_tutte');
     }
     else if (r !== 'già') toast('Non è andata: aspetta qualche secondo e riprova');
-  }, [uid, today, toast, stat, sfide]);
+  }, [uid, today, toast, stat, sfide, profile?.lastSfida]);
 
   return {
     registered, today, streak, busy, sfide, daPrendere, riscuoti,

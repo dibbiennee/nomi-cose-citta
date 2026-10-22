@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { sx, Face, hostButtonStyle, BotTag } from '../ui/kit';
 import { ranking } from '../engine/rules';
 
@@ -27,9 +27,13 @@ export default function Round({ g }) {
   const maxScore = Math.max(1, ...ranked.map((p) => p.score || 0));
   const lead = ranked[0];
   const last = round.n >= room.settings.rounds;
+  const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
   const next = () => {
     if (!isHost) { g.toast(`Va avanti ${g.hostName}`); return; }
-    g.act(() => g.engine.nextRound(g.code));
+    if (busyRef.current) return; // un tocco solo: i ripetuti non fanno partire due volte la lettera
+    busyRef.current = true; setBusy(true);
+    g.act(() => g.engine.nextRound(g.code)).finally(() => { busyRef.current = false; setBusy(false); });
   };
 
   return (
@@ -59,7 +63,7 @@ export default function Round({ g }) {
         })}
       </div>
       <div style={sx('padding: 10px 16px 14px; border-top: 2px solid #E6E0F7')}>
-        <button className="n-btn" onClick={next} style={{ ...hostButtonStyle(isHost), height: 54, fontSize: 18 }}>{!isHost ? `Va avanti ${g.hostName}…` : last ? 'Vai ai premi' : 'Prossima lettera'}</button>
+        <button className="n-btn" onClick={next} style={{ ...hostButtonStyle(isHost), height: 54, fontSize: 18 }}>{!isHost ? `Va avanti ${g.hostName}…` : busy ? 'Un attimo…' : last ? 'Vai ai premi' : 'Prossima lettera'}</button>
       </div>
     </div>
   );

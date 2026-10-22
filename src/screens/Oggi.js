@@ -44,7 +44,7 @@ export function OggiSheet({ r, onClose }) {
               <span style={sx('font-size: 13px; font-weight: 700; color: #5E5880')}>{s.reward} monete</span>
             </span>
             {s.riscossa ? <span style={sx('font-size: 14px; font-weight: 800; color: #5E5880')}>Presa</span>
-              : s.fatta ? <button type="button" className="n-btn" disabled={r.busy} onClick={() => r.riscuoti(s.id)} style={small('#6EE7A8', '#17122B')}>Prendi le {s.reward}&nbsp;monete</button>
+              : s.fatta ? <button type="button" className="n-btn" disabled={r.busy} onClick={() => r.riscuoti(s.id)} style={small('#6EE7A8', '#17122B')}>{r.busy ? 'Un attimo…' : <>Prendi le {s.reward}&nbsp;monete</>}</button>
                 : <span style={sx('font-size: 14px; font-weight: 700; color: #6F698F')}>Da fare</span>}
           </div>
         ))}

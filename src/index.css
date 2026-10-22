@@ -12,6 +12,7 @@ body {
 a { color: #17122B; }
 a:hover { color: #5B3FD6; }
 button, input { font-family: Figtree, system-ui, sans-serif; }
+html, body { touch-action: manipulation; } /* niente zoom al doppio tocco, nemmeno fuori dai pulsanti (iPhone) */
 button { -webkit-user-select: none; user-select: none; touch-action: manipulation; }
 input::placeholder { color: #A39DC4; }
 :focus-visible { outline: 3px solid #5B3FD6 !important; outline-offset: 3px; }
