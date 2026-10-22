@@ -4,17 +4,21 @@
 // "spento" senza toccare niente: il gioco vota come prima.
 // Le librerie pesanti si caricano solo a giudice acceso: da spento la funzione risponde subito, senza avvio a freddo.
 
+let fase = ''; // dove si è fermata l'ultima richiesta: è l'unico dettaglio che va nei log (i messaggi d'errore possono contenere pezzi di chiavi)
 let servizio = null; // si crea alla prima richiesta e si riusa finché l'istanza resta viva
 async function ottieniServizio() {
   if (!servizio) {
+    fase = 'librerie';
     const [{ default: Anthropic }, { cert, getApps, initializeApp }, { getAuth }, { getDatabase }, { creaServizio }, { creaDizionario }, { LISTE }] = await Promise.all([
       import('@anthropic-ai/sdk'), import('firebase-admin/app'), import('firebase-admin/auth'), import('firebase-admin/database'),
       import('../src/giudice/server/servizio.mjs'), import('../src/giudice/protezione.js'), import('../src/giudice/liste/index.js'),
     ]);
+    fase = 'credenziali';
     const app = getApps()[0] || initializeApp({
       credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)),
       databaseURL: process.env.REACT_APP_FIREBASE_DATABASE_URL,
     });
+    fase = 'avvio';
     servizio = creaServizio({
       admin: { auth: getAuth(app), db: getDatabase(app) },
       anthropic: new Anthropic(),
@@ -33,12 +37,15 @@ export default async function handler(req, res) {
   if (!corpo || typeof corpo !== 'object') return res.status(400).json({ stato: 'rifiutato' });
   const token = String(req.headers.authorization || '').replace(/^Bearer /, '');
   try {
-    const r = await (await ottieniServizio()).giudica({ ...corpo, token });
+    fase = 'inizio';
+    const svc = await ottieniServizio();
+    fase = 'giudizio';
+    const r = await svc.giudica({ ...corpo, token });
     if (r.stato !== 'ok') console.log(`giudica: ${r.stato}${r.motivo ? ' ' + r.motivo : ''}`); // solo lo stato, mai testi né chiavi
     const http = r.stato === 'ok' ? 200 : r.stato === 'rifiutato' ? 400 : 202;
     return res.status(http).json({ stato: r.stato, verdetti: r.verdetti });
   } catch (e) {
-    console.log(`giudica: errore ${e?.name || ''}`);
+    console.log(`giudica: errore ${e?.name || ''} nella fase ${fase}`);
     return res.status(500).json({ stato: 'errore' }); // nessun dettaglio all'esterno
   }
 }
