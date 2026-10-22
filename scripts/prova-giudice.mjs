@@ -5,13 +5,19 @@
 //   export ANTHROPIC_API_KEY=sk-ant-...        # creala su console.anthropic.com, con un limite di spesa basso
 //   node scripts/prova-giudice.mjs             # confronta Haiku 5.5 e Sonnet 5.5 sugli stessi casi
 //   node scripts/prova-giudice.mjs claude-haiku-5-5   # un modello solo
+//   node scripts/prova-giudice.mjs grande      # prova grande: circa 360 casi presi dal dizionario controllato, solo Haiku
+//   node scripts/prova-giudice.mjs grande claude-haiku-5-5 claude-sonnet-5-5   # prova grande con più modelli
 import Anthropic from '@anthropic-ai/sdk';
+import { LISTE } from '../src/giudice/liste/index.js';
+import { normalize } from '../src/engine/rules.js';
 
-const MODELLI = process.argv.slice(2).length ? process.argv.slice(2) : ['claude-haiku-5-5', 'claude-sonnet-5-5'];
+const GRANDE = process.argv.includes('grande');
+const DA_ARGV = process.argv.slice(2).filter((a) => a !== 'grande');
+const MODELLI = DA_ARGV.length ? DA_ARGV : GRANDE ? ['claude-haiku-5-5'] : ['claude-haiku-5-5', 'claude-sonnet-5-5'];
 const PREZZI = { 'claude-haiku-5-5': [0.1, 0.5], 'claude-sonnet-5-5': [2, 10] }; // $ per milione di token (in, out)
 
 // cat, lettera, parola, atteso: 'ok' valida, 'no' non valida
-const CASI = [
+const CASI_PICCOLI = [
   // valide e comuni
   ['nomi', 'A', 'Andrea', 'ok'], ['cose', 'B', 'Bicchiere', 'ok'], ['citta', 'C', 'Catania', 'ok'], ['animali', 'D', 'Delfino', 'ok'],
   ['mestieri', 'F', 'Falegname', 'ok'], ['cibi', 'L', 'Lasagne', 'ok'], ['film', 'T', 'Titanic', 'ok'], ['calciatori', 'M', 'Maradona', 'ok'],
@@ -34,6 +40,38 @@ const CASI = [
   ['calciatori', 'P', 'Paolo Rossolini Mastrangelo', 'no'], ['film', 'L', 'Il lago delle mucche volanti', 'no'],
 ];
 
+/** Prova grande: il dizionario controllato contiene solo parole vere, quindi è un metro onesto per gli errori sulle vere. */
+function casiGrandi() {
+  let seme = 20261022;
+  const caso = () => { seme = (seme * 1664525 + 1013904223) >>> 0; return seme / 4294967296; };
+  const scegli = (arr) => arr[Math.floor(caso() * arr.length)];
+  const lettera = (w) => normalize(w)[0].toUpperCase();
+  const cat8 = ['nomi', 'cose', 'citta', 'animali', 'cibi', 'mestieri', 'film', 'calciatori'];
+  const note = Object.fromEntries(cat8.map((c) => [c, new Set(LISTE[c].map(normalize))]));
+  const casi = [];
+  // 1) parole vere: 30 per categoria, le più rare comprese (si pesca a caso su tutta la lista)
+  for (const c of cat8) for (let i = 0; i < 30; i++) { const w = scegli(LISTE[c]); casi.push([c, lettera(w), w, 'ok', 'vera']); }
+  // 2) parole vere ma nella categoria sbagliata (una città tra gli animali): devono essere respinte
+  const aperte = ['nomi', 'citta', 'animali', 'cibi', 'mestieri'];
+  for (let i = 0; i < 80; i++) {
+    const da = scegli(aperte);
+    const a = scegli(aperte.filter((c) => c !== da));
+    const w = scegli(LISTE[da]);
+    if (!note[a].has(normalize(w))) casi.push([a, lettera(w), w, 'no', 'altra categoria']);
+  }
+  // 3) parole inventate che suonano italiane
+  const sillabe = ['ba', 'co', 'fe', 'gu', 'li', 'mo', 'ne', 'po', 'ra', 'su', 'ti', 'vu', 'zo', 'dre', 'spo', 'tra', 'gli', 'fa', 'ro', 'mi'];
+  for (let i = 0; i < 40; i++) {
+    const n = 3 + Math.floor(caso() * 2);
+    let w = ''; for (let k = 0; k < n; k++) w += scegli(sillabe);
+    w = w[0].toUpperCase() + w.slice(1);
+    const c = scegli(aperte);
+    if (!cat8.some((x) => note[x].has(normalize(w)))) casi.push([c, lettera(w), w, 'no', 'inventata']);
+  }
+  return casi;
+}
+const CASI = GRANDE ? casiGrandi() : CASI_PICCOLI;
+
 const CATEGORIE = {
   nomi: 'nome proprio di persona', cose: 'cosa, oggetto concreto', citta: 'città, anche estera', animali: 'animale',
   mestieri: 'mestiere o professione', cibi: 'cibo o piatto', film: 'titolo di un film', calciatori: 'calciatore (nome o cognome)',
@@ -53,7 +91,7 @@ if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(chiave)) {
   process.exit(1);
 }
 const client = new Anthropic();
-const gruppi = [CASI.slice(0, 20), CASI.slice(20, 40), CASI.slice(40)];
+const gruppi = Array.from({ length: Math.ceil(CASI.length / 20) }, (_, i) => CASI.slice(i * 20, i * 20 + 20));
 
 async function giudica(model) {
   let tokIn = 0, tokOut = 0;
@@ -73,8 +111,8 @@ async function giudica(model) {
     const testo = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
     let verdetti = [];
     try { verdetti = JSON.parse(testo.slice(testo.indexOf('['), testo.lastIndexOf(']') + 1)); } catch (e) { console.error(`${model}: risposta non leggibile:`, testo.slice(0, 200)); }
-    gruppo.forEach(([cat, lettera, parola, atteso], i) => {
-      esiti.push({ cat, lettera, parola, atteso, v: verdetti.find((x) => x.id === i)?.verdetto || 'nessuno' });
+    gruppo.forEach(([cat, lettera, parola, atteso, tipo], i) => {
+      esiti.push({ cat, lettera, parola, atteso, tipo, v: verdetti.find((x) => x.id === i)?.verdetto || 'nessuno' });
     });
   }
   const [pi, po] = PREZZI[model] || [0, 0];
@@ -95,6 +133,12 @@ for (const r of risultati) {
   console.log(`Parole vere accettate:  ${pct(validi.filter(giusto).length, validi.length)}   (le vere bocciate sono il danno peggiore)`);
   console.log(`Parole false respinte:  ${pct(invalidi.filter(giusto).length, invalidi.length)}`);
   console.log(`Detti "incerta":        ${r.esiti.filter((e) => e.v === 'incerta').length}`);
+  if (GRANDE) {
+    for (const tipo of ['vera', 'altra categoria', 'inventata']) {
+      const del = r.esiti.filter((e) => e.tipo === tipo);
+      console.log(`  ${tipo}: ${pct(del.filter(giusto).length, del.length)}; "incerta" ${del.filter((e) => e.v === 'incerta').length}; sbagliato ${del.filter((e) => !giusto(e) && e.v !== 'incerta').length}`);
+    }
+  }
   for (const e of r.esiti.filter((x) => !giusto(x))) console.log(`  ${e.atteso === 'ok' ? 'VERA  non accettata' : 'FALSA non respinta'}: ${e.cat} ${e.lettera} "${e.parola}" -> ${e.v}`);
   console.log(`Token: ${r.tokIn} in, ${r.tokOut} out. Costo: circa ${(r.costo * 100).toFixed(3)} centesimi di dollaro; per una partita di 3 round circa ${((r.costo / gruppi.length) * 3 * 100).toFixed(3)} centesimi.`);
 }
