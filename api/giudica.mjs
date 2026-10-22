@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     const http = r.stato === 'ok' ? 200 : r.stato === 'rifiutato' ? 400 : 202;
     return res.status(http).json({ stato: r.stato, verdetti: r.verdetti });
   } catch (e) {
-    console.log(`giudica: errore ${e?.name || ''} nella fase ${fase}`);
+    console.log(`giudica: errore ${e?.name || ''} nella fase ${fase}${fase === 'librerie' ? ` ${String(e?.message).slice(0, 300)}` : ''}`); // il messaggio solo per il caricamento delle librerie: lì non ci sono segreti
     return res.status(500).json({ stato: 'errore' }); // nessun dettaglio all'esterno
   }
 }
