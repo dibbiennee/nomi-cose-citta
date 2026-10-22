@@ -1,7 +1,7 @@
 // Parole protette: una parola che il dizionario riconosce non si può togliere votando. Esegui con: npm run test:rules
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { CATEGORIE_PROTETTE, creaDizionario, impostaDizionario, dizionarioPronto, isProtetta, senzaVotiProtetti } from './protezione.js';
+import { CATEGORIE_PROTETTE, creaDizionario, impostaDizionario, dizionarioPronto, isProtetta, senzaVotiProtetti, creaContatoreTentativi } from './protezione.js';
 
 const LISTE = { animali: ['Aquila', 'Cane'], citta: ['Catania', 'Reggio Emilia'], nomi: ['Andrea'] };
 beforeEach(() => impostaDizionario(null));
@@ -62,4 +62,23 @@ test('senzaVotiProtetti: categorie o risposte mancanti non danno errore', () => 
   assert.deepEqual(senzaVotiProtetti({}, {}, 'A'), {});
   assert.deepEqual(senzaVotiProtetti({ animali: { p1: { p2: true } } }, {}, 'A'), { animali: { p1: { p2: true } } });
   assert.deepEqual(senzaVotiProtetti(null, null, 'A'), {});
+});
+
+test('avviso privato: solo dopo 3 tentativi su parole del dizionario in 10 minuti, e poi ogni 3', () => {
+  const MIN = 60 * 1000;
+  const c = creaContatoreTentativi(3, 10 * MIN);
+  assert.deepEqual(c.registra('ABCD', 0), { n: 1, avviso: false }, 'uno solo può essere curiosità');
+  assert.deepEqual(c.registra('ABCD', 1 * MIN), { n: 2, avviso: false });
+  assert.deepEqual(c.registra('ABCD', 2 * MIN), { n: 3, avviso: true });
+  assert.deepEqual(c.registra('ABCD', 3 * MIN), { n: 4, avviso: false });
+  assert.deepEqual(c.registra('ABCD', 4 * MIN), { n: 5, avviso: false });
+  assert.deepEqual(c.registra('ABCD', 5 * MIN), { n: 6, avviso: true });
+});
+
+test('avviso privato: i tentativi vecchi non contano e ogni stanza ha il suo conto', () => {
+  const MIN = 60 * 1000;
+  const c = creaContatoreTentativi(3, 10 * MIN);
+  c.registra('ABCD', 0); c.registra('ABCD', 1 * MIN);
+  assert.deepEqual(c.registra('ABCD', 30 * MIN), { n: 1, avviso: false }, 'dopo mezz\'ora i primi due sono dimenticati');
+  assert.deepEqual(c.registra('WXYZ', 30 * MIN), { n: 1, avviso: false }, 'altra stanza, altro conto');
 });

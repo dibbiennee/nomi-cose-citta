@@ -1,6 +1,11 @@
-// Le parole che il dizionario riconosce, per categoria. Per ora quelle delle liste dei robot; le liste complete le
-// compila scripts/compila-dizionario.mjs (vedi docs/dizionario-fonti.md).
-import { LISTE as ROBOT } from '../../solo/parole/index.js';
+// Le parole che il dizionario riconosce, per categoria. Generato da scripts/compila-dizionario.mjs.
+import nomi from './nomi.js';
+import cose from './cose.js';
+import citta from './citta.js';
+import animali from './animali.js';
+import cibi from './cibi.js';
+import mestieri from './mestieri.js';
+import film from './film.js';
+import calciatori from './calciatori.js';
 
-const parole = (lista) => Object.values(lista).flat().map(([parola]) => parola);
-export const LISTE = Object.fromEntries(Object.entries(ROBOT).map(([cat, lista]) => [cat, parole(lista)]));
+export const LISTE = { nomi, cose, citta, animali, cibi, mestieri, film, calciatori };

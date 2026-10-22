@@ -40,9 +40,18 @@ async def main():
         check('la riga protetta porta l\'etichetta "Nel dizionario"', 'Nel dizionario' in body)
         vota_protetta = pg.get_by_role('button', name=f"Non vale: {info['protetta']} di Anna")
         vota_falsa = pg.get_by_role('button', name=f"Non vale: {info['falsa']} di Bea")
-        check('la parola del dizionario non ha il tasto "Non vale"', await vota_protetta.count() == 0)
+        check('la parola del dizionario ha un tasto "Non vale" che spiega ma non vota', await vota_protetta.count() == 1)
         check('la parola finta ha il tasto "Non vale"', await vota_falsa.count() == 1)
-        await pg.wait_for_timeout(3500)  # finisce l'animazione dello STOP
+        await pg.wait_for_timeout(3500)  # finisce l'animazione dello STOP, che copre la schermata
+        await vota_protetta.click(force=True); await pg.wait_for_timeout(500)  # force: Playwright tratta aria-disabled come non cliccabile, un telefono no
+        t1 = (await pg.locator('body').inner_text()).replace('\u00a0', ' ')
+        check('primo tentativo: spiega che è nel dizionario', 'è nel dizionario: vale per tutti' in t1)
+        await vota_protetta.click(force=True); await pg.wait_for_timeout(300)
+        await vota_protetta.click(force=True); await pg.wait_for_timeout(500)
+        t3 = (await pg.locator('body').inner_text()).replace('\u00a0', ' ')
+        check('al terzo tentativo compare l\'avviso privato', 'Hai provato a bocciare 3 parole che esistono' in t3)
+        voti = chiedi('voti')
+        check('nessun voto scritto contro la parola protetta', not voti.get('voti'), voti)
         await pg.screenshot(path=f'{OUT}/giudice-correzione.png')
         check('niente scroll laterale a 390px', not await pg.evaluate('document.documentElement.scrollWidth > innerWidth'))
         await pg.set_viewport_size({'width': 360, 'height': 740}); await pg.wait_for_timeout(500)

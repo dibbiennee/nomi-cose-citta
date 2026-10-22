@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { sx, INK, Face, hostButtonStyle, BotTag } from '../ui/kit';
 import { scoreCategory } from '../engine/rules';
-import { senzaVotiProtetti, isProtetta } from '../giudice/protezione';
+import { senzaVotiProtetti, isProtetta, tentativiSuParoleVere } from '../giudice/protezione';
 
 const TAGS = { empty: 'vuota', wrongLetter: 'lettera sbagliata', rejected: 'bocciata dalla stanza', solo: 'unico a rispondere', duplicate: 'doppia', unique: 'unica' };
 const PTS_BG = { 20: '#FFD23F', 10: '#6EE7A8', 5: '#5CD0FF', 0: '#E6E0F7' };
@@ -78,6 +78,14 @@ export default function Review({ g }) {
                 <span style={sx(`font-family: 'Bricolage Grotesque Variable', sans-serif; font-size: 21px; line-height: 1.1; font-weight: 800; text-decoration: ${rejected || r.status === 'wrongLetter' ? 'line-through' : 'none'}; opacity: ${valid ? '1' : '0.45'}; overflow-wrap: break-word; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden`)}>{r.text || '—'}</span>
                 {known && (
                   <span style={sx('height: 30px; padding: 0 10px; border-radius: 999px; border: 2px solid #17122B; background: #6EE7A8; font-size: 12px; font-weight: 800; align-self: flex-start; margin-top: 8px; display: flex; align-items: center; white-space: nowrap')}>Nel dizionario</span>
+                )}
+                {!isMe && known && (
+                  <button className="n-press" aria-disabled="true" aria-label={`Non vale: ${r.text} di ${p.name}. È nel dizionario, vale per tutti`}
+                    onClick={() => {
+                      const t = tentativiSuParoleVere.registra(g.code);
+                      g.toast(t.avviso ? `Hai provato a bocciare ${t.n} parole che esistono. Il dizionario le protegge: non serve votare.` : `«${r.text}» è nel dizionario: vale per tutti, il voto non conta.`);
+                    }}
+                    style={sx('height: 44px; padding: 0 12px; border-radius: 12px; border: 2px solid #CFC8EA; background: #EDE8FB; color: #6F698F; font-size: 13px; font-weight: 800; cursor: pointer; align-self: flex-start; margin-top: 8px')}>Non vale</button>
                 )}
                 {canVote && (
                   <button className="n-press" aria-pressed={myVote} aria-label={`${myVote ? 'Annulla il voto su' : 'Non vale:'} ${r.text} di ${p.name}`} onClick={() => g.act(() => g.engine.vote(g.code, cat.key, p.id, !myVote))}

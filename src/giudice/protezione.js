@@ -36,6 +36,24 @@ export function senzaVotiProtetti(votes, answers, letter) {
   return out;
 }
 
+/**
+ * Quante volte, in una finestra di tempo, una persona ha provato a bocciare una parola che il dizionario conosce.
+ * L'avviso scatta ogni `soglia` tentativi e lo vede solo lei: un solo tentativo può essere curiosità, e le parole che
+ * il dizionario non conosce non contano (lì non si può sapere chi ha ragione). Il conto sta sul telefono.
+ */
+export function creaContatoreTentativi(soglia = 3, finestraMs = 10 * 60 * 1000) {
+  const tentativi = {};
+  return {
+    registra(chiave, adesso = Date.now()) {
+      const recenti = (tentativi[chiave] || []).filter((t) => adesso - t < finestraMs);
+      recenti.push(adesso);
+      tentativi[chiave] = recenti;
+      return { n: recenti.length, avviso: recenti.length % soglia === 0 };
+    },
+  };
+}
+export const tentativiSuParoleVere = creaContatoreTentativi();
+
 let caricamento = null;
 /** Carica le liste solo quando servono (entrando in una stanza online). Un secondo tentativo se il primo fallisce. */
 export function caricaDizionario() {
