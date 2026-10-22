@@ -3,12 +3,12 @@
 //
 // Uso (la chiave resta nel tuo terminale, non va incollata in nessuna chat):
 //   export ANTHROPIC_API_KEY=sk-ant-...        # creala su console.anthropic.com, con un limite di spesa basso
-//   node scripts/prova-giudice.mjs
-//   node scripts/prova-giudice.mjs claude-sonnet-5-5   # per confrontare con un altro modello
+//   node scripts/prova-giudice.mjs             # confronta Haiku 5.5 e Sonnet 5.5 sugli stessi casi
+//   node scripts/prova-giudice.mjs claude-haiku-5-5   # un modello solo
 import Anthropic from '@anthropic-ai/sdk';
 
-const MODEL = process.argv[2] || 'claude-haiku-5-5';
-const PRICE = { 'claude-haiku-5-5': [0.1, 0.5], 'claude-sonnet-5-5': [2, 10] }[MODEL] || [0, 0]; // $ per milione di token (in, out)
+const MODELLI = process.argv.slice(2).length ? process.argv.slice(2) : ['claude-haiku-5-5', 'claude-sonnet-5-5'];
+const PREZZI = { 'claude-haiku-5-5': [0.1, 0.5], 'claude-sonnet-5-5': [2, 10] }; // $ per milione di token (in, out)
 
 // cat, lettera, parola, atteso: 'ok' valida, 'no' non valida
 const CASI = [
@@ -47,40 +47,60 @@ Rispondi SOLO con un array JSON, senza altro testo: [{"id":0,"verdetto":"valida"
 
 const client = new Anthropic();
 const gruppi = [CASI.slice(0, 20), CASI.slice(20, 40), CASI.slice(40)];
-let tokIn = 0, tokOut = 0;
-const esiti = [];
-const t0 = Date.now();
 
-for (const gruppo of gruppi) {
-  const righe = gruppo.map(([cat, lettera, parola], i) => `${i}. categoria: ${CATEGORIE[cat]} | lettera: ${lettera} | risposta: ${parola}`).join('\n');
-  const res = await client.messages.create({
-    model: MODEL,
-    max_tokens: 4000,
-    output_config: { effort: 'low' },
-    system: SISTEMA,
-    messages: [{ role: 'user', content: righe }],
-  });
-  tokIn += res.usage.input_tokens;
-  tokOut += res.usage.output_tokens;
-  const testo = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
-  let verdetti = [];
-  try { verdetti = JSON.parse(testo.slice(testo.indexOf('['), testo.lastIndexOf(']') + 1)); } catch (e) { console.error('Risposta non leggibile:', testo.slice(0, 200)); }
-  gruppo.forEach(([cat, lettera, parola, atteso], i) => {
-    const v = verdetti.find((x) => x.id === i)?.verdetto || 'nessuno';
-    esiti.push({ cat, lettera, parola, atteso, v });
-  });
+async function giudica(model) {
+  let tokIn = 0, tokOut = 0;
+  const esiti = [];
+  const t0 = Date.now();
+  for (const gruppo of gruppi) {
+    const righe = gruppo.map(([cat, lettera, parola], i) => `${i}. categoria: ${CATEGORIE[cat]} | lettera: ${lettera} | risposta: ${parola}`).join('\n');
+    const res = await client.messages.create({
+      model,
+      max_tokens: 4000,
+      output_config: { effort: 'low' },
+      system: SISTEMA,
+      messages: [{ role: 'user', content: righe }],
+    });
+    tokIn += res.usage.input_tokens;
+    tokOut += res.usage.output_tokens;
+    const testo = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
+    let verdetti = [];
+    try { verdetti = JSON.parse(testo.slice(testo.indexOf('['), testo.lastIndexOf(']') + 1)); } catch (e) { console.error(`${model}: risposta non leggibile:`, testo.slice(0, 200)); }
+    gruppo.forEach(([cat, lettera, parola, atteso], i) => {
+      esiti.push({ cat, lettera, parola, atteso, v: verdetti.find((x) => x.id === i)?.verdetto || 'nessuno' });
+    });
+  }
+  const [pi, po] = PREZZI[model] || [0, 0];
+  return { model, esiti, tokIn, tokOut, secondi: (Date.now() - t0) / 1000, costo: (tokIn * pi + tokOut * po) / 1e6 };
 }
 
 const giusto = (e) => (e.atteso === 'ok' ? e.v === 'valida' : e.v === 'non_valida');
-const validi = esiti.filter((e) => e.atteso === 'ok');
-const invalidi = esiti.filter((e) => e.atteso === 'no');
 const pct = (n, tot) => `${n}/${tot} (${Math.round((100 * n) / tot)}%)`;
-console.log(`\nModello: ${MODEL}, ${esiti.length} casi in ${gruppi.length} chiamate, ${((Date.now() - t0) / 1000).toFixed(1)} s`);
-console.log(`Parole vere accettate:     ${pct(validi.filter(giusto).length, validi.length)}   (le vere bocciate sono il danno peggiore)`);
-console.log(`Parole false respinte:     ${pct(invalidi.filter(giusto).length, invalidi.length)}`);
-console.log(`Detti "incerta":           ${esiti.filter((e) => e.v === 'incerta').length}`);
-console.log(`\nSbagli:`);
-for (const e of esiti.filter((x) => !giusto(x))) console.log(`  ${e.atteso === 'ok' ? 'VERA  bocciata/dubbia' : 'FALSA accettata/dubbia'}: ${e.cat} ${e.lettera} "${e.parola}" -> ${e.v}`);
-const costo = (tokIn * PRICE[0] + tokOut * PRICE[1]) / 1e6;
-console.log(`\nToken: ${tokIn} in, ${tokOut} out. Costo di questa prova: circa ${(costo * 100).toFixed(3)} centesimi di dollaro.`);
-console.log(`Per partita (3 round): circa ${((costo / gruppi.length) * 3 * 100).toFixed(3)} centesimi di dollaro, se ogni round fosse come queste chiamate.`);
+const risultati = [];
+for (const m of MODELLI) {
+  try { risultati.push(await giudica(m)); } catch (e) { console.error(`${m}: errore ${e.status || ''} ${e.message}`); }
+}
+
+for (const r of risultati) {
+  const validi = r.esiti.filter((e) => e.atteso === 'ok');
+  const invalidi = r.esiti.filter((e) => e.atteso === 'no');
+  console.log(`\n=== ${r.model}: ${r.esiti.length} casi in ${gruppi.length} chiamate, ${r.secondi.toFixed(1)} s ===`);
+  console.log(`Parole vere accettate:  ${pct(validi.filter(giusto).length, validi.length)}   (le vere bocciate sono il danno peggiore)`);
+  console.log(`Parole false respinte:  ${pct(invalidi.filter(giusto).length, invalidi.length)}`);
+  console.log(`Detti "incerta":        ${r.esiti.filter((e) => e.v === 'incerta').length}`);
+  for (const e of r.esiti.filter((x) => !giusto(x))) console.log(`  ${e.atteso === 'ok' ? 'VERA  non accettata' : 'FALSA non respinta'}: ${e.cat} ${e.lettera} "${e.parola}" -> ${e.v}`);
+  console.log(`Token: ${r.tokIn} in, ${r.tokOut} out. Costo: circa ${(r.costo * 100).toFixed(3)} centesimi di dollaro; per una partita di 3 round circa ${((r.costo / gruppi.length) * 3 * 100).toFixed(3)} centesimi.`);
+}
+
+if (risultati.length === 2) {
+  const [a, b] = risultati;
+  console.log(`\n=== Dove ${a.model} e ${b.model} non sono d'accordo ===`);
+  let diversi = 0;
+  a.esiti.forEach((e, i) => {
+    const f = b.esiti[i];
+    if (e.v !== f.v) { diversi++; console.log(`  ${e.cat} ${e.lettera} "${e.parola}" (atteso ${e.atteso === 'ok' ? 'valida' : 'non valida'}): ${a.model.replace('claude-', '')} ${e.v}, ${b.model.replace('claude-', '')} ${f.v}`); }
+  });
+  if (!diversi) console.log('  nessuna: rispondono uguale su tutti i casi');
+  const rapporto = b.costo / (a.costo || 1);
+  console.log(`\nCosto: ${b.model} costa circa ${rapporto.toFixed(0)} volte ${a.model}.`);
+}
