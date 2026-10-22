@@ -1,14 +1,18 @@
+/* global globalThis */
 // Statistiche del gioco su Firebase: contatori per giorno e chi c'è adesso. Niente dati personali, solo numeri;
 // la pagina /statistiche li legge dal vivo. Le regole (database.rules.json, stats e live) accettano solo
 // aumenti di uno sui contatori di questo elenco, e la presenza di ognuno solo da lui stesso.
 import { ref, runTransaction, set, remove, onDisconnect, serverTimestamp } from 'firebase/database';
 
 const LEVELS = ['facile', 'medio', 'difficile', 'impossibile'];
+/** Da dove arriva una visita: il link che mettiamo in ogni profilo ha ?s=tiktok (o instagram, youtube, whatsapp). */
+export const FONTI = ['tiktok', 'instagram', 'youtube', 'whatsapp', 'altro'];
 export const STAT_KEYS = [
   // chi arriva e chi torna (src/visite.js)
   'aperture', 'telefoni_nuovi', 'telefoni_tornati', 'tornati_d1', 'tornati_d7',
   ...Array.from({ length: 24 }, (_, h) => `ora_${String(h).padStart(2, '0')}`), // aperture per fascia oraria
   'da_link', 'da_icona', 'diretta', // da dove si apre: link a una stanza, icona sulla Home, sito
+  ...FONTI.flatMap((f) => [`fonte_${f}`, `nuovi_${f}`]), // aperture e telefoni nuovi per fonte (?s=)
   // il percorso
   'scelta_online', 'scelta_solo',
   // online
@@ -35,6 +39,27 @@ export const STAT_KEYS = [
 export const MINUTE_KEYS = ['minuti_online', 'minuti_solo'];
 export const LIVE_PLACES = ['home', 'stanza', 'solo', 'coda'];
 
+// Telefoni di prova: aprendo una volta il gioco con ?test=1 quel telefono (o computer) non conta più nelle statistiche
+// né nella presenza dal vivo, finché non si apre con ?test=0. Così i numeri sono solo di giocatori veri.
+const TEST_KEY = 'ncc-test';
+if (typeof window !== 'undefined') {
+  try {
+    const t = new URLSearchParams(window.location.search).get('test');
+    if (t === '1') window.localStorage.setItem(TEST_KEY, '1');
+    else if (t === '0') window.localStorage.removeItem(TEST_KEY);
+  } catch (e) { /* niente storage: resta come prima */ }
+}
+export function isTester() {
+  try { return globalThis.NCC_TEST === true || globalThis.localStorage?.getItem(TEST_KEY) === '1'; } catch (e) { return false; }
+}
+
+/** La fonte della visita da ?s= (minuscole; una sconosciuta vale "altro"); senza parametro resta quella già ricordata. */
+export function leggiFonte(search, ricordata) {
+  const s = new URLSearchParams(search || '').get('s');
+  if (s) { const f = s.toLowerCase(); return FONTI.includes(f) ? f : 'altro'; }
+  return ricordata || null;
+}
+
 /** Il giorno in Italia, AAAA-MM-GG: le statistiche si leggono con l'orario di chi gioca. */
 export const dayKey = (ms) => new Date(ms).toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
 
@@ -49,6 +74,7 @@ function inLine(path, run) {
 
 /** Minuti di gioco da sommare per oggi (durata delle partite). */
 export function trackMinutes(db, key, minutes) {
+  if (isTester()) return Promise.resolve();
   const m = Math.min(120, Math.max(1, Math.round(minutes)));
   if (!MINUTE_KEYS.includes(key)) return Promise.resolve();
   const path = `stats/days/${dayKey(Date.now())}/${key}`;
@@ -57,13 +83,14 @@ export function trackMinutes(db, key, minutes) {
 
 /** Un contatore in più per oggi. Se non c'è rete, si perde: sono statistiche, non devono disturbare il gioco. */
 export function track(db, key) {
-  if (!STAT_KEYS.includes(key)) return Promise.resolve();
+  if (!STAT_KEYS.includes(key) || isTester()) return Promise.resolve();
   const path = `stats/days/${dayKey(Date.now())}/${key}`;
   return inLine(path, () => runTransaction(ref(db, path), (v) => (v || 0) + 1, { applyLocally: false }));
 }
 
 /** Dove si trova questo telefono adesso (home, stanza, solo, coda). La voce sparisce da sola quando si scollega. */
 export async function setLive(db, uid, where) {
+  if (isTester()) return;
   const me = ref(db, `live/${uid}`);
   await onDisconnect(me).remove();
   await set(me, { where, at: serverTimestamp() });

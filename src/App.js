@@ -15,7 +15,7 @@ import Round from './screens/Round';
 import { Awards, Final } from './screens/Finale';
 import Solo from './screens/Solo';
 import Statistiche from './screens/Statistiche';
-import { track, trackMinutes, setLive, dayKey } from './stats';
+import { track, trackMinutes, setLive, dayKey, leggiFonte } from './stats';
 import { visitEvents, hourKey, VISIT_KEY } from './visite';
 import { isStandalone } from './ui/installa';
 import { createFounderStore } from './club/fondatore';
@@ -126,6 +126,15 @@ export default function App() {
     events.forEach((k) => statRef.current(k));
     statRef.current(hourKey(Date.now()));
     statRef.current(isStandalone() ? 'da_icona' : codeFromPath(window.location.pathname) ? 'da_link' : 'diretta');
+    // Il link nei profili ha ?s=tiktok (o instagram...): la fonte si ricorda per la sessione, anche se poi si apre una stanza.
+    let fonteSalvata = null;
+    try { fonteSalvata = window.sessionStorage.getItem('ncc-fonte'); } catch (e) { fonteSalvata = null; }
+    const fonte = leggiFonte(window.location.search, fonteSalvata);
+    if (fonte) {
+      try { window.sessionStorage.setItem('ncc-fonte', fonte); } catch (e) { /* niente */ }
+      statRef.current(`fonte_${fonte}`);
+      if (events.includes('telefoni_nuovi')) statRef.current(`nuovi_${fonte}`);
+    }
   }, []);
   // Chi c'è adesso: home, stanza o partita da soli. La voce sparisce da sola quando il telefono si scollega.
   const place = solo ? 'solo' : view === 'room' ? 'stanza' : view === 'cerco' ? 'coda' : 'home';

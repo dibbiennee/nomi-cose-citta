@@ -136,6 +136,9 @@ export default function Statistiche() {
             </div>
             <p style={note}>Telefoni di ritorno: {sum('telefoni_tornati')}. Installazioni sulla Home: {sum('installazioni')}.</p>
             <Bars rows={[['Dal sito', sum('diretta')], ['Da un link', sum('da_link')], ['Dall\'icona', sum('da_icona')]]} />
+            <h3 style={sx('margin: 4px 0 0; font-size: 15px; font-weight: 800')}>Da quale profilo (link con ?s=)</h3>
+            <Bars rows={[['TikTok', sum('fonte_tiktok'), `${sum('nuovi_tiktok')} nuovi`], ['Instagram', sum('fonte_instagram'), `${sum('nuovi_instagram')} nuovi`], ['YouTube', sum('fonte_youtube'), `${sum('nuovi_youtube')} nuovi`], ['WhatsApp', sum('fonte_whatsapp'), `${sum('nuovi_whatsapp')} nuovi`], ['Altro', sum('fonte_altro'), `${sum('nuovi_altro')} nuovi`]]} />
+            <p style={note}>Per escludere un tuo telefono o computer dai numeri, aprilo una volta con <strong>?test=1</strong> in fondo all'indirizzo (con ?test=0 torna a contare).</p>
           </section>
 
           <section style={card}>

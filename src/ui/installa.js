@@ -16,7 +16,7 @@ export function isStandalone() {
 export function platform() {
   const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
   const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && typeof navigator !== 'undefined' && navigator.maxTouchPoints > 1);
-  const app = /WhatsApp|Instagram|FBAN|FBAV|Line\//.test(ua);
+  const app = /WhatsApp|Instagram|FBAN|FBAV|Line\/|TikTok|musical_ly|BytedanceWebview|trill/.test(ua);
   let browser = null;
   if (app) browser = 'app';
   else if (/CriOS|Chrome\//.test(ua) && !/EdgA|EdgiOS|OPR|SamsungBrowser/.test(ua)) browser = 'chrome';

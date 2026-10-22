@@ -11,6 +11,7 @@ import { LISTE } from '../src/giudice/liste/index.js';
 import { normalize } from '../src/engine/rules.js';
 import { chiaveParola } from '../src/giudice/chiave.mjs';
 
+globalThis.NCC_TEST = true; // la prova non conta nelle statistiche
 const SITO = process.argv[2] || 'https://nomicosecitta.pro';
 const env = Object.fromEntries(readFileSync(new URL('../.env.production', import.meta.url), 'utf8').split('\n').filter((r) => r.includes('=')).map((r) => [r.slice(0, r.indexOf('=')), r.slice(r.indexOf('=') + 1).replace(/^"|"$/g, '')]));
 const config = { apiKey: env.REACT_APP_FIREBASE_API_KEY, authDomain: env.REACT_APP_FIREBASE_AUTH_DOMAIN, databaseURL: env.REACT_APP_FIREBASE_DATABASE_URL, projectId: env.REACT_APP_FIREBASE_PROJECT_ID, appId: env.REACT_APP_FIREBASE_APP_ID };

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, signInAnonymously } from 'firebase/auth';
 import { getDatabase, connectDatabaseEmulator, ref, get, set, goOffline } from 'firebase/database';
-import { STAT_KEYS, dayKey, track, trackMinutes, setLive } from './stats.js';
+import { STAT_KEYS, dayKey, track, trackMinutes, setLive, leggiFonte, FONTI } from './stats.js';
 
 const PROJECT = process.env.GCLOUD_PROJECT || 'demo-ncc';
 const apps = [];
@@ -94,4 +94,40 @@ test('lo stesso telefono conta lo stesso contatore più volte di fila senza perd
   await Promise.all([3, 4].map((m) => trackMinutes(a.db, 'minuti_solo', m)));
   assert.equal(await a.read(`stats/days/${day}/guida_aperta`), g0 + 5);
   assert.equal(await a.read(`stats/days/${day}/minuti_solo`), m0 + 7);
+});
+
+test('la fonte di una visita si legge da ?s= e si ricorda per la sessione; il resto è "altro"', () => {
+  assert.equal(leggiFonte('?s=tiktok', null), 'tiktok');
+  assert.equal(leggiFonte('?s=TikTok&x=1', null), 'tiktok', 'maiuscole');
+  assert.equal(leggiFonte('?s=boh', null), 'altro', 'una fonte sconosciuta conta come altro');
+  assert.equal(leggiFonte('', null), null, 'senza parametro niente fonte');
+  assert.equal(leggiFonte('', 'instagram'), 'instagram', 'dentro la stessa sessione resta quella della prima pagina');
+  assert.equal(leggiFonte('?s=youtube', 'instagram'), 'youtube', 'un parametro nuovo vince');
+  for (const f of FONTI) assert.ok(STAT_KEYS.includes(`fonte_${f}`) && STAT_KEYS.includes(`nuovi_${f}`), f);
+});
+
+test('le fonti arrivano nei contatori del giorno, quelle inventate no', async () => {
+  const a = await phone();
+  const day = dayKey(Date.now());
+  const f0 = (await a.read(`stats/days/${day}/fonte_tiktok`)) || 0;
+  await track(a.db, 'fonte_tiktok');
+  await track(a.db, 'nuovi_tiktok');
+  assert.equal(await a.read(`stats/days/${day}/fonte_tiktok`), f0 + 1);
+  await denied(set(ref(a.db, `stats/days/${day}/fonte_inventata`), 1));
+});
+
+test('un telefono di prova (?test=1) non conta nelle statistiche né nella presenza dal vivo', async () => {
+  const a = await phone();
+  const day = dayKey(Date.now());
+  const q0 = (await a.read(`stats/days/${day}/guida_aperta`)) || 0;
+  globalThis.NCC_TEST = true;
+  try {
+    await track(a.db, 'guida_aperta');
+    await trackMinutes(a.db, 'minuti_solo', 5);
+    await setLive(a.db, a.uid, 'home');
+  } finally { globalThis.NCC_TEST = false; }
+  assert.equal((await a.read(`stats/days/${day}/guida_aperta`)) || 0, q0, 'contatore intatto');
+  assert.equal(await a.read(`live/${a.uid}`), null, 'nessuna presenza');
+  await track(a.db, 'guida_aperta');
+  assert.equal(await a.read(`stats/days/${day}/guida_aperta`), q0 + 1, 'tolto il flag, torna a contare');
 });
