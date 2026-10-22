@@ -45,6 +45,13 @@ Sii equo, non severo: accetta parole rare, nomi stranieri, nomi di battesimo e c
 Rispondi con "valida", "non_valida", oppure "incerta" quando non sei sicuro che esista.
 Rispondi SOLO con un array JSON, senza altro testo: [{"id":0,"verdetto":"valida"}, ...]`;
 
+const chiave = process.env.ANTHROPIC_API_KEY || '';
+if (!chiave) { console.error('Manca la chiave: nel terminale scrivi  export ANTHROPIC_API_KEY=\'sk-ant-...\'  e rilancia.'); process.exit(1); }
+if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(chiave)) {
+  console.error('La chiave non è valida: contiene caratteri strani (per esempio pallini) o è troppo corta.');
+  console.error('La console mostra la chiave intera una sola volta, subito dopo averla creata: creane una nuova, copiala da lì e mettila tra apici.');
+  process.exit(1);
+}
 const client = new Anthropic();
 const gruppi = [CASI.slice(0, 20), CASI.slice(20, 40), CASI.slice(40)];
 
