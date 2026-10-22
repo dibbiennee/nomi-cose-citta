@@ -23,6 +23,7 @@ import { isReservedCode } from '../club/fondatore.js';
 import { CHARACTER_IDS } from '../club/contenuti.js';
 import { cleanAcc } from '../shop/accessori.js';
 import { dueAnswers, dueStop, botVotesFor, pickBots, seededRandom, sameAnswers } from './robotOnline.js';
+import { senzaVotiProtetti } from '../giudice/protezione.js';
 
 export const SPIN_MS = 2000; // la lettera che gira
 export const COUNTDOWN_MS = 3200; // 3, 2, 1, Via!
@@ -68,12 +69,14 @@ export function createEngine(db, uid) {
    */
   function honestVotes(room, code) {
     const votes = JSON.parse(JSON.stringify(room.votes || {}));
-    if (!room.quick) return votes;
-    for (const cat of Object.keys(votes)) {
-      for (const t of Object.keys(votes[cat])) for (const v of Object.keys(votes[cat][t] || {})) if (room.players?.[v]?.bot) delete votes[cat][t][v];
+    if (room.quick) {
+      for (const cat of Object.keys(votes)) {
+        for (const t of Object.keys(votes[cat])) for (const v of Object.keys(votes[cat][t] || {})) if (room.players?.[v]?.bot) delete votes[cat][t][v];
+      }
+      if (botDict) for (const v of botVotesFor(room, code, botDict)) ((votes[v.cat] ||= {})[v.target] ||= {})[v.voter] = true;
     }
-    if (botDict) for (const v of botVotesFor(room, code, botDict)) ((votes[v.cat] ||= {})[v.target] ||= {})[v.voter] = true;
-    return votes;
+    // Le parole che il dizionario riconosce non si possono bocciare votando (stessa funzione della schermata del voto).
+    return senzaVotiProtetti(votes, room.answers, room.round?.letter);
   }
   const roomRef = (code, path = '') => ref(db, `rooms/${code}${path ? '/' + path : ''}`);
   let serverOffset = 0;

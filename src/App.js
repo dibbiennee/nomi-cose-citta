@@ -29,6 +29,7 @@ import { useAccount } from './account/useAccount';
 import Account from './screens/Account';
 import Negozio from './screens/Negozio';
 import { useRitorno } from './ritorno/useRitorno';
+import { caricaDizionario } from './giudice/protezione';
 import { OggiSheet, FestaSheet } from './screens/Oggi';
 import { NEED_NET, Cerco, PrimiSheet, WaitlistSheet, ErrorScreen, RulesSheet, OnlineSheet, JoinSheet, FounderSheet, InstallSheet, ScoresSheet, ExitSheet, OfflineBanner, Toast, Loading, IdleNotice } from './screens/Avvisi';
 
@@ -126,6 +127,9 @@ export default function App() {
     statRef.current(isStandalone() ? 'da_icona' : codeFromPath(window.location.pathname) ? 'da_link' : 'diretta');
   }, []);
   // Chi c'è adesso: home, stanza o partita da soli. La voce sparisce da sola quando il telefono si scollega.
+  // Nelle stanze online il dizionario si carica all'ingresso, molto prima del voto (le parole che conosce non si bocciano).
+  const [, setDizionario] = useState(false);
+  useEffect(() => { if (view === 'room' && !solo) caricaDizionario().then(setDizionario); }, [view, solo]);
   const place = solo ? 'solo' : view === 'room' ? 'stanza' : view === 'cerco' ? 'coda' : 'home';
   useEffect(() => {
     if (netEngine && view !== 'stats') setLive(db, netEngine.uid, place).catch(() => {});

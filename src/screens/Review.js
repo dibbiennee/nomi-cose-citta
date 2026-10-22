@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { sx, INK, Face, hostButtonStyle, BotTag } from '../ui/kit';
 import { scoreCategory } from '../engine/rules';
+import { senzaVotiProtetti, isProtetta } from '../giudice/protezione';
 
 const TAGS = { empty: 'vuota', wrongLetter: 'lettera sbagliata', rejected: 'bocciata dalla stanza', solo: 'unico a rispondere', duplicate: 'doppia', unique: 'unica' };
 const PTS_BG = { 20: '#FFD23F', 10: '#6EE7A8', 5: '#5CD0FF', 0: '#E6E0F7' };
@@ -31,7 +32,8 @@ export default function Review({ g }) {
   const ids = g.scoring.map((p) => p.id);
   const catAnswers = {};
   for (const id of ids) catAnswers[id] = (room.answers?.[id] || {})[cat.key] || '';
-  const votes = room.votes?.[cat.key] || {};
+  // Le parole che il dizionario riconosce non si bocciano votando: stessa funzione che usa il punteggio (room.js).
+  const votes = room.solo ? (room.votes?.[cat.key] || {}) : (senzaVotiProtetti({ [cat.key]: room.votes?.[cat.key] || {} }, room.answers, round.letter)[cat.key] || {});
   const res = scoreCategory(ids, catAnswers, votes, round.letter);
   const bubbles = useReactions(room, g.now);
   const voters = Math.max(1, ids.length - 1);
@@ -62,8 +64,8 @@ export default function Review({ g }) {
           const r = res[p.id], isMe = p.id === uid;
           const rejected = r.status === 'rejected';
           const valid = ['solo', 'duplicate', 'unique'].includes(r.status);
-          // Partita da soli: le parole che il dizionario conosce sono valide e non si votano.
-          const known = !!room.solo?.known?.[cat.key]?.[p.id] && valid;
+          // Le parole che il dizionario conosce sono valide e non si votano (da soli: quelle dei robot; online: protette).
+          const known = valid && (room.solo ? !!room.solo.known?.[cat.key]?.[p.id] : isProtetta(cat.key, r.text, round.letter));
           const canVote = !isMe && !known && r.status !== 'empty' && r.status !== 'wrongLetter';
           const myVote = !!votes[p.id]?.[uid];
           const tag = (r.status === 'rejected' && room.solo ? 'bocciata dai robot' : TAGS[r.status]) + (valid && r.votesAgainst && !room.solo ? ` · ${r.votesAgainst} su ${need} per bocciarla` : '');
